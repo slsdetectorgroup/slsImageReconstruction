@@ -3,6 +3,7 @@ WD				=	$(shell pwd)
 LIBDIR	 		= 	$(WD)/../bin
 LIBRARYRXRDIR 	=	$(WD)/../slsReceiverSoftware
 LIBRARYDETDIR 	=	$(WD)/../slsDetectorSoftware
+LIBRARYCALDIR	=	$(WD)/../slsDetectorCalibration
 LDFLAGRXR 		= 	-L$(LIBDIR) -lSlsReceiver -L/usr/lib64/ -lpthread
 LDFLAGDET 		= 	-L$(LIBDIR) -lSlsDetector -L/usr/lib64/ -lpthread
 INCLUDESRXR		=	-I $(LIBRARYRXRDIR)/slsReceiver
@@ -18,7 +19,7 @@ PROGS		= 	eigerImageReconstruct
 DESTDIR		?= 	bin
 INSTMODE	= 	0777
 
-INCLUDES	= 	-I. -Iincludes -I $(INCLUDESRXR)/includes
+INCLUDES	= 	-I. -Iincludes -I $(LIBRARYRXRDIR)/include -I $(LIBRARYCALDIR)
 
 SRC_CLNT	=	src/main.cpp 
 OBJS 		= 	$(SRC_CLNT:.cpp=.o)
