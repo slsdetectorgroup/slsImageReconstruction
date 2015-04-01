@@ -6,104 +6,101 @@
  */
 
 #include "sls_receiver_defs.h"
-#include "slsReceiverData.h"
-
-
 #include <iostream>
 #include <string.h>
+#include <map>
+#include <getopt.h>
+
+#include "ImageMaker.h"
 using namespace std;
+
+int getParameters(int argc, char *argv[], int &dr, string &fn, int &tg);
 
 
 int main(int argc, char *argv[]) {
 
-	slsReceiverData <uint32_t> *receiverData = 0;
+	//get config parameters
+	string fname = "";
+	int dynamicrange = 16;
+	int tenGiga = 0;
+	if(getParameters(argc, argv, dynamicrange,fname,tenGiga) == slsReceiverDefs::OK){
 
-	if(receiverData)
-		delete receiverData;
+		cout << " dynamic range:"<< dynamicrange << " file name:" << fname << " ten giga:"<< tenGiga << endl;
 
-#include "slsReceiverData.h"
-	slsReceiverData<uint32_t>  *receiverdata;
+		//construct image
+		ImageMaker *imageMaker = new ImageMaker(fname, dynamicrange, tenGiga);
+		imageMaker->processFile();
 
-#include "eigerHalfModuleData.h"
-	receiverdata(NULL)
-
-
-	:eiger_read_frame()
-	   int inum = 0;
-	+/*                     //dr = 16, hence uint16_t
-	+                       for(inum = 0; inum < 2; inum++)
-	+                               cprintf(YELLOW,"before htonl %d,0 :%d\n",inum,((uint16_t)(*((uint16_t*)((char*)(retval+(inum*(dynamicrange/8))))))));
-	+                       for(inum = 254; inum < 258; inum++)
-	+                               cprintf(YELLOW,"before htonl %d,0 :%d\n",inum,((uint16_t)(*((uint16_t*)((char*)(retval+(inum*(dynamicrange/8))))))));
-	+                       for(inum = 0; inum < 2; inum++)
-	+                               cprintf(YELLOW,"before htonl %d,2 :%d\n",inum,((uint16_t)(*((uint16_t*)((char*)(retval+((2048+inum)*(dynamicrange/8))))))));
-	+                       for(inum = 254; inum < 258; inum++)
-	+                               cprintf(YELLOW,"before htonl %d,2 :%d\n",inum,((uint16_t)(*((uint16_t*)((char*)(retval+((2048+inum)*(dynamicrange/8))))))));
-	+
-	+*/
-	+/*
-	+                       for(inum = 0; inum < 2; inum++)
-	+                               cprintf(BLUE,"before htonl 0,%d :%f\n",inum,(receiverdata->getValue((char*)origVal,inum,0,dynamicrange)));
-	+                       for(inum = 254; inum < 258; inum++)
-	+                               cprintf(BLUE,"before htonl %d,0 :%f\n",inum,(receiverdata->getValue((char*)origVal,inum,0,dynamicrange)));
-	+                       for(inum = 0; inum < 2; inum++)
-	+                               cprintf(BLUE,"before htonl %d,2 :%f\n",inum,(receiverdata->getValue((char*)origVal,inum,2,dynamicrange)));
-	+                       for(inum = 254; inum < 258; inum++)
-	+                               cprintf(BLUE,"before htonl %d,2 :%f\n",inum,(receiverdata->getValue((char*)origVal,inum,2,dynamicrange)));
-	+*/
-	                        //64 bit htonl cuz of endianness
-	                        for(i=0;i<(1024*(16*dynamicrange)*2)/8;i++){
-	                                (*(((uint64_t*)retval)+i)) = be64toh(((uint64_t)(*(((uint64_t*)retval)+i))));
-	-                        /*
-	+
-	+                               /*
-	                          int64_t temp;
-	                          temp = ((uint64_t)(*(((uint64_t*)retval)+i)));
-	                          temp = ((temp << 8) & 0xFF00FF00FF00FF00ULL ) | ((temp >> 8) & 0x00FF00FF00FF00FFULL );
-	@@ -1501,6 +1528,18 @@ int      slsReceiverTCPIPInterface::eiger_read_frame(){
-	                          (*(((uint64_t*)retval)+i)) = temp;
-	                          */
-	                        }
-	+
-	+/*                     //dr = 16, hence uint16_t
-	+                       for(inum = 0; inum < 2; inum++)
-	+                               cprintf(MAGENTA,"after htonl %d,0 :%d\n",inum,((uint16_t)(*((uint16_t*)((char*)(retval+(inum*(dynamicrange/8))))))));
-	+                       for(inum = 254; inum < 258; inum++)
-	+                               cprintf(MAGENTA,"after htonl %d,0 :%d\n",inum,((uint16_t)(*((uint16_t*)((char*)(retval+(inum*(dynamicrange/8))))))));
-	+                       for(inum = 0; inum < 2; inum++)
-	+                               cprintf(MAGENTA,"after htonl %d,2 :%d\n",inum,((uint16_t)(*((uint16_t*)((char*)(retval+((2048+inum)*(dynamicrange/8))))))));
-	+                       for(inum = 254; inum < 258; inum++)
-	+                               cprintf(MAGENTA,"after htonl %d,2 :%d\n",inum,((uint16_t)(*((uint16_t*)((char*)(retval+((2048+inum)*(dynamicrange/8))))))));
-	+
-	+*/
-
-
-
-
-	 int slsReceiverTCPIPInterface::set_dynamic_range() {
-	                        retval=receiverBase->setDynamicRange(dr);
-	                        dynamicrange = dr;
-	                         if(myDetectorType == EIGER){
-	-                                if(!tenGigaEnable)
-	+                                if(!tenGigaEnable){
-	                                         packetsPerFrame = EIGER_ONE_GIGA_CONSTANT * dynamicrange * EIGER_MAX_PORTS;
-	-                                else
-	+                                        if(receiverdata){ delete receiverdata;receiverdata = NULL;}
-	+                                        receiverdata = new eigerHalfModuleData(dynamicrange,packetsPerFrame,EIGER_ONE_GIGA_ONE_PACKET_SIZE, EIGER_ONE_GIGA_O
-	+                                }else{
-	                                         packetsPerFrame = EIGER_TEN_GIGA_CONSTANT * dynamicrange * EIGER_MAX_PORTS;
-	+                                }
-	                         }
-	                }
-	        }
-
-
-
-
-
-
-
-
+	}
 	cout << "Goodbye!" << endl;
-	return 0;
+	return slsReceiverDefs::OK;
+}
+
+
+
+int getParameters(int argc, char *argv[], int &dr, string &fn, int &tg){
+
+	map<string, string> configuration_map;
+	static struct option long_options[] = {
+			{"dr",				required_argument,       0, 'd'},
+			{"tengiga",    		required_argument,       0, 't'},
+			{"fname",     		required_argument,       0, 'f'},
+			{"help",  			no_argument,      		 0, 'h'},
+			{0, 0, 0, 0}
+	};
+	int option_index = 0, c;
+	while ( c != -1 ){
+		c = getopt_long (argc, argv, "dtfh", long_options, &option_index);
+		if (c == -1)//end of options
+			break;
+		switch(c){
+		case 'd':
+			if(sscanf(optarg, "%d", &dr) <=0){
+				cprintf(RED,"ERROR: Cannot parse dynamic range. Options: 4,8,16,32.\n");
+				return slsReceiverDefs::FAIL;
+			}
+			switch(dr){
+			case 4:
+			case 8:
+			case 16:
+			case 32: break;
+			default:
+				cprintf(RED,"ERROR: Invalid dynamic range. Options: 4,8,16,32.\n");
+				return slsReceiverDefs::FAIL;
+			}
+			break;
+			case 't':
+				if(sscanf(optarg, "%d", &tg) <=0){
+					cprintf(RED,"ERROR: Cannot parse ten giga parameter. Options: 0 or 1.\n");
+					return slsReceiverDefs::FAIL;
+				}
+				switch(tg){
+				case 0:
+				case 1: break;
+				default:
+					cprintf(RED,"ERROR: Invalid ten giga parameter. Options: 0 or 1.\n");
+					return slsReceiverDefs::FAIL;
+				}
+				break;
+		case 'f':
+			fn = optarg;
+			if(fn.empty()){
+				cprintf(RED,"ERROR: Empty file name.\n");
+				return slsReceiverDefs::FAIL;
+			}
+			break;
+		case 'h':
+			string help_message = """\nSLS Image Reconstruction\n\n""";
+			help_message += """usage: image --f config_fname [--dr dynamic_range]\n\n""";
+			help_message += """\t--dr:\t dynamic range or bit mode. Default:16. Options: 4,8,16,32.\n""";
+			help_message += """\t--tengiga:\t 1 if 10Gbe or 0 for 1Gbe. Default: 0\n""";
+			help_message += """\t--fname:\t file name of image\n\n""";
+			cout << help_message << endl;
+			break;
+
+		}
+	}
+
+	//cout << " dynamic range:"<< dr << " file name:" << fn << " ten giga:"<< tg << endl;
+	return slsReceiverDefs::OK;
 }
