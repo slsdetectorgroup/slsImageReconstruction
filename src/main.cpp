@@ -25,14 +25,19 @@ int main(int argc, char *argv[]) {
 	int tenGiga = 0;
 	if(getParameters(argc, argv, dynamicrange,fname,tenGiga) == slsReceiverDefs::OK){
 
-		cout << " dynamic range:"<< dynamicrange << " file name:" << fname << " ten giga:"<< tenGiga << endl;
+		cout << "\n\nDynamic range:"<< dynamicrange << "\nFile name:" << fname << "\nTen giga:"<< tenGiga << endl << endl;;
 
 		//construct image
-		ImageMaker *imageMaker = new ImageMaker(fname, dynamicrange, tenGiga);
-		imageMaker->processFile();
+		ImageMaker *topImageMaker = new ImageMaker(dynamicrange, tenGiga, true);
+		topImageMaker->processFile(fname);
+		ImageMaker *bottomImageMaker = new ImageMaker(dynamicrange, tenGiga, false);
+		bottomImageMaker->processFile(fname2);
+
+
+
 
 	}
-	cout << "Goodbye!" << endl;
+	cout << endl << "Goodbye!" << endl;
 	return slsReceiverDefs::OK;
 }
 

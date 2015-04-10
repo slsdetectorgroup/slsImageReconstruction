@@ -24,11 +24,11 @@ public:
 	/**
 	 * Constructor
 	 * creates the tcp interface and the udp class
-	 * @param fn file name
 	 * @param dr dyanamic range
 	 * @param tg ten giga enable
+	 * @param top true if its top, else bottom
 	 */
-	ImageMaker(string fn, int dr, int tg);
+	ImageMaker(int dr, int tg, bool top = true);
 
 	/**
 	 * Destructor
@@ -37,17 +37,18 @@ public:
 
 	/**
 	 * Opens file and process its
+	 * @param fname file name
+	 * returns success or fail
 	 */
-	void processFile();
+	int processFile(string fname);
 
 
 private:
-	string fname;
 	int dynamicrange;
 	int tenGiga;
+	int dataSize;
 
 	slsReceiverData <uint32_t> *receiverData;
-
 };
 
 
