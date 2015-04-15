@@ -22,7 +22,7 @@ INSTMODE	= 	0777
 
 INCLUDES	= 	-I. -Iincludes -I $(LIBRARYRXRDIR)/include -I $(LIBRARYCALDIR) -I $(CALDIR)
 
-SRC_CLNT	=	src/main.cpp src/ImageMaker.cpp
+SRC_CLNT	=	src/main.cpp #src/ImageMaker.cpp
 OBJS 		= 	$(SRC_CLNT:.cpp=.o)
 
 
