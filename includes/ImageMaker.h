@@ -36,11 +36,32 @@ public:
 	~ImageMaker();
 
 	/**
-	 * Opens file and process its
+	 * Opens file
 	 * @param fname file name
-	 * returns success or fail
+	 * @param file stream
+	 * returns ok if success or fail
 	 */
-	int processFile(string fname);
+	int openFile(string fname, ifstream &infile);
+
+	/**
+	 * closes file
+	 * @param infile file pointer
+	 */
+	void closeFile(ifstream &infile);
+
+	/**
+	 * reads one from from file
+	 * @param infile file pointer
+	 */
+	char* readOneFrame(ifstream &infile);
+
+	/**
+	 * Gets value for the particular coordinate
+	 * @param ix x coordinate
+	 * @param iy y coordinate
+	 * @param buff the buffer
+	 */
+	double getValue(int ix, int iy, char* buff);
 
 
 private:

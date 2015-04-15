@@ -20,7 +20,6 @@ ImageMaker::ImageMaker(int dr, int tg, bool top):dynamicrange(dr), tenGiga(tg),d
 	}
 	int packetsPerFrame = multfactor * dynamicrange*2;
 
-
 	receiverData = new eigerHalfModuleData(dynamicrange,packetsPerFrame,bufferSize, dataSize, top);
 }
 
@@ -30,34 +29,48 @@ ImageMaker::~ImageMaker(){
 		delete receiverData;
 }
 
-int ImageMaker::processFile(string fname){
 
-	ifstream infile;
+int ImageMaker::openFile(string fname, ifstream &infile){
+
 	infile.open(fname.c_str(),ios::in | ios::binary);
-	if(infile.is_open()){
-
-		/*separate them into open file and close file and read next frame and get value.*/
-		char*receiverData = topData->readNextFrame(infile);
-		int inum;
-		for(inum = 0; inum < 2; inum++)
-			cprintf(BLUE,"0,%d :%f\n",inum,(receiverData->getValue((char*)buff,inum,0,dynamicrange)));
-		for(inum = 254; inum < 258; inum++)
-			cprintf(BLUE,"%d,0 :%f\n",inum,(receiverData->getValue((char*)buff,inum,0,dynamicrange)));
-		for(inum = 0; inum < 2; inum++)
-			cprintf(BLUE,"%d,2 :%f\n",inum,(receiverData->getValue((char*)buff,inum,2,dynamicrange)));
-		for(inum = 254; inum < 258; inum++)
-			cprintf(BLUE,"%d,2 :%f\n",inum,(receiverData->getValue((char*)buff,inum,2,dynamicrange)));
-
-
-
-		infile.close();
-	}else{
+	if(!infile.is_open()){
 		cprintf(RED, "Error: Could not read file: %s\n", fname.c_str());
 		return slsReceiverDefs::FAIL;
 	}
 	return slsReceiverDefs::OK;
-
-
-
 }
+
+
+void ImageMaker::closeFile(ifstream &infile){
+	if(infile.is_open())
+		infile.close();
+}
+
+
+char* ImageMaker::readOneFrame(ifstream &infile){
+	return receiverData->readNextFrame(infile);
+}
+
+
+double ImageMaker::getValue(int ix, int iy, char* buff){
+	return (receiverData->getValue((char*)buff,ix,iy,dynamicrange));
+}
+
+
+
+/*run_one_frame_8bit_d0_0.raw
+
+ * after htonl 0,0 :0
+after htonl 1,0 :0
+after htonl 254,0 :0
+after htonl 255,0 :46080
+after htonl 256,0 :46260
+after htonl 257,0 :29876
+after htonl 0,2 :0
+after htonl 1,2 :0
+after htonl 254,2 :0
+after htonl 255,2 :46080
+after htonl 256,2 :46260
+after htonl 257,2 :46260
+ */
 
