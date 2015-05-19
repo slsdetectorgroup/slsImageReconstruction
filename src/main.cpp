@@ -8,6 +8,7 @@
 #include "sls_receiver_defs.h"
 #include "slsReceiverData.h"
 #include "eigerHalfModuleData.h"
+#include "ansi.h"
 
 
 #include <iostream>
@@ -33,6 +34,7 @@ int main(int argc, char *argv[]) {
 	dynamicrange = 16;
 	tenGiga = 0;
 	if(getParameters(argc, argv, dynamicrange,fnametop,fnamebottom, tenGiga) == slsReceiverDefs::OK){
+		//cprintf(BLUE,"\n\nDynamic range:%d\nTop File name:%s\nBottom File name:%s\nTen giga:%d\n\n",dynamicrange,fnametop,fnamebottom,tenGiga);
 		cout << "\n\nDynamic range:"<< dynamicrange << "\nTop File name:" << fnametop << "\nBottom File name:" << fnamebottom << "\nTen giga:"<< tenGiga << endl << endl;
 
 
@@ -50,71 +52,75 @@ int main(int argc, char *argv[]) {
 
 
 //top
-		//construct top datamapping object
-		numFrames = 0;
-		receiverdata = new eigerHalfModuleData(dynamicrange,packetsPerFrame,bufferSize, dataSize, true);
-		//open file
-		infile.open(fnametop.c_str(),ios::in | ios::binary);
-		if(infile.is_open()){
-			//get frame buffer
-			while((buffer = receiverdata->readNextFrame(infile))){
+		if(!fnametop.empty()){
+			//construct top datamapping object
+			numFrames = 0;
+			receiverdata = new eigerHalfModuleData(dynamicrange,packetsPerFrame,bufferSize, dataSize, true);
+			//open file
+			infile.open(fnametop.c_str(),ios::in | ios::binary);
+			if(infile.is_open()){
+				//get frame buffer
+				while((buffer = receiverdata->readNextFrame(infile))){
 
-				cout << "Reading top values for frame #" << numFrames << endl;
-				//getting values
-				for(ix = 0; ix < 2; ix++)
-					cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
-				for(ix = 254; ix < 258; ix++)
-					cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
-				iy = 2;
-				for(ix = 0; ix < 2; ix++)
-					cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
-				for(ix = 254; ix < 258; ix++)
-					cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
+					cout << "Reading top values for frame #" << numFrames << endl;
+					//getting values
+					iy = 0;
+					for(ix = 0; ix < 2; ix++)
+						cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
+					for(ix = 254; ix < 258; ix++)
+						cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
+					iy = 2;
+					for(ix = 0; ix < 2; ix++)
+						cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
+					for(ix = 254; ix < 258; ix++)
+						cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
 
-				delete [] buffer;
-				numFrames++;
-			}
-			//close file
-			infile.close();
-		}else cprintf(RED, "Error: Could not read top file: %s\n", fnametop.c_str());
-		delete receiverdata;
+					delete [] buffer;
+					numFrames++;
+				}
+				//close file
+				infile.close();
+			}else cprintf(RED, "Error: Could not read top file: %s\n", fnametop.c_str());
+			delete receiverdata;
 
-		cout  << "Found " << numFrames << " frames in top file." << endl << endl;
-
+			cout  << "Found " << numFrames << " frames in top file." << endl << endl;
+		}
 
 
 //bottom
-		//construct bottom datamapping object
-		numFrames = 0;
-		receiverdata = new eigerHalfModuleData(dynamicrange,packetsPerFrame,bufferSize, dataSize, false);
-		//open file
-		infile.open(fnamebottom.c_str(),ios::in | ios::binary);
-		if(infile.is_open()){
-			//get frame buffer
-			while((buffer = receiverdata->readNextFrame(infile))){
+		if(!fnamebottom.empty()){
+			//construct bottom datamapping object
+			numFrames = 0;
+			receiverdata = new eigerHalfModuleData(dynamicrange,packetsPerFrame,bufferSize, dataSize, false);
+			//open file
+			infile.open(fnamebottom.c_str(),ios::in | ios::binary);
+			if(infile.is_open()){
+				//get frame buffer
+				while((buffer = receiverdata->readNextFrame(infile))){
 
-				cout << "Reading bottom values for frame #" << numFrames << endl;
-				//getting values
-				for(ix = 0; ix < 2; ix++)
-					cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
-				for(ix = 254; ix < 258; ix++)
-					cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
-				iy = 2;
-				for(ix = 0; ix < 2; ix++)
-					cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
-				for(ix = 254; ix < 258; ix++)
-					cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
+					cout << "Reading bottom values for frame #" << numFrames << endl;
+					//getting values
+					iy = 0;
+					for(ix = 0; ix < 2; ix++)
+						cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
+					for(ix = 254; ix < 258; ix++)
+						cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
+					iy = 2;
+					for(ix = 0; ix < 2; ix++)
+						cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
+					for(ix = 254; ix < 258; ix++)
+						cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
 
-				delete [] buffer;
-				numFrames++;
-			}
-			//close file
-			infile.close();
-		}else cprintf(RED, "Error: Could not read top file: %s\n", fnametop.c_str());
-		delete receiverdata;
+					delete [] buffer;
+					numFrames++;
+				}
+				//close file
+				infile.close();
+			}else cprintf(RED, "Error: Could not read bottom file: %s\n", fnamebottom.c_str());
+			delete receiverdata;
 
-		cout  << "Found " << numFrames << " frames in bottom file." << endl;
-
+			cout  << "Found " << numFrames << " frames in bottom file." << endl;
+		}
 
 	}
 	cout << endl << "Goodbye!" << endl;
