@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 	char* buffer = NULL;
 	ifstream infile;
 	string fnametop = "", fnamebottom = "";
-	int dynamicrange, tenGiga, bufferSize, dataSize, packetsPerFrame, ix, iy, numFrames;
+	int dynamicrange, tenGiga, bufferSize, dataSize, packetsPerFrame, ix, iy, numFrames, fnum;
 
 
 	//get config parameters
@@ -55,12 +55,13 @@ int main(int argc, char *argv[]) {
 		if(!fnametop.empty()){
 			//construct top datamapping object
 			numFrames = 0;
+			fnum = -1;
 			receiverdata = new eigerHalfModuleData(dynamicrange,packetsPerFrame,bufferSize, dataSize, true);
 			//open file
 			infile.open(fnametop.c_str(),ios::in | ios::binary);
 			if(infile.is_open()){
 				//get frame buffer
-				while((buffer = receiverdata->readNextFrame(infile))){
+				while((buffer = receiverdata->readNextFrame(infile, fnum))){
 
 					cout << "Reading top values for frame #" << numFrames << endl;
 					//getting values
@@ -91,12 +92,13 @@ int main(int argc, char *argv[]) {
 		if(!fnamebottom.empty()){
 			//construct bottom datamapping object
 			numFrames = 0;
+			fnum = -1;
 			receiverdata = new eigerHalfModuleData(dynamicrange,packetsPerFrame,bufferSize, dataSize, false);
 			//open file
 			infile.open(fnamebottom.c_str(),ios::in | ios::binary);
 			if(infile.is_open()){
 				//get frame buffer
-				while((buffer = receiverdata->readNextFrame(infile))){
+				while((buffer = receiverdata->readNextFrame(infile,fnum))){
 
 					cout << "Reading bottom values for frame #" << numFrames << endl;
 					//getting values
