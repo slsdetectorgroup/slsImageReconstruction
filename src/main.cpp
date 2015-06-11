@@ -62,8 +62,9 @@ int main(int argc, char *argv[]) {
 			if(infile.is_open()){
 				//get frame buffer
 				while((buffer = receiverdata->readNextFrame(infile, fnum))){
+				//while((buffer = receiverdata->readNextFrame(infile))){
 
-					cout << "Reading top values for frame #" << numFrames << endl;
+					cout << "Reading top values for frame #" << fnum << endl;
 					//getting values
 					iy = 0;
 					for(ix = 0; ix < 2; ix++)
@@ -99,8 +100,8 @@ int main(int argc, char *argv[]) {
 			if(infile.is_open()){
 				//get frame buffer
 				while((buffer = receiverdata->readNextFrame(infile,fnum))){
-
-					cout << "Reading bottom values for frame #" << numFrames << endl;
+				//while((buffer = receiverdata->readNextFrame(infile))){
+					cout << "Reading bottom values for frame #" << fnum << endl;
 					//getting values
 					iy = 0;
 					for(ix = 0; ix < 2; ix++)
