@@ -16,6 +16,7 @@
 #include <fstream>
 #include <map>
 #include <getopt.h>
+#include <stdlib.h>			// exit()
 using namespace std;
 
 int getParameters(int argc, char *argv[], int &dr, string &fntop, string &fnbottom, int &tg);
@@ -29,13 +30,71 @@ int main(int argc, char *argv[]) {
 	string fnametop = "", fnamebottom = "";
 	int dynamicrange, tenGiga, bufferSize, dataSize, packetsPerFrame, ix, iy, numFrames, fnum;
 
+	typedef struct
+	{
+		unsigned char num1[4];
+		unsigned char num2[2];
+		unsigned char num3[1];
+		unsigned char num4[1];
+	} eiger_packet_header;
+
 
 	//get config parameters
-	dynamicrange = 16;
+	dynamicrange = -1;
 	tenGiga = 0;
 	if(getParameters(argc, argv, dynamicrange,fnametop,fnamebottom, tenGiga) == slsReceiverDefs::OK){
-		//cprintf(BLUE,"\n\nDynamic range:%d\nTop File name:%s\nBottom File name:%s\nTen giga:%d\n\n",dynamicrange,fnametop,fnamebottom,tenGiga);
+
+
+
+		//if no dynamic range given
+		if(dynamicrange == -1){
+
+			char *data = new char[1024];
+			int dynamicrange2=-1;
+
+			//top dynamic range
+			if(!fnametop.empty()){
+				infile.open(fnametop.c_str(),ios::in | ios::binary);
+				if (infile.is_open()) {
+					if(infile.read(data,1024)){
+						dynamicrange = eigerHalfModuleData::getDynamicRange(data);
+					}
+					infile.close();
+				}else cprintf(RED, "Error: Could not read top file: %s\n", fnametop.c_str());
+			}
+			//bottom dynamic range
+			if(!fnamebottom.empty()){
+				infile.open(fnamebottom.c_str(),ios::in | ios::binary);
+				if (infile.is_open()) {
+					if(infile.read(data,1024)){
+						dynamicrange2 = eigerHalfModuleData::getDynamicRange(data);
+						if ((dynamicrange != -1) && (dynamicrange != dynamicrange2)){
+							cprintf(RED, "Error: Dynamic range of top %d and bottom %d does not match\n", dynamicrange,dynamicrange2);
+							exit(-1);
+						}
+						else dynamicrange = dynamicrange2; //only bottom checked
+					}
+					infile.close();
+				}else cprintf(RED, "Error: Could not read bottom file: %s\n", fnamebottom.c_str());
+			}
+
+			delete [] data;
+		}
+
+		//verify dynamic range
+		switch(dynamicrange){
+		case 4:
+		case 8:
+		case 16:
+		case 32: break;
+		default:
+			cprintf(RED, "Error: Invalid dynamic range %d. Options: 4,8,16,32.\n", dynamicrange);
+			exit(-1);
+		}
+
+
 		cout << "\n\nDynamic range:"<< dynamicrange << "\nTop File name:" << fnametop << "\nBottom File name:" << fnamebottom << "\nTen giga:"<< tenGiga << endl << endl;
+
 
 
 		//initialize variables for 1g and 10g
@@ -51,7 +110,9 @@ int main(int argc, char *argv[]) {
 		}
 
 
-//top
+
+
+		//top
 		if(!fnametop.empty()){
 			//construct top datamapping object
 			numFrames = 0;
@@ -62,7 +123,7 @@ int main(int argc, char *argv[]) {
 			if(infile.is_open()){
 				//get frame buffer
 				while((buffer = receiverdata->readNextFrame(infile, fnum))){
-				//while((buffer = receiverdata->readNextFrame(infile))){
+					//while((buffer = receiverdata->readNextFrame(infile))){
 
 					cout << "Reading top values for frame #" << fnum << endl;
 					//getting values
@@ -89,7 +150,7 @@ int main(int argc, char *argv[]) {
 		}
 
 
-//bottom
+		//bottom
 		if(!fnamebottom.empty()){
 			//construct bottom datamapping object
 			numFrames = 0;
@@ -100,7 +161,7 @@ int main(int argc, char *argv[]) {
 			if(infile.is_open()){
 				//get frame buffer
 				while((buffer = receiverdata->readNextFrame(infile,fnum))){
-				//while((buffer = receiverdata->readNextFrame(infile))){
+					//while((buffer = receiverdata->readNextFrame(infile))){
 					cout << "Reading bottom values for frame #" << fnum << endl;
 					//getting values
 					iy = 0;
@@ -156,7 +217,8 @@ int getParameters(int argc, char *argv[], int &dr, string &fntop, string &fnbott
 				cprintf(RED,"ERROR: Cannot parse dynamic range. Options: 4,8,16,32.\n");
 				return slsReceiverDefs::FAIL;
 			}
-			switch(dr){
+			//verification done later
+			/*switch(dr){
 			case 4:
 			case 8:
 			case 16:
@@ -164,7 +226,7 @@ int getParameters(int argc, char *argv[], int &dr, string &fntop, string &fnbott
 			default:
 				cprintf(RED,"ERROR: Invalid dynamic range. Options: 4,8,16,32.\n");
 				return slsReceiverDefs::FAIL;
-			}
+			}*/
 			break;
 			case 't':
 				if(sscanf(optarg, "%d", &tg) <=0){
