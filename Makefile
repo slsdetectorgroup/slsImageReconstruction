@@ -30,17 +30,15 @@ OBJS 		= 	$(SRC_CLNT:.cpp=.o)
 
 all: clean $(PROGS)
 
-	
 boot: $(OBJS)
 
 $(PROGS): 
 	@echo $(WD)
 	echo $(OBJS)
 	mkdir -p $(DESTDIR) 
-	$(CCX)  -o $@  $(SRC_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(LDFLAGDET)  $(CFLAGS) $(LDLIBS) 
+	$(CCX)  -o $@  $(SRC_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(LDFLAGDET)  $(CFLAGS) $(LDLIBS) `$(ROOTSYS)/bin/root-config --cflags --libs` 
+	cp $(PROGS) ../bin
 	mv $(PROGS) $(DESTDIR)
 
 clean:
 	rm -rf $(DESTDIR)/$(PROGS)  *.o
-	
-	
