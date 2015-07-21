@@ -35,8 +35,8 @@ int main(int argc, char *argv[]) {
   slsReceiverData <uint32_t> *receiverdata = NULL;
   char* buffer = NULL;
   ifstream infile;
-  string fnametop = "", fnamebottom = "";
-  int dynamicrange, tenGiga, bufferSize, dataSize, packetsPerFrame, ix, iy, numFrames, fnum;
+  string fname;
+  int dynamicrange, tenGiga, bufferSize, dataSize, packetsPerFrame, numFrames, fnum;
 
   typedef struct
   {
@@ -49,10 +49,17 @@ int main(int argc, char *argv[]) {
   string dir;
   string file;
   int n;
+  
+  //single module  
+  const int npix_x_sm=(256*4);
+  const int npix_y_sm=(256*2);
+
+  //user set geometry
+  int npix_x_user= npix_x_sm;
+  int npix_y_user= npix_y_sm;
 
   const int Nframes=1;
   TH2F* hmap[Nframes];
-  //hmap[]= new TH2F("hmap","hmap",256*4, 0, 256*4, 256*2, 0, 256*2);
 
   //get config parameters
   dynamicrange = -1;
@@ -64,131 +71,103 @@ int main(int argc, char *argv[]) {
       char *data = new char[1024];
       int dynamicrange2=-1;
 
+      int startdet=0;
       //top dynamic range
       dir=argv[1];
       file=argv[2];
       n=atoi(argv[3]);
+      if(argc>4){  
+	npix_x_user=atoi(argv[4]);
+	npix_y_user=atoi(argv[5]);
+	startdet=atoi(argv[6]);
+      }
+      //work out how many modules in vertical and how many in horizontal
+      int n_v= npix_y_user/npix_y_sm;
+      int n_h= npix_x_user/npix_x_sm;
+
+      cout<<"geometery has "<<n_h<<" modules in horizontal and "<<n_v<<" modules in vertical"<<endl;
 
       string frames="";//"f000000000000";
-      fnametop=TString::Format("%s/%s_d0%s_%d.raw",dir.c_str(),file.c_str(),frames.c_str(),n).Data();
-      fnamebottom=TString::Format("%s/%s_d1%s_%d.raw",dir.c_str(),file.c_str(),frames.c_str(),n).Data();
 
-      cout<< fnametop <<endl;
-      cout<< fnamebottom<<endl;
-
+      int nfile=startdet;
+      //put master on top always
+      for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
+	for(int imod_h=0; imod_h<n_h;imod_h++){
 	
-      if(!fnametop.empty()){
-	infile.open(fnametop.c_str(),ios::in | ios::binary);
-	if (infile.is_open()) {
-	  if(infile.read(data,1024)){
-	    dynamicrange = eigerHalfModuleData::getDynamicRange(data);
-	  }
-	  infile.close();
-	}else cprintf(RED, "Error: Could not read top file: %s\n", fnametop.c_str());
-      }
-      //bottom dynamic range
-      if(!fnamebottom.empty()){
-	infile.open(fnamebottom.c_str(),ios::in | ios::binary);
-	if (infile.is_open()) {
-	  if(infile.read(data,1024)){
-	    dynamicrange2 = eigerHalfModuleData::getDynamicRange(data);
-	    if ((dynamicrange != -1) && (dynamicrange != dynamicrange2)){
-	      cprintf(RED, "Error: Dynamic range of top %d and bottom %d does not match\n", dynamicrange,dynamicrange2);
-	      exit(-1);
+	  for( int it=0;it<2;it++){
+	    fname=TString::Format("%s/%s_d%d%s_%d.raw",dir.c_str(),file.c_str(),/*(it+(imod_h*2)+n_h*imod_v)*/nfile,frames.c_str(),n).Data();
+	    cout<<fname<<endl;
+	    if(!fname.empty()){
+	      infile.open(fname.c_str(),ios::in | ios::binary);
+	      if (infile.is_open()) {
+		if(infile.read(data,1024)){
+		  dynamicrange = eigerHalfModuleData::getDynamicRange(data);
+		}
+		infile.close();
+	      }else cprintf(RED, "Error: Could not read top file: %s\n", fname.c_str());
 	    }
-	    else dynamicrange = dynamicrange2; //only bottom checked
+
+	    //initialize variables for 1g and 10g
+	    bufferSize = 1040;
+	    dataSize = 1024;
+	    packetsPerFrame = 16 * dynamicrange * 2;
+	    if(tenGiga){
+	      packetsPerFrame = 4 * dynamicrange*2;
+	      bufferSize = 4112;
+	      dataSize = 4096;
+	    }
+
+	    //top
+	    if(!fname.empty()){
+	      //construct top datamapping object
+	      numFrames = 0;
+	      fnum = -1;
+	      receiverdata = new eigerHalfModuleData(dynamicrange,packetsPerFrame,bufferSize, dataSize, true);
+	      //open file
+	      infile.open(fname.c_str(),ios::in | ios::binary);
+	      if(infile.is_open()){
+		//get frame buffer
+		while((buffer = receiverdata->readNextFrame(infile, fnum))){
+	  
+		  cout << "Reading top values for frame #" << fnum << endl;
+ 
+		  //getting values //top
+		  if(it==0){
+		    if(imod_v==(n_v-1) && imod_h==0){
+		      //top master is done first
+		      hmap[fnum-1]= new TH2F(TString::Format("hmap%d",fnum-1).Data(),
+					     TString::Format("hmap%d",fnum-1).Data(),
+					     npix_x_user, 0, npix_x_user, npix_y_user, 0, npix_y_user);		 
+		    }    
+		    for(int iy=((npix_y_sm/2)+imod_v*npix_y_sm); iy<(npix_y_sm+imod_v*npix_y_sm); iy++)
+		      for(int ix=0+imod_h*npix_x_sm; ix<npix_x_sm+imod_h*npix_x_sm; ix++)
+			hmap[fnum-1]->SetBinContent(ix+1, iy+1, (receiverdata->getValue((char*)buffer,(ix-imod_h*npix_x_sm),(iy-(npix_y_sm/2)-imod_v*npix_y_sm),dynamicrange)));
+		  }
+		  if(it==1){
+		    for(int iy=0+imod_v*npix_y_sm; iy<npix_y_sm/2+imod_v*npix_y_sm; iy++)
+		      for(int ix=0+imod_h*npix_x_sm; ix<npix_x_sm+imod_h*npix_x_sm; ix++)
+			hmap[fnum-1]->SetBinContent(ix+1, iy+1, (receiverdata->getValue((char*)buffer,
+											(ix-imod_h*npix_x_sm),(iy-imod_v*npix_y_sm),dynamicrange)));
+		  }
+		  
+		  delete [] buffer;
+	  numFrames++;
+	}
+	//close file
+	infile.close();
+      }else cprintf(RED, "Error: Could not read file: %s\n", fname.c_str());
+      delete receiverdata;
+
+      cout  << "Found " << numFrames << " frames in "<<nfile/*it+(imod_h*2)+n_h*imod_v*/<<" file." << endl << endl;
+      cout<<	it<< "  "<< imod_h <<"  "<<n_h <<"    "<<imod_v<<endl;    
+	    }
+	    nfile++;	  
 	  }
-	  infile.close();
-	}else cprintf(RED, "Error: Could not read bottom file: %s\n", fnamebottom.c_str());
-      }
-
-      delete [] data;
-
-    cout << "\n\nDynamic range:"<< dynamicrange << "\nTop File name:" << fnametop << "\nBottom File name:" << fnamebottom << "\nTen giga:"<< tenGiga << endl << endl;
-
-
-    //initialize variables for 1g and 10g
-    ix=0;
-    iy = 0;
-    bufferSize = 1040;
-    dataSize = 1024;
-    packetsPerFrame = 16 * dynamicrange * 2;
-    if(tenGiga){
-      packetsPerFrame = 4 * dynamicrange*2;
-      bufferSize = 4112;
-      dataSize = 4096;
-    }
-
-
-    //top
-    if(!fnametop.empty()){
-      //construct top datamapping object
-      numFrames = 0;
-      fnum = -1;
-      receiverdata = new eigerHalfModuleData(dynamicrange,packetsPerFrame,bufferSize, dataSize, true);
-      //open file
-      infile.open(fnametop.c_str(),ios::in | ios::binary);
-      if(infile.is_open()){
-	//get frame buffer
-	while((buffer = receiverdata->readNextFrame(infile, fnum))){
-	  //while((buffer = receiverdata->readNextFrame(infile))){
 	  
-	  cout << "Reading top values for frame #" << fnum << endl;
+	} //hor
+      }//vert
  
-	  //top is done first
-	  hmap[fnum-1]= new TH2F(TString::Format("hmap%d",fnum-1).Data(),
-			       TString::Format("hmap%d",fnum-1).Data(),
-			       256*4, 0, 256*4, 256*2, 0, 256*2);
-	  
-	  //getting values
-	  for(iy=256; iy<256*2; iy++)
-	    for(ix=0; ix<256*4; ix++)
-	      hmap[fnum-1]->SetBinContent(ix+1, iy+1, (receiverdata->getValue((char*)buffer,ix,iy-256,dynamicrange)));		
-	  
-	  delete [] buffer;
-	  numFrames++;
-	}
-	//close file
-	infile.close();
-      }else cprintf(RED, "Error: Could not read top file: %s\n", fnametop.c_str());
-      delete receiverdata;
-
-      cout  << "Found " << numFrames << " frames in top file." << endl << endl;
-    }
-
-
-    //bottom
-    if(!fnamebottom.empty()){
-      //construct bottom datamapping object
-      numFrames = 0;
-      fnum = -1;
-      receiverdata = new eigerHalfModuleData(dynamicrange,packetsPerFrame,bufferSize, dataSize, false);
-      //open file
-      infile.open(fnamebottom.c_str(),ios::in | ios::binary);
-      if(infile.is_open()){
-	//get frame buffer
-	while((buffer = receiverdata->readNextFrame(infile,fnum))){
-	  //while((buffer = receiverdata->readNextFrame(infile))){
-	  cout << "Reading bottom values for frame #" << fnum << endl;
-
-	  for(iy=0; iy<256; iy++)
-	    for(ix=0; ix<256*4; ix++)
-	      hmap[fnum-1]->SetBinContent(ix+1, iy+1, (receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
-	  
-	  delete [] buffer;
-	  numFrames++;
-	}
-	//close file
-	infile.close();
-      }else cprintf(RED, "Error: Could not read bottom file: %s\n", fnamebottom.c_str());
-      delete receiverdata;
-
-      cout  << "Found " << numFrames << " frames in bottom file." << endl;
-    }
-
-    //}
- 
-    TFile* ofile = new TFile(TString::Format("%s/%s_%d.root",dir.c_str(),file.c_str(),n).Data(),"RECREATE");
+      TFile* ofile = new TFile(TString::Format("%s/%s_det%d-%d_%d.root",dir.c_str(),file.c_str(),startdet,nfile-1,n).Data(),"RECREATE");
     for(int fnum=0; fnum<numFrames; fnum++){
       if( hmap[fnum]){
 	hmap[fnum]->SetStats(kFALSE);
