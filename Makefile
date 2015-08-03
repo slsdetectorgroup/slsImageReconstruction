@@ -22,7 +22,8 @@ INSTMODE	= 	0777
 
 INCLUDES	= 	-I. -Iincludes -I $(LIBRARYRXRDIR)/include -I $(LIBRARYCALDIR) -I $(CALDIR)
 
-SRC_CLNT	=	src/main_1.5M.cpp #src/ImageMaker.cpp
+#SRC_CLNT	=	src/dummymain.cpp
+SRC_CLNT	=	src/main.cpp 
 OBJS 		= 	$(SRC_CLNT:.cpp=.o)
 
 
@@ -38,7 +39,8 @@ $(PROGS):
 	mkdir -p $(DESTDIR) 
 	$(CCX)  -o $@  $(SRC_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(LDFLAGDET)  $(CFLAGS) $(LDLIBS) `$(ROOTSYS)/bin/root-config --cflags --libs` 
 	cp $(PROGS) ../bin
-	mv $(PROGS) $(DESTDIR)
+#	$(CCX)  -o $@  $(SRC_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(LDFLAGDET)  $(CFLAGS) $(LDLIBS)  
+
 
 clean:
 	rm -rf $(DESTDIR)/$(PROGS)  *.o
