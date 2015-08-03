@@ -116,13 +116,14 @@ int main(int argc, char *argv[]) {
 	      bufferSize = 4112;
 	      dataSize = 4096;
 	    }
-
+	  
 	    //top
 	    if(!fname.empty()){
 	      //construct top datamapping object
 	      numFrames = 0;
 	      fnum = -1;
-	      receiverdata = new eigerHalfModuleData(dynamicrange,packetsPerFrame,bufferSize, dataSize, true);
+	      receiverdata = new eigerHalfModuleData(dynamicrange,packetsPerFrame,bufferSize, dataSize, it==0? true: false);
+	      
 	      //open file
 	      infile.open(fname.c_str(),ios::in | ios::binary);
 	      if(infile.is_open()){
