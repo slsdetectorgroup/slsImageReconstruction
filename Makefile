@@ -38,9 +38,8 @@ $(PROGS):
 	echo $(OBJS)
 	mkdir -p $(DESTDIR) 
 	$(CCX)  -o $@  $(SRC_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(LDFLAGDET)  $(CFLAGS) $(LDLIBS) `$(ROOTSYS)/bin/root-config --cflags --libs` 
-	cp $(PROGS) ../bin
 #	$(CCX)  -o $@  $(SRC_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(LDFLAGDET)  $(CFLAGS) $(LDLIBS)  
-
+	mv $(PROGS) ../bin
 
 clean:
-	rm -rf $(DESTDIR)/$(PROGS)  *.o
+	rm -rf ../bin/$(PROGS)  *.o

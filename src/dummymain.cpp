@@ -115,16 +115,19 @@ int main(int argc, char *argv[]) {
 					//while((buffer = receiverdata->readNextFrame(infile))){
 					cout << "Reading top values for frame #" << fnum << endl;
 					//getting values
-					iy = 0;
+					iy = 45;
 					for(ix = 0; ix < 2; ix++)
-						cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
+						cprintf(BLUE,"%d,%d :%f\n",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
 					for(ix = 254; ix < 258; ix++)
-						cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
-					iy = 2;
+						cprintf(BLUE,"%d,%d :%f\n",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
+					iy = 46;
 					for(ix = 0; ix < 2; ix++)
-						cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
+						cprintf(BLUE,"%d,%d :%f\n",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
 					for(ix = 254; ix < 258; ix++)
-						cprintf(BLUE,"%d,%d :%f\n",iy,ix,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
+						cprintf(BLUE,"%d,%d :%f\n",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
+
+
+
 					delete [] buffer;
 					numFrames++;
 				}
