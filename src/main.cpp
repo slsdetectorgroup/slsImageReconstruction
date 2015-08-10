@@ -177,6 +177,7 @@ int main(int argc, char *argv[]) {
       }
     }
     ofile->Write();
+    delete ofile;
     cout << endl << "Goodbye!" << endl;
     return slsReceiverDefs::OK;
 }
