@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
 		  dynamicrange = eigerHalfModuleData::getDynamicRange(data);
 		}
 		infile.close();
-	      }else cprintf(RED, "Error: Could not read top file: %s\n", fname.c_str());
+	      }else cprintf(RED, "Error: Could not read file: %s\n", fname.c_str());
 	    }
 
 	    //initialize variables for 1g and 10g
