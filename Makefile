@@ -32,17 +32,17 @@ OBJSCSAXS 	= 	$(SRC_CSAXS_CLNT:.cpp=.o)
 
 #FLAGS+=  #-DVERBOSE -DVERYVERBOSE
 
-all: clean $(PROGS_CSAXS) #$(PROGS) 
+all: clean $(PROGS_CSAXS) $(PROGS) 
 
 boot: $(OBJS) $(OBJSCSAXS)
 
-#$(PROGS): 
-#	@echo $(WD)
-#	echo $(OBJS)
-#	mkdir -p $(DESTDIR) 
-#	$(CCX)  -o $@  $(SRC_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(LDFLAGDET)  $(CFLAGS) $(LDLIBS) `$(ROOTSYS)/bin/root-config --cflags --libs` 
-##	$(CCX)  -o $@  $(SRC_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(LDFLAGDET)  $(CFLAGS) $(LDLIBS)  
-#	mv $(PROGS) ../bin
+$(PROGS): 
+	@echo $(WD)
+	echo $(OBJS)
+	mkdir -p $(DESTDIR) 
+	$(CCX)  -o $@  $(SRC_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(LDFLAGDET)  $(CFLAGS) $(LDLIBS) `$(ROOTSYS)/bin/root-config --cflags --libs` 
+#	$(CCX)  -o $@  $(SRC_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(LDFLAGDET)  $(CFLAGS) $(LDLIBS)  
+	mv $(PROGS) ../bin
 
 $(PROGS_CSAXS): 
 	@echo $(WD)

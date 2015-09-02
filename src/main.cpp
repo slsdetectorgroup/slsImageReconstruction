@@ -130,24 +130,24 @@ int main(int argc, char *argv[]) {
 		//get frame buffer
 		while((buffer = receiverdata->readNextFrame(infile, fnum))){
 	  
-		  cout << "Reading top values for frame #" << fnum << endl;
+		  cout << "Reading values for frame #" << numFrames << endl;
  
 		  //getting values //top
 		  if(it==0){
 		    if(imod_v==(n_v-1) && imod_h==0){
 		      //top master is done first
-		      hmap[fnum-1]= new TH2F(TString::Format("hmap%d",fnum-1).Data(),
-					     TString::Format("hmap%d",fnum-1).Data(),
+		      hmap[numFrames]= new TH2F(TString::Format("hmap%d",numFrames).Data(),
+					     TString::Format("hmap%d",numFrames).Data(),
 					     npix_x_user, 0, npix_x_user, npix_y_user, 0, npix_y_user);		 
 		    }    
 		    for(int iy=((npix_y_sm/2)+imod_v*npix_y_sm); iy<(npix_y_sm+imod_v*npix_y_sm); iy++)
 		      for(int ix=0+imod_h*npix_x_sm; ix<npix_x_sm+imod_h*npix_x_sm; ix++)
-			hmap[fnum-1]->SetBinContent(ix+1, iy+1, (receiverdata->getValue((char*)buffer,(ix-imod_h*npix_x_sm),(iy-(npix_y_sm/2)-imod_v*npix_y_sm),dynamicrange)));
+			hmap[numFrames]->SetBinContent(ix+1, iy+1, (receiverdata->getValue((char*)buffer,(ix-imod_h*npix_x_sm),(iy-(npix_y_sm/2)-imod_v*npix_y_sm),dynamicrange)));
 		  }
 		  if(it==1){
 		    for(int iy=0+imod_v*npix_y_sm; iy<npix_y_sm/2+imod_v*npix_y_sm; iy++)
 		      for(int ix=0+imod_h*npix_x_sm; ix<npix_x_sm+imod_h*npix_x_sm; ix++)
-			hmap[fnum-1]->SetBinContent(ix+1, iy+1, (receiverdata->getValue((char*)buffer,
+			hmap[numFrames]->SetBinContent(ix+1, iy+1, (receiverdata->getValue((char*)buffer,
 											(ix-imod_h*npix_x_sm),(iy-imod_v*npix_y_sm),dynamicrange)));
 		  }
 		  
