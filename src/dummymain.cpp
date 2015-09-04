@@ -44,6 +44,7 @@ int main(int argc, char *argv[]) {
 	if(getParameters(argc, argv, dynamicrange,fnametop,fnamebottom, tenGiga) == slsReceiverDefs::OK){
 		//if no dynamic range given
 		if(dynamicrange == -1){
+			cout << "Getting Dynamic Range from File..." << endl;
 			char *data = new char[1024];
 			int dynamicrange2=-1;
 
@@ -55,7 +56,11 @@ int main(int argc, char *argv[]) {
 						dynamicrange = eigerHalfModuleData::getDynamicRange(data);
 					}
 					infile.close();
-				}else cprintf(RED, "Error: Could not read top file: %s\n", fnametop.c_str());
+				}else{
+					cprintf(RED, "Error: Could not read top file: %s\n", fnametop.c_str());
+					delete [] data;
+					exit(-1);
+				}
 			}
 
 			//bottom dynamic range
@@ -71,7 +76,11 @@ int main(int argc, char *argv[]) {
 						else dynamicrange = dynamicrange2; //only bottom checked
 					}
 					infile.close();
-				}else cprintf(RED, "Error: Could not read bottom file: %s\n", fnamebottom.c_str());
+				}else{
+					cprintf(RED, "Error: Could not read bottom file: %s\n", fnamebottom.c_str());
+					delete [] data;
+					exit(-1);
+				}
 			}
 
 			delete [] data;
@@ -116,11 +125,19 @@ int main(int argc, char *argv[]) {
 					cout << "Reading top values for frame #" << fnum << endl;
 					//getting values
 
+
+					/*
 					for(iy = 0; iy < 5; iy++){
 						for(ix = 0; ix < 2; ix++)
 							cprintf(BLUE,"%d,%d :%f\n",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
 						for(ix = 254; ix < 258; ix++)
 							cprintf(BLUE,"%d,%d :%f\n",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
+					}
+*/
+					for(iy = 0; iy < 256 ; iy++){
+						for(ix = 0; ix < 1024 ; ix++){
+							cprintf(BLUE,"%d,%d :%f\t",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
+						}
 					}
 
 
@@ -149,12 +166,25 @@ int main(int argc, char *argv[]) {
 					cout << "Reading bottom values for frame #" << fnum << endl;
 
 					//getting values
+
+
+
+					/*
 					for(iy = 0; iy < 3; iy++){
 						for(ix = 0; ix < 2; ix++)
 							cprintf(BLUE,"%d,%d :%f\n",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
 						for(ix = 254; ix < 258; ix++)
 							cprintf(BLUE,"%d,%d :%f\n",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
 					}
+					*/
+					for(iy = 0; iy < 256 ; iy++){
+						for(ix = 0; ix < 1024 ; ix++){
+							cprintf(BLUE,"%d,%d :%f\t",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
+						}
+					}
+
+
+
 					delete [] buffer;
 					numFrames++;
 				}
