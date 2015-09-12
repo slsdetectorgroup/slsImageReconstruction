@@ -75,6 +75,7 @@ int main(int argc, char *argv[]) {
   int npix_x_user= npix_x_sm;
   int npix_y_user= npix_y_sm;
 
+  
   const int Nframes=1;
   
   //get config parameters
@@ -99,14 +100,22 @@ int main(int argc, char *argv[]) {
       const int nx_=npix_x_user;
       const int ny_=npix_y_user;
       int map[nx_*ny_];
+     
 
       //work out how many modules in vertical and how many in horizontal
       int n_v= npix_y_user/npix_y_sm;
       int n_h= npix_x_user/npix_x_sm;
 
+      //note bad coded valid only to 1.5M 
+      int npix_x_g=npix_x_sm*n_h+2*3*n_h+8*(n_h-1);
+      int npix_y_g=npix_y_sm*n_v+2*n_v+36*(n_v-1);
+  
+      int mapg[npix_x_g*npix_y_g];
+      for(int ik=0; ik<npix_x_g*npix_y_g; ik++) mapg[ik]=0.;
+      
       cout<<"geometery has "<<n_h<<" modules in horizontal and "<<n_v<<" modules in vertical"<<endl;
       FILE *out;
-
+      
       slsReceiverData <uint32_t> *receiverdata[n_v *n_h*2];
       vector <char*> buffer;
       buffer.reserve(n_v *n_h*2);
@@ -218,7 +227,7 @@ int main(int argc, char *argv[]) {
 	      }
 	      if(it==1){
 		for(int iy=0+imod_v*npix_y_sm; iy<npix_y_sm/2+imod_v*npix_y_sm; ++iy){
-		  for(int ix=0+imod_h*npix_x_sm; ix<npix_x_sm+imod_h*npix_x_sm; ++ix){
+		  for(int ix=0+imod_h*npix_x_sm; ix<npix_x_sm+imod_h*npix_x_sm; ++ix){			  
 		    int k=ix+n_h*npix_x_sm*iy;
 		    map[k]= (receiverdata[inr]->getValue(buffer.at(inr),
 							 (ix-imod_h*npix_x_sm),(iy-imod_v*npix_y_sm),dynamicrange));
@@ -230,39 +239,48 @@ int main(int argc, char *argv[]) {
 	  }
 	} //close all loops	     
 	
-	
+
+	//now add gap pixels - should be done above to be faster but I will rewrite the code later
+	for(int imody=0; imody<n_v;imody++){  
+	  for(int ichipy=0; ichipy<2;ichipy++){    
+	    for(int iy=0; iy<256;iy++){
+	      for(int imodx=0; imodx<n_h;imodx++){   
+		for(int ichipx=0; ichipx<4;ichipx++){   
+		  for(int ix=0; ix<256;ix++){
+
+		    int knog=(ix+256*ichipx+256*4*imodx)+ npix_x_g*(iy+256*ichipy+256*2*imody);
+		    int kg= ix+(256+2)*ichipx+(256*4+6+8)*imodx+ npix_x_g*(iy+(256+2)*ichipy+(256*2+2+36)*imody);
+		    mapg[kg]=map[knog];
+		  }
+		}
+	      }
+	    }
+	  }
+	}  
 	buffer.clear();
 	
-	  /* Write the new file */
-	  //---> here I should also fill
+	/* Write the new file */
+	//---> here I should also fill
 	char buff[256];
 	cbf_failnez (cbf_make_handle (&cbf));	
 	snprintf(buff, sizeof(buff),"%s/%s_%d_%d.cbf",dir.c_str(),file.c_str(),numFrames, n); 
 	out = fopen (buff, "w");
 	  
 	
-	
-	
 	/* Make a new data block */
 	
 	cbf_failnez (cbf_new_datablock (cbf, "image_1"))
 	  
-
-	 
-	    /* Make the _diffrn category */
-	    cbf_failnez (cbf_new_category (cbf, "diffrn"))
-	    cbf_failnez (cbf_new_column   (cbf, "id"))
-	    cbf_failnez (cbf_set_value    (cbf, "DS1"))
-	    
-
-
-
-
-
+	  /* Make the _diffrn category */
+	  cbf_failnez (cbf_new_category (cbf, "diffrn"))
+	  cbf_failnez (cbf_new_column   (cbf, "id"))
+	  cbf_failnez (cbf_set_value    (cbf, "DS1"))
+	  
+	  
 	  /* Make the _array_data category */
-
+	  
 	  //cbf_failnez (cbf_new_datablock (cbf, "image_1"))
-
+	  
 	  //cbf_failnez (cbf_new_category     (cbf, "array_data"));
 	  //assert(0);	  	
 	  //cbf_failnez (cbf_new_column       (cbf, "array_id"));
@@ -274,11 +292,11 @@ int main(int argc, char *argv[]) {
 	  /* Save the binary data */
 	
 
-       	  cbf_failnez (cbf_set_integerarray_wdims_fs (cbf, CBF_BYTE_OFFSET /*| CBF_FLAT_IMAGE*/, 1,
-						      &(map[0]), sizeof (int), 1,
-						      npix_y_user * npix_x_user,
-						      "little_endian", npix_x_user, npix_y_user,0,0 ));
-	  
+       	  cbf_failnez (cbf_set_integerarray_wdims_fs (cbf, CBF_BYTE_OFFSET| CBF_FLAT_IMAGE, 1,
+						      &(mapg[0]), sizeof (int), 1,
+						      npix_y_g * npix_x_g,
+						      "little_endian", npix_x_g, npix_y_g,0,0 ));
+	
 	
 	  cbf_failnez (cbf_write_file (cbf, out, 1, CBF, MSG_DIGEST | MIME_HEADERS  , 0));
 	

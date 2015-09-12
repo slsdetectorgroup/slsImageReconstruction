@@ -51,5 +51,5 @@ $(PROGS_CSAXS):
 	mv $(PROGS_CSAXS) ../bin
 
 clean:
-#	rm -rf ../bin/$(PROGS)  *.o
+	rm -rf ../bin/$(PROGS)  *.o
 	rm -rf ../bin/$(PROGS_CSAXS)  *.o
