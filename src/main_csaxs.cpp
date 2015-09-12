@@ -90,9 +90,10 @@ int main(int argc, char *argv[]) {
       file=argv[2];
       n=atoi(argv[3]);
       if(argc>4){  
-	npix_x_user=atoi(argv[4]);
-	npix_y_user=atoi(argv[5]);
-	startdet=atoi(argv[6]);
+	tenGiga =atoi(argv[4]);
+	npix_x_user=atoi(argv[5]);
+	npix_y_user=atoi(argv[6]);
+	startdet=atoi(argv[7]);
       }
 
       const int nx_=npix_x_user;
@@ -273,7 +274,7 @@ int main(int argc, char *argv[]) {
 	  /* Save the binary data */
 	
 
-       	  cbf_failnez (cbf_set_integerarray_wdims_fs (cbf, CBF_PACKED|CBF_FLAT_IMAGE, 1,
+       	  cbf_failnez (cbf_set_integerarray_wdims_fs (cbf, CBF_BYTE_OFFSET /*| CBF_FLAT_IMAGE*/, 1,
 						      &(map[0]), sizeof (int), 1,
 						      npix_y_user * npix_x_user,
 						      "little_endian", npix_x_user, npix_y_user,0,0 ));

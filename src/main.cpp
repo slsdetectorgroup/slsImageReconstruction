@@ -63,23 +63,25 @@ int main(int argc, char *argv[]) {
 
   //get config parameters
   dynamicrange = -1;
-  tenGiga = 0;
-  //if(getParameters(argc, argv, dynamicrange,fnametop,fnamebottom, tenGiga) == slsReceiverDefs::OK){
+    //if(getParameters(argc, argv, dynamicrange,fnametop,fnamebottom, tenGiga) == slsReceiverDefs::OK){
 
     //if no dynamic range given
 
       char *data = new char[1024];
       int dynamicrange2=-1;
 
+      tenGiga =0;
+
       int startdet=0;
       //top dynamic range
       dir=argv[1];
       file=argv[2];
       n=atoi(argv[3]);
-      if(argc>4){  
-	npix_x_user=atoi(argv[4]);
-	npix_y_user=atoi(argv[5]);
-	startdet=atoi(argv[6]);
+      if(argc>4){ 
+	tenGiga =atoi(argv[4]);
+ 	npix_x_user=atoi(argv[5]);
+	npix_y_user=atoi(argv[6]);
+	startdet=atoi(argv[7]);
       }
       //work out how many modules in vertical and how many in horizontal
       int n_v= npix_y_user/npix_y_sm;
