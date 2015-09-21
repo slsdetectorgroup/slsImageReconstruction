@@ -28,7 +28,6 @@ void getParameters(int argc, char *argv[], string &file, int &fileIndex, bool &i
 
 
 
-
 int main(int argc, char *argv[]) {
 
 	//geometry
