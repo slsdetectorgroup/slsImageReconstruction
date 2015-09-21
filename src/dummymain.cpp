@@ -126,6 +126,10 @@ int main(int argc, char *argv[]) {
 					//getting values
 
 
+					iy = 255;
+					for(ix = 512; ix < 516; ix++)
+						cprintf(BLUE,"%d,%d :%f\n",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
+
 					/*
 					for(iy = 0; iy < 5; iy++){
 						for(ix = 0; ix < 2; ix++)
@@ -133,13 +137,14 @@ int main(int argc, char *argv[]) {
 						for(ix = 254; ix < 258; ix++)
 							cprintf(BLUE,"%d,%d :%f\n",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
 					}
-*/
+
+
 					for(iy = 0; iy < 256 ; iy++){
 						for(ix = 0; ix < 1024 ; ix++){
 							cprintf(BLUE,"%d,%d :%f\t",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
 						}
 					}
-
+*/
 
 
 					delete [] buffer;
