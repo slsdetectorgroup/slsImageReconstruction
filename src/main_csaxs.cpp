@@ -18,6 +18,7 @@
 
 #include <cassert>	
 #include <algorithm> 
+
 #include "cbf.h"
 using namespace std;
 
@@ -401,7 +402,7 @@ void getParameters(int argc, char *argv[], string &file, int &fileIndex, bool &i
 
 	//more parameters for ten giga, user pixels, startdet
 	if(argc>2){
-		if(argc < 5){
+		if(argc < 6){
 			cprintf(RED, "Error: Not enough arguments: bcfMaker [file_name_with_dir] "
 					"[tengiga] [numpixels_x][numpixels_y] [start_detector_Index]\nExiting.\n");
 			exit(-1);

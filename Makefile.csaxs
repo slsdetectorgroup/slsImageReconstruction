@@ -24,7 +24,7 @@ CFLAGS		+=  -Wall
 LDLIBS		+= 	-lm  -lstdc++ 
 
 PROGS_CSAXS	= 	bcfMaker
-DESTDIR		= 	bin
+DESTDIR		?= 	../bin
 INSTMODE	= 	0777
 
 SRC_CSAXS_CLNT	=	src/main_csaxs.cpp 
