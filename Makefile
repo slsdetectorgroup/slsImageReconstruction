@@ -41,13 +41,16 @@ $(PROGS):
 	echo $(OBJS)
 	mkdir -p $(DESTDIR) 
 	$(CCX)  -o $@  $(SRC_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(LDFLAGDET)  $(CFLAGS) $(LDLIBS) `$(ROOTSYS)/bin/root-config --cflags --libs` 
+	cp $(PROGS) ../bin
 	mv $(PROGS) $(DESTDIR)
 
 $(PROGS_CSAXS): 
 	@echo $(WD)
 	echo $(OBJS_CSAXS)
 	$(CCX)  -o $@  $(SRC_CSAXS_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5) $(LDFLAGDET) $(CFLAGS) $(LDLIBS) 
+	cp $(PROGS) ../bin
 	mv $(PROGS_CSAXS) $(DESTDIR)
+
 
 clean:
 	rm -rf ../bin/$(PROGS)  *.o
