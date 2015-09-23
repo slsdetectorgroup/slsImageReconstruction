@@ -13,10 +13,9 @@
 #include <iostream>
 #include <string.h>
 #include <fstream>
+#include <stdlib.h>			
 #include <map>
 #include <getopt.h>
-#include <stdlib.h>			
-
 
 using namespace std;
 
@@ -30,13 +29,21 @@ int main(int argc, char *argv[]) {
 	ifstream infile;
 	string fnametop = "", fnamebottom = "";
 	int dynamicrange, tenGiga, bufferSize, dataSize, packetsPerFrame, ix, iy, numFrames, fnum;
+	/** structure of an eiger packet*/
 	typedef struct
 	{
-		unsigned char num1[4];
-		unsigned char num2[2];
-		unsigned char num3[1];
-		unsigned char num4[1];
-	} eiger_packet_header;
+		unsigned char subframenum[4];
+		unsigned char missingpacket[2];
+		unsigned char portnum[1];
+		unsigned char dynamicrange[1];
+	} eiger_packet_header_t;
+
+	typedef struct
+	{
+		unsigned char framenum[6];
+		unsigned char packetnum[2];
+	} eiger_packet_footer_t;
+
 
 	//get config parameters
 	dynamicrange = -1;
@@ -126,11 +133,9 @@ int main(int argc, char *argv[]) {
 					//getting values
 
 
-					iy = 255;
-					for(ix = 512; ix < 516; ix++)
-						cprintf(BLUE,"%d,%d :%f\n",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
 
-					/*
+
+
 					for(iy = 0; iy < 5; iy++){
 						for(ix = 0; ix < 2; ix++)
 							cprintf(BLUE,"%d,%d :%f\n",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
@@ -139,12 +144,6 @@ int main(int argc, char *argv[]) {
 					}
 
 
-					for(iy = 0; iy < 256 ; iy++){
-						for(ix = 0; ix < 1024 ; ix++){
-							cprintf(BLUE,"%d,%d :%f\t",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
-						}
-					}
-*/
 
 
 					delete [] buffer;
@@ -174,19 +173,15 @@ int main(int argc, char *argv[]) {
 
 
 
-					/*
+
 					for(iy = 0; iy < 3; iy++){
 						for(ix = 0; ix < 2; ix++)
 							cprintf(BLUE,"%d,%d :%f\n",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
 						for(ix = 254; ix < 258; ix++)
 							cprintf(BLUE,"%d,%d :%f\n",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
 					}
-					*/
-					for(iy = 0; iy < 256 ; iy++){
-						for(ix = 0; ix < 1024 ; ix++){
-							cprintf(BLUE,"%d,%d :%f\t",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
-						}
-					}
+
+
 
 
 
@@ -212,77 +207,80 @@ int main(int argc, char *argv[]) {
  */
 int getParameters(int argc, char *argv[], int &dr, string &fntop, string &fnbottom,int &tg){
 
-  map<string, string> configuration_map;
-  static struct option long_options[] = {
-    {"dr",				required_argument,       0, 'd'},
-    {"tengiga",    		required_argument,       0, 't'},
-    {"top",     		required_argument,       0, 'p'},
-    {"bottom",     		required_argument,       0, 'm'},
-    {"help",  			no_argument,      		 0, 'h'},
-    {0, 0, 0, 0}
-  };
-  int option_index = 0, c;
-  while ( c != -1 ){
-    c = getopt_long (argc, argv, "dtpmh", long_options, &option_index);
-    if (c == -1)//end of options
-      break;
-    switch(c){
-    case 'd':
-      if(sscanf(optarg, "%d", &dr) <=0){
-	cprintf(RED,"ERROR: Cannot parse dynamic range. Options: 4,8,16,32.\n");
-	return slsReceiverDefs::FAIL;
-      }
-      //verification done later
-      /*switch(dr){
-	case 4:
-	case 8:
-	case 16:
-	case 32: break;
-	default:
-	cprintf(RED,"ERROR: Invalid dynamic range. Options: 4,8,16,32.\n");
-	return slsReceiverDefs::FAIL;
-	}*/
-      break;
-    case 't':
-      if(sscanf(optarg, "%d", &tg) <=0){
-	cprintf(RED,"ERROR: Cannot parse ten giga parameter. Options: 0 or 1.\n");
-	return slsReceiverDefs::FAIL;
-      }
-      switch(tg){
-      case 0:
-      case 1: break;
-      default:
-	cprintf(RED,"ERROR: Invalid ten giga parameter. Options: 0 or 1.\n");
-	return slsReceiverDefs::FAIL;
-      }
-      break;
-    case 'p':
-      fntop = optarg;
-      if(fntop.empty()){
-	cprintf(RED,"ERROR: Empty top file name.\n");
-	return slsReceiverDefs::FAIL;
-      }
-      break;
-    case 'm':
-      fnbottom = optarg;
-      if(fnbottom.empty()){
-	cprintf(RED,"ERROR: Empty bottom file name.\n");
-	return slsReceiverDefs::FAIL;
-      }
-      break;
-    case 'h':
-      string help_message = """\nSLS Image Reconstruction\n\n""";
-      help_message += """usage: image --p top_fname [--m bottom_fname] [--dr dynamic_range]\n\n""";
-      help_message += """\t--dr:\t dynamic range or bit mode. Default:16. Options: 4,8,16,32.\n""";
-      help_message += """\t--tengiga:\t 1 if 10Gbe or 0 for 1Gbe. Default: 0\n""";
-      help_message += """\t--top:\t file name of top image\n""";
-      help_message += """\t--bottom:\t file name of bottom image\n\n""";
-      cout << help_message << endl;
-      break;
+	map<string, string> configuration_map;
+	string file;
+	int top;
+	size_t detPosition,framePosition,filePosition,endPosition;
 
-    }
-  }
+	static struct option long_options[] = {
+			{"tengiga",    		required_argument,       0, 't'},
+			{"file",     		required_argument,       0, 'f'},
+			{"help",  			no_argument,      		 0, 'h'},
+			{0, 0, 0, 0}
+	};
 
-  //cout << " dynamic range:"<< dr << " top file name:" << fntop << " bottom file name:" << fnbottom << " ten giga:"<< tg << endl;
-  return slsReceiverDefs::OK;
+	int option_index = 0, c;
+
+
+	while ( c != -1 ){
+		c = getopt_long (argc, argv, "tfh", long_options, &option_index);
+		if (c == -1)//end of options
+			break;
+		switch(c){
+
+		case 't':
+			if(sscanf(optarg, "%d", &tg) <=0){
+				cprintf(RED,"ERROR: Cannot parse ten giga parameter. Options: 0 or 1.\n");
+				return slsReceiverDefs::FAIL;
+			}
+			switch(tg){
+			case 0:
+			case 1: break;
+			default:
+				cprintf(RED,"ERROR: Invalid ten giga parameter. Options: 0 or 1.\n");
+				return slsReceiverDefs::FAIL;
+			}
+			break;
+			case 'f':
+				file = optarg;
+				if(file.empty()){
+					cprintf(RED,"ERROR: Empty file name.\n");
+					return slsReceiverDefs::FAIL;
+				}
+
+				detPosition=file.rfind("_d");
+				if(detPosition == string::npos){
+					cprintf(RED, "Error: Invalid file name. Cannot find detector index from %s\n",file.c_str());
+					return slsReceiverDefs::FAIL;
+				}
+				framePosition=file.rfind("_f00",detPosition);
+				filePosition=file.rfind("_");
+				endPosition = framePosition;
+				if(framePosition == string::npos)
+					endPosition = filePosition;
+				if (!sscanf(file.substr(detPosition+1,endPosition-1-detPosition).c_str(),"d%d",&top)) {
+					cprintf(RED, "Error: Invalid file name. Cannot parse detector index from %s\n",file.c_str());
+					return slsReceiverDefs::FAIL;
+				}
+				if(top%2)
+					fnbottom = file;
+				else
+					fntop = file;
+
+				break;
+			case 'h':
+				string help_message = """\nSLS Image Reconstruction\n\n""";
+				help_message += """usage: image --p top_fname [--m bottom_fname] [--dr dynamic_range]\n\n""";
+				help_message += """\t--dr:\t dynamic range or bit mode. Default:16. Options: 4,8,16,32.\n""";
+				help_message += """\t--tengiga:\t 1 if 10Gbe or 0 for 1Gbe. Default: 0\n""";
+				help_message += """\t--top:\t file name of top image\n""";
+				help_message += """\t--bottom:\t file name of bottom image\n\n""";
+				cout << help_message << endl;
+				break;
+
+		}
+	}
+
+	//cout << " dynamic range:"<< dr << " top file name:" << fntop << " bottom file name:" << fnbottom << " ten giga:"<< tg << endl;
+	return slsReceiverDefs::OK;
 }
