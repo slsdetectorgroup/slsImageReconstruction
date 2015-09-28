@@ -54,7 +54,10 @@ int main(int argc, char *argv[]) {
 	int n_v = npix_y_user/npix_y_sm;
 	int n_h = npix_x_user/npix_x_sm;
 
-
+	cprintf(BLUE,
+					"Number of modules in horizontal : %d\n"
+					"Number of modules in vertical   : %d\n",
+					n_h,n_v);
 
 
 	//get dynamic range and configure  depending on top and bottom
@@ -80,7 +83,7 @@ int main(int argc, char *argv[]) {
 		for(int imod_h=0; imod_h<n_h;imod_h++){
 			for( int it=0;it<2;it++){
 				sprintf(fname,"%s_d%d%s_%d.raw",file.c_str(),nfile,frames,fileIndex);//(it+(imod_h*2)+n_h*imod_v)nfile
-				cout<<fname<<endl;
+				cout<<"Reading file: "<<fname<<endl;
 				//read file to get dynamic range
 				infile.open(fname,ios::in | ios::binary);
 				if (infile.is_open()) {
@@ -170,7 +173,9 @@ int main(int argc, char *argv[]) {
 	delete ofile;
 	for(int i=0;i<Nframes;i++)
 		delete hmap[i];
-	cout << endl << "Goodbye!" << endl;
+
+	cprintf(GREEN,"Root File Created: %s_det%d-%d_%d.root\n\n",file.c_str(),startdet,nfile-1,fileIndex);
+
 	return slsReceiverDefs::OK;
 }
 
@@ -232,21 +237,23 @@ void getParameters(int argc, char *argv[], string &file, int &fileIndex, bool &i
 		startdet=atoi(argv[5]);
 
 		cprintf(BLUE,
-				"File Name:%s\n"
-				"File Index:%d\n"
-				"Is File Frame Index in File:%d\n"
-				"Frame Index:%d\n"
-				"Ten Giga: %d\n"
-				"Number of pixels in x dir:%d\n"
-				"Number of pixels in y dir:%d\n"
-				"Start detector index:%d\n",
+				"\n"
+				"File Name                 : %s\n"
+				"File Index                : %d\n"
+				"Frame Index Enable        : %d\n"
+				"Frame Index               : %d\n"
+				"Ten Giga                  : %d\n"
+				"Number of pixels in x dir : %d\n"
+				"Number of pixels in y dir : %d\n"
+				"Start detector index      : %d\n",
 				file.c_str(),fileIndex,isFileFrameIndex,fileFrameIndex, tenGiga,npix_x_user,npix_y_user,startdet);
 		return;
 	}
 	cprintf(BLUE,
-			"File Name:%s\n"
-			"File Index:%d\n"
-			"Is File Frame Index in File:%d"
-			"\nFile Frame Index:%d\n",
+			"\n"
+			"File Name                   : %s\n"
+			"File Index                  : %d\n"
+			"Frame Index Enable          : %d\n"
+			"File Frame Index            : %d\n",
 			file.c_str(),fileIndex,isFileFrameIndex,fileFrameIndex);
 }

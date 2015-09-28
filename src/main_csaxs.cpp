@@ -83,13 +83,18 @@ int main(int argc, char *argv[]) {
 	//+ gap pixels between modules * (number of modules -1)
 	int npix_x_g = npix_x_sm * n_h  +  gap_pix_x_sm *  n_h + GapPixelsBetweenModules_x  * (n_h-1);
 	int npix_y_g = npix_y_sm * n_v  +  gap_pix_y_sm *  n_v + GapPixelsBetweenModules_y  * (n_v-1);
-	cout<<"npix_x_g:"<<npix_x_g<<" npix_y_g:"<<npix_y_g<<endl;
 	//map including gap pixels
 	//int mapg[npix_x_g*npix_y_g];
 	int* mapg = new int[npix_x_g*npix_y_g];
 	for(int ik=0; ik<npix_x_g*npix_y_g; ik++)
 		mapg[ik]=0.;
-	cout << "\nNumber of modules in horizontal: " << n_h << "\nNumber of modules in vertical  : " << n_v << endl << endl;
+	cprintf(BLUE,
+					"Number of Pixels (incl gap pixels) in x dir : %d\n"
+					"Number of Pixels (incl gap pixels) in y dir : %d\n"
+					"Number of modules in horizontal             : %d\n"
+					"Number of modules in vertical               : %d\n",
+					npix_x_g,npix_y_g,n_h,n_v);
+
 
 
 
@@ -163,8 +168,7 @@ int main(int argc, char *argv[]) {
 	}
 	delete [] data;
 
-
-
+	cprintf(BLUE, "Dynamic Range read from file                : %d\n\n",dynamicrange);
 
 	//Create cbf files with data
 	cbf_handle cbf;
@@ -182,7 +186,7 @@ int main(int argc, char *argv[]) {
 		for(int inr=0; inr<nr; inr++){
 			sprintf(fname, "%s_d%d%s_%d.raw",file.c_str(),inr,frames,fileIndex);
 			if( numFrames == 1)
-			cout << fname << endl;
+			cout << "Reading file:" << fname << endl;
 			//open file
 			if(!infile[inr].is_open())
 				infile[inr].open(fname,ios::in | ios::binary);
@@ -349,6 +353,7 @@ int main(int argc, char *argv[]) {
 	/* Free the cbf */
 	cbf_failnez (cbf_free_handle (cbf));
 
+	cprintf(GREEN,"CBF File Created: %s\n\n",fname);
 
 	for(int inr=0; inr<nr; ++inr){
 		delete receiverdata[inr];
@@ -413,22 +418,24 @@ void getParameters(int argc, char *argv[], string &file, int &fileIndex, bool &i
 		startdet=atoi(argv[5]);
 
 		cprintf(BLUE,
-				"File Name:%s\n"
-				"File Index:%d\n"
-				"Is File Frame Index in File:%d\n"
-				"Frame Index:%d\n"
-				"Ten Giga: %d\n"
-				"Number of pixels in x dir:%d\n"
-				"Number of pixels in y dir:%d\n"
-				"Start detector index:%d\n",
+				"\n"
+				"File Name                 : %s\n"
+				"File Index                : %d\n"
+				"Frame Index Enable        : %d\n"
+				"Frame Index               : %d\n"
+				"Ten Giga                  : %d\n"
+				"Number of pixels in x dir : %d\n"
+				"Number of pixels in y dir : %d\n"
+				"Start detector index      : %d\n",
 				file.c_str(),fileIndex,isFileFrameIndex,fileFrameIndex, tenGiga,npix_x_user,npix_y_user,startdet);
 		return;
 	}
 	cprintf(BLUE,
-			"File Name:%s\n"
-			"File Index:%d\n"
-			"Is File Frame Index in File:%d"
-			"\nFile Frame Index:%d\n",
+			"\n"
+			"File Name                   : %s\n"
+			"File Index                  : %d\n"
+			"Frame Index Enable          : %d\n"
+			"File Frame Index            : %d\n",
 			file.c_str(),fileIndex,isFileFrameIndex,fileFrameIndex);
 }
 

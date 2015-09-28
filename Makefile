@@ -21,20 +21,24 @@ CCX			=	g++
 CFLAGS		+=  -Wall 
 LDLIBS		+= 	-lm  -lstdc++ 
 
-PROGS		= 	image
-PROGS_CSAXS	= 	bcfMaker
-DESTDIR		= 	bin
-INSTMODE	= 	0777
+PROGS				= 	image
+PROGS_CSAXS			= 	bcfMaker
+PROGS_CSAXS_MULTI	= 	bcfMakerMulti
+DESTDIR				= 	bin
+INSTMODE			= 	0777
 
 
 SRC_CLNT		=	src/main.cpp 
 SRC_CSAXS_CLNT	=	src/main_csaxs.cpp 
+SRC_CSAXS_MULTI	=	src/main_csaxs_multi.cpp 
 OBJS 			= 	$(SRC_CLNT:.cpp=.o)
 OBJSCSAXS 		= 	$(SRC_CSAXS_CLNT:.cpp=.o)
+OBJSCSAXSMULTI	= 	$(SRC_CSAXS_MULTI:.cpp=.o)
 
-all: clean $(PROGS_CSAXS) $(PROGS) 
 
-boot: $(OBJS) $(OBJSCSAXS)
+all: clean $(PROGS_CSAXS) $(PROGS_CSAXS_MULTI) $(PROGS) 
+
+boot: $(OBJS) $(OBJSCSAXS) $(OBJSCSAXSMULTI)
 
 $(PROGS): 
 	@echo $(WD)
@@ -48,10 +52,18 @@ $(PROGS_CSAXS):
 	@echo $(WD)
 	echo $(OBJS_CSAXS)
 	$(CCX)  -o $@  $(SRC_CSAXS_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5) $(LDFLAGDET) $(CFLAGS) $(LDLIBS) 
-	cp $(PROGS) ../bin
+	cp $(PROGS_CSAXS) ../bin
 	mv $(PROGS_CSAXS) $(DESTDIR)
+	
+$(PROGS_CSAXS_MULTI): 
+	@echo $(WD)
+	echo $(OBJSCSAXSMULTI)
+	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5) $(LDFLAGDET) $(CFLAGS) $(LDLIBS) 
+	cp $(PROGS_CSAXS_MULTI) ../bin
+	mv $(PROGS_CSAXS_MULTI) $(DESTDIR)
 
 
 clean:
-	rm -rf ../bin/$(PROGS)  *.o
-	rm -rf ../bin/$(PROGS_CSAXS)  *.o
+	rm -rf ../bin/$(PROGS)  *.o $(DESTDIR)/$(PROGS)
+	rm -rf ../bin/$(PROGS_CSAXS)  *.o $(DESTDIR)/$(PROGS_CSAXS)
+	rm -rf ../bin/$(PROGS_CSAXS_MULTI)  *.o $(DESTDIR)/$(PROGS_CSAXS_MULTI)
