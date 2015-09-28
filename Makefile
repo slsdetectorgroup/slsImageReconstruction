@@ -22,8 +22,8 @@ CFLAGS		+=  -Wall
 LDLIBS		+= 	-lm  -lstdc++ 
 
 PROGS				= 	image
-PROGS_CSAXS			= 	bcfMaker
-PROGS_CSAXS_MULTI	= 	bcfMakerMulti
+PROGS_CSAXS			= 	cbfMaker
+PROGS_CSAXS_MULTI	= 	cbfMakerMulti
 DESTDIR				= 	bin
 INSTMODE			= 	0777
 
