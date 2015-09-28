@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 	size_t exePos = exe.rfind("Multi");
 	exe.erase(exePos,5);
 
-	string command = exe + " " + string(argv[1]) + " 0 1024 2048 0";
+	string command = exe + " " + string(argv[1]) + " 0 3072 512 0";
 	cout<<"command:"<<command<<endl;
 	system(command.c_str());
 
