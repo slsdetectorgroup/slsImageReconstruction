@@ -193,6 +193,8 @@ int main(int argc, char *argv[]) {
 			if(infile[inr].is_open()){
 				//get frame buffer
 				char* tempbuffer=(receiverdata[inr]->readNextFrame(infile[inr], fnum[inr])); /*creating memory has to be deleted*/
+				/**************USE THIS IF YOU ARE USING MASTER BRANCH INSTEAD OF CHECKFRAMES()*****************/
+				//if(fnum[inr] ==-1) continue;
 				if(!CheckFrames(fnum[inr],numFrames))
 					continue;
 				buffer.push_back(tempbuffer);
