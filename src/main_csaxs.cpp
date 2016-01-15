@@ -63,10 +63,6 @@ int main(int argc, char *argv[]) {
 	getParameters(argc, argv, file, fileIndex, isFileFrameIndex, fileFrameIndex, tenGiga, npix_x_user, npix_y_user, startdet);
 
 
-	//map of pixels
-	const int nx_ = npix_x_user;
-	const int ny_ = npix_y_user;
-	int map[nx_*ny_];
 	//number of modules in vertical and horizontal
 	int n_v = npix_y_user/npix_y_sm;
 	int n_h = npix_x_user/npix_x_sm;
@@ -84,22 +80,17 @@ int main(int argc, char *argv[]) {
 	int npix_x_g = npix_x_sm * n_h  +  gap_pix_x_sm *  n_h + GapPixelsBetweenModules_x  * (n_h-1);
 	int npix_y_g = npix_y_sm * n_v  +  gap_pix_y_sm *  n_v + GapPixelsBetweenModules_y  * (n_v-1);
 	//map including gap pixels
-	//int mapg[npix_x_g*npix_y_g];
-	int* mapg = new int[npix_x_g*npix_y_g];
-	for(int ik=0; ik<npix_x_g*npix_y_g; ik++)
-		mapg[ik]=0.;
+	int map[npix_x_g*npix_y_g];
+
+	cout<<"only gap pixel map "<<endl;
+
+
 	cprintf(BLUE,
 					"Number of Pixels (incl gap pixels) in x dir : %d\n"
 					"Number of Pixels (incl gap pixels) in y dir : %d\n"
 					"Number of modules in horizontal             : %d\n"
 					"Number of modules in vertical               : %d\n",
 					npix_x_g,npix_y_g,n_h,n_v);
-
-
-
-
-
-
 
 
 	//initialize receiverdata and fnum for all half modules
@@ -117,7 +108,9 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	//get dynamic range and configure receiverdata depending on top and bottom
+
+
+//get dynamic range and configure receiverdata depending on top and bottom
 	char fname[1000];
 	char frames[20]="";
 	if(isFileFrameIndex)
@@ -213,66 +206,55 @@ int main(int argc, char *argv[]) {
 					//getting values //top
 					if(it==0){
 						//initialize the first time
-						if(imod_v==(n_v-1) && imod_h==0)
-							for(int ik=0; ik<npix_y_user*npix_x_user;++ik)
-								map[ik]=-1;
-
-						for(int iy=((npix_y_sm/2)+imod_v*npix_y_sm); iy<(npix_y_sm+imod_v*npix_y_sm); iy++){
-							for(int ix=0+imod_h*npix_x_sm; ix<npix_x_sm+imod_h*npix_x_sm; ix++){
-								int k=ix+n_h*npix_x_sm*iy;
-								map[k]=(receiverdata[inr]->getValue(buffer.at(inr),
-										(ix-imod_h*npix_x_sm),(iy-(npix_y_sm/2)-imod_v*npix_y_sm),dynamicrange));
-							}
+					  if(imod_v==(n_v-1) && imod_h==0)
+					    for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
+					      map[ik]=-1;
+					  
+					  for(int ichipy=1; ichipy<2;ichipy++){
+					    for(int iy=0; iy<256;iy++){
+					      for(int ichipx=0; ichipx<4;ichipx++){
+						for(int ix=0; ix<256;ix++){
+						  
+						  int k= ix+(256+2)*ichipx+(256*4+6+8)*imod_h + npix_x_g*(iy+(256+2)*ichipy+(256*2+2+36)*imod_v);
+						  
+						  map[k]=(receiverdata[inr]->getValue(buffer.at(inr),
+										      ix+256*ichipx,iy,     
+										      dynamicrange));
 						}
+					      }
+					    }
+					  }
 					}
 					//getting values for bottom
-					if(it==1){
-						for(int iy=0+imod_v*npix_y_sm; iy<npix_y_sm/2+imod_v*npix_y_sm; ++iy){
-							for(int ix=0+imod_h*npix_x_sm; ix<npix_x_sm+imod_h*npix_x_sm; ++ix){
-								int k=ix+n_h*npix_x_sm*iy;
-								map[k]= (receiverdata[inr]->getValue(buffer.at(inr),
-										(ix-imod_h*npix_x_sm),(iy-imod_v*npix_y_sm),dynamicrange));
-							}
+				if(it==1){
+					  
+					  for(int ichipy=0; ichipy<1;ichipy++){
+					    for(int iy=0; iy<256;iy++){
+					      for(int ichipx=0; ichipx<4;ichipx++){
+						for(int ix=0; ix<256;ix++){
+						  
+						  int k= ix+(256+2)*ichipx+(256*4+6+8)*imod_h + npix_x_g*(iy+(256+2)*ichipy+(256*2+2+36)*imod_v);
+						  
+						  map[k]= (receiverdata[inr]->getValue(buffer.at(inr),
+										       ix+256*ichipx,iy,
+										       dynamicrange));
 						}
+					      }
+					    }
+					  }
 					}
 					inr++;
 				}
 			}
 		} //close all loops
-
-
-		//now add gap pixels - should be done above to be faster but I will rewrite the code later
-		int knog,kg;
-		for(int imody=0; imody<n_v;imody++){
-			for(int ichipy=0; ichipy<2;ichipy++){
-				for(int iy=0; iy<256;iy++){
-					for(int imodx=0; imodx<n_h;imodx++){
-						for(int ichipx=0; ichipx<4;ichipx++){
-							for(int ix=0; ix<256;ix++){
-								knog=(ix+256*ichipx+256*4*imodx)+ n_h*npix_x_sm*(iy+256*ichipy+256*2*imody);
-								kg= ix+(256+2)*ichipx+(256*4+6+8)*imodx+ npix_x_g*(iy+(256+2)*ichipy+(256*2+2+36)*imody);
-	//cout<<"imody:"<<imody<<" ichipy:"<<ichipy<<" iy:"<<iy<<" imodx:"<<imodx<<" ichipx:"<<ichipx<<" ix:"<<ix<<""
-									//	" kg:"<<kg<<" knog:"<<knog<<" mapg[kg]:"<<mapg[kg]<<endl;
-								//cout<<"map[knog]:"<<map[knog]<<endl;
-								mapg[kg]=map[knog];
-							}
-						}
-					}
-				}
-			}
-		}
+		
 		buffer.clear();
-
-
-
+		
 		//---> here I should also fill
 		/* Create and initializes new internal CBF Object*/
 		cbf_failnez (cbf_make_handle (&cbf));
-		sprintf(fname, "%s_%d_%d.cbf",file.c_str(),numFrames, fileIndex);
+		sprintf(fname, "%s_%d_%d.cbf",file.c_str(),fileIndex, numFrames);
 		out = fopen (fname, "w");
-
-
-
 
 		//fake headers
 		fprintf(out,
@@ -316,7 +298,7 @@ int main(int argc, char *argv[]) {
 				cbf, 								//cbf_handle handle
 				CBF_BYTE_OFFSET| CBF_FLAT_IMAGE, 	// unsigned int compression
 				1,									//int binary_id
-				&(mapg[0]), 						//void *array
+				&(map[0]), 						//void *array
 				sizeof (int),						 //size_t elsize
 				1,									//int elsigned
 				npix_y_g * npix_x_g,				//size_t elements
@@ -337,7 +319,7 @@ int main(int argc, char *argv[]) {
 				MSG_DIGEST | MIME_HEADERS  , //int headers
 				0));		//int encoding
 
-
+		cprintf(GREEN,"CBF File Created: %s\n\n",fname);
 		numFrames++;
 	}
 
@@ -355,7 +337,7 @@ int main(int argc, char *argv[]) {
 	/* Free the cbf */
 	cbf_failnez (cbf_free_handle (cbf));
 
-	cprintf(GREEN,"CBF File Created: %s\n\n",fname);
+
 
 	for(int inr=0; inr<nr; ++inr){
 		delete receiverdata[inr];
