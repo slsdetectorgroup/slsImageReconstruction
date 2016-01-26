@@ -187,8 +187,8 @@ int main(int argc, char *argv[]) {
 	  //getting values //top
 	  if(it==0){
 	    if(inr==0)
-	      hmap= new TH2F(TString::Format("hmap%d",numFrames).Data(),
-			     TString::Format("hmap%d",numFrames).Data(),
+	      hmap= new TH2F(TString::Format("hmap%d",numFrames-1).Data(),
+			     TString::Format("hmap%d",numFrames-1).Data(),
 			     npix_x_user, 0, npix_x_user, npix_y_user, 0, npix_y_user);
 			
 	    for(int iy=((npix_y_sm/2)+imod_v*npix_y_sm); iy<(npix_y_sm+imod_v*npix_y_sm); ++iy){
