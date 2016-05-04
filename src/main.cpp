@@ -54,12 +54,13 @@ int main(int argc, char *argv[]) {
 
   //number of modules in vertical and horizontal
   int n_v = npix_y_user/npix_y_sm;
+  if( npix_y_user==256)  n_v=1;
   int n_h = npix_x_user/npix_x_sm;
   //Gap pixels
-  const int GapPixelsBetweenChips_x = 0;
-  const int GapPixelsBetweenChips_y = 0;
-  const int GapPixelsBetweenModules_x = 0;
-  const int GapPixelsBetweenModules_y = 0;
+  const int GapPixelsBetweenChips_x = 2;
+  const int GapPixelsBetweenChips_y = 2;
+  const int GapPixelsBetweenModules_x = 8;
+  const int GapPixelsBetweenModules_y = 38;
   int gap_pix_x_sm = GapPixelsBetweenChips_x * (NumChip_x-1);
   int gap_pix_y_sm = GapPixelsBetweenChips_y * (NumChip_y-1);
   //number of pixels of single module * number of modules +
@@ -67,9 +68,10 @@ int main(int argc, char *argv[]) {
   //+ gap pixels between modules * (number of modules -1)
   int npix_x_g = npix_x_sm * n_h  +  gap_pix_x_sm *  n_h + GapPixelsBetweenModules_x  * (n_h-1);
   int npix_y_g = npix_y_sm * n_v  +  gap_pix_y_sm *  n_v + GapPixelsBetweenModules_y  * (n_v-1);
+  if( npix_y_user==256)  npix_y_g = npix_y_user;
   cprintf(BLUE,
 	  "Number of Pixels (incl gap pixels) in x dir : %d\n"
-	  "Number of Pixels (incl gap pixels) in y dir : %d\n"
+	  "Number of Pixels (incl  gap pixels) in y dir : %d\n"
 	  "Number of modules in horizontal             : %d\n"
 	  "Number of modules in vertical               : %d\n",
 	  npix_x_g,npix_y_g,n_h,n_v);
@@ -86,6 +88,7 @@ int main(int argc, char *argv[]) {
   for(int imod_v=0; imod_v<n_v; imod_v++){
     for(int imod_h=0; imod_h<n_h; imod_h++){
       for(int it=0;it<2;it++){
+	if( npix_y_user==256 && it==1 ) continue; 
 	receiverdata[nr]=NULL;
 	fnum[nr]=0;
 	nr++;
@@ -110,6 +113,8 @@ int main(int argc, char *argv[]) {
   for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
     for(int imod_h=0; imod_h<n_h; imod_h++){
       for( int it=0;it<2;it++){
+	if( npix_y_user==256 && it==1 ) continue;  
+
 	sprintf(fname,"%s_d%d%s_%d.raw",file.c_str(),nfile,frames,fileIndex);
 	//read file to get dynamic range
 	infile[nr].open(fname,ios::in | ios::binary);
@@ -184,6 +189,7 @@ int main(int argc, char *argv[]) {
     for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
       for(int imod_h=0; imod_h<n_h;imod_h++){
 	for( int it=0;it<2;it++){
+	  if( npix_y_user==256 && it==1) continue; 
 	  //getting values //top
 	  if(it==0){
 	    if(inr==0)
@@ -191,14 +197,25 @@ int main(int argc, char *argv[]) {
 			     TString::Format("hmap%d",numFrames-1).Data(),
 			     npix_x_user, 0, npix_x_user, npix_y_user, 0, npix_y_user);
 			
-	    for(int iy=((npix_y_sm/2)+imod_v*npix_y_sm); iy<(npix_y_sm+imod_v*npix_y_sm); ++iy){
-	      for(int ix=0+imod_h*npix_x_sm; ix<npix_x_sm+imod_h*npix_x_sm; ++ix){
-		hmap->SetBinContent(ix+1, iy+1, 
-				    (receiverdata[inr]->getValue(buffer[inr],(ix-imod_h*npix_x_sm),(iy-(npix_y_sm/2)-imod_v*npix_y_sm),dynamicrange)));
+	    if( npix_y_user!=256 ){
+	      for(int iy=((npix_y_sm/2)+imod_v*npix_y_sm); iy<(npix_y_sm+imod_v*npix_y_sm); ++iy){
+		for(int ix=0+imod_h*npix_x_sm; ix<npix_x_sm+imod_h*npix_x_sm; ++ix){
+		  hmap->SetBinContent(ix+1, iy+1, 
+				      (receiverdata[inr]->getValue(buffer[inr],(ix-imod_h*npix_x_sm),(iy-(npix_y_sm/2)-imod_v*npix_y_sm),dynamicrange)));
+		  
+		}
+	      }
+	    } else{
+	      for(int iy=0; iy< npix_y_user; ++iy){
+		for(int ix=0+imod_h*npix_x_sm; ix<npix_x_sm+imod_h*npix_x_sm; ++ix){		
+		  hmap->SetBinContent(ix+1, iy+1, 
+				      (receiverdata[inr]->getValue(buffer[inr],(ix),(iy),dynamicrange)));
+		  
+		  
+		}
 	      }
 	    }
-	  }
-		      
+	  }	      
 	  //getting values for bottom
 	  if(it==1){
 	    for(int iy=0+imod_v*npix_y_sm; iy<npix_y_sm/2+imod_v*npix_y_sm; ++iy){
