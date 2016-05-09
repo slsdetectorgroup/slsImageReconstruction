@@ -76,14 +76,18 @@ int main(int argc, char *argv[]) {
 	  "Number of modules in vertical               : %d\n",
 	  npix_x_g,npix_y_g,n_h,n_v);
 	
-  TFile* ofile = new TFile(TString::Format("%s_det%d-%d_%d.root",file.c_str(),startdet,(n_v*n_h)*2-1,fileIndex).Data(),"RECREATE");
+  TFile* ofile;
+    if(npix_y_user!=256)
+    ofile= new TFile(TString::Format("%s_det%d-%d_%d.root",file.c_str(),startdet,(n_v*n_h)*2-1,fileIndex).Data(),"RECREATE");
+  else   ofile= new TFile(TString::Format("%s_%d.root",file.c_str(),fileIndex).Data(),"RECREATE");
   ofile->Close();
   delete ofile;
 
   //initialize receiverdata and fnum for all half modules
   int numModules = n_v *n_h*NumHalfModules;
-  slsReceiverData <uint32_t> *receiverdata[numModules];
-  int fnum[n_v *n_h*2];
+  if (npix_y_user==256) numModules;
+ slsReceiverData <uint32_t> *receiverdata[numModules];
+ int fnum[( npix_y_user!=256) ? n_v *n_h*2 : 1];
   int nr=0;
   for(int imod_v=0; imod_v<n_v; imod_v++){
     for(int imod_h=0; imod_h<n_h; imod_h++){
@@ -115,7 +119,11 @@ int main(int argc, char *argv[]) {
       for( int it=0;it<2;it++){
 	if( npix_y_user==256 && it==1 ) continue;  
 
+	if( npix_y_user!=256)
 	sprintf(fname,"%s_d%d%s_%d.raw",file.c_str(),nfile,frames,fileIndex);
+	else 
+	  sprintf(fname,"%s%s_%d.raw",file.c_str(),frames,fileIndex);
+	cout<<fname<<endl;
 	//read file to get dynamic range
 	infile[nr].open(fname,ios::in | ios::binary);
 	if (infile[nr].is_open()) {
@@ -165,7 +173,9 @@ int main(int argc, char *argv[]) {
     //here nr is not volatile anymore
     //loop on each receiver to get frame buffer
     for(int inr=0; inr<nr; inr++){
-      sprintf(fname, "%s_d%d%s_%d.raw",file.c_str(),inr,frames,fileIndex);
+     if(npix_y_user!=256) sprintf(fname, "%s_d%d%s_%d.raw",file.c_str(),inr,frames,fileIndex);
+     else sprintf(fname, "%s%s_%d.raw",file.c_str(),frames,fileIndex);
+
       if( numFrames == 1)
 	cout << "Reading file:" << fname << endl;
       //open file
@@ -231,7 +241,12 @@ int main(int argc, char *argv[]) {
       }
     }
 		
+    if(npix_y_user!=256)
     ofile= new TFile(TString::Format("%s_det%d-%d_%d.root",file.c_str(),startdet,(n_v*n_h)*2-1,fileIndex).Data(),"UPDATE");
+    else
+    ofile= new TFile(TString::Format("%s_%d.root",file.c_str(),fileIndex).Data(),"UPDATE");
+
+
     hmap->SetStats(kFALSE);
     hmap->Draw("colz");
     hmap->Write();
@@ -244,7 +259,9 @@ int main(int argc, char *argv[]) {
     numFrames++;
   }
 
-  cprintf(GREEN,"Root File Created: %s_det%d-%d_%d.root\n\n",file.c_str(),startdet,(n_v*n_h)*2-1,fileIndex);
+  if(npix_y_user!=256)
+    cprintf(GREEN,"Root File Created: %s_det%d-%d_%d.root\n\n",file.c_str(),startdet,(n_v*n_h)*2-1,fileIndex);
+  else     cprintf(GREEN,"Root File Created: %s_%d.root\n\n",file.c_str(),fileIndex);
 	
   //close file when not frame yet
   for(int inr=0; inr<nr; inr++)
@@ -273,17 +290,31 @@ void getParameters(int argc, char *argv[], string &file, int &fileIndex, bool &i
 
   //extract file index and file name with _d0
   int i;
-  size_t uscore=file.rfind("_");
-  if (uscore==string::npos) {
-    cprintf(RED, "Error: Invalid file name. No underscore found\nExiting.\n");
-    exit(-1);
-  }
+  //  size_t uscore=file.rfind("_");
+  //if (uscore==string::npos) {
+  //cprintf(RED, "Error: Invalid file name. No underscore found\nExiting.\n");
+  //exit(-1);
+  //}
   string s=file;
-  if (sscanf(s.substr(uscore+1,s.size()-uscore-1).c_str(),"%d",&i)) {
-    fileIndex=i;
-    s=file.substr(0,uscore);
-  } else{
-    cprintf(RED, "Error: Invalid file name. Cannot parse file index from %s\n",file.c_str());
+  //  if (sscanf(s.substr(uscore+1,s.size()-uscore-1).c_str(),"%d",&i)) {
+   std::size_t pos = s.find(".raw");
+    s=file.substr(0,pos);
+
+    size_t uscore=s.rfind("_");
+    if (uscore==string::npos) {
+      cprintf(RED, "Error: Invalid file name. No underscore found\nExiting.\n");
+      exit(-1);
+    }
+    
+    if (sscanf(s.substr(uscore+1,s.size()-uscore-1).c_str(),"%d",&i)) {
+
+      //if (sscanf(s.substr(pos-1).c_str(),"%d",&i)) {
+    //cout<<s<<endl;
+      fileIndex=i;
+      cout<<i<<endl;
+      s=file.substr(0,uscore);
+    } else{
+      cprintf(RED, "Error: Invalid file name. Cannot parse file index from %s\n",file.c_str());
     exit(-1);
   }
   uscore=s.rfind("_");
@@ -295,10 +326,14 @@ void getParameters(int argc, char *argv[], string &file, int &fileIndex, bool &i
     uscore=s.rfind("_");
     if (sscanf( s.substr(uscore+1,s.size()-uscore-1).c_str(),"d%d",&i)){
       s=file.substr(0,uscore);
-    }else{
-      cprintf(RED, "Error: Invalid file name. Cannot parse detector index from %s\n",file.c_str());
-      exit(-1);
-    }
+    }//else{
+     // std::size_t pos = s.find(".raw");
+     // s=file.substr(0,pos);
+    //cout<<s<<endl;
+    //}
+    //cprintf(RED, "Error: Invalid file name. Cannot parse detector index from %s\n",file.c_str());
+    // exit(-1);
+    //}
     file=s;
 
     //more parameters for ten giga, user pixels, startdet
