@@ -16,7 +16,7 @@ CCX			=	g++
 CFLAGS		+=  -Wall 
 LDLIBS		+= 	-lm  -lstdc++ 
 
-PROGS		= 	image
+PROGS		= 	imagedhanya
 DESTDIR		?= 	bin
 INSTMODE	= 	0777
 
