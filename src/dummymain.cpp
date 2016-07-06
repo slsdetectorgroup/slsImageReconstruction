@@ -193,15 +193,20 @@ int getFileParameters(string file, int &hs, int &dr, int &ps, int &x, int &y){
 	infile.open(file.c_str(),ios::in | ios::binary);
 	if (infile.is_open()) {
 
+		//empty line
+		getline(infile,str);
+
 		//header size
 		if(getline(infile,str)){
 			istringstream sstr(str);
+			cout<<"headerStr:"<<str<<endl;
 			sstr >> str >> hs;
 		}
 
 		//dynamic range
 		if(getline(infile,str)){
 			istringstream sstr(str);
+			cout<<"Str:"<<str<<endl;
 			sstr >> str >> str >> dr;
 		}
 
