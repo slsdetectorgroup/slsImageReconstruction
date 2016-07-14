@@ -13,11 +13,8 @@
 #include <iostream>
 #include <string.h>
 #include <fstream>
-#include <sstream>
 #include <vector>
 #include <stdlib.h>			
-#include <map>
-#include <getopt.h>
 
 #include <cassert>	
 #include <algorithm> 
@@ -36,11 +33,7 @@ using namespace std;
     }							\
   }
 
-int getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int &startdet);
-
-int getFileParameters(string file, int &hs, int &dr, int &ps, int &x, int &y);
-
-
+void getParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &tenGiga, int &npix_x_user, int &npix_y_user, int &startdet);
 bool CheckFrames( int fnum, int numFrames);
 int local_exit(int status);
 
@@ -65,9 +58,9 @@ int main(int argc, char *argv[]) {
 
   //get command line arguments
   string file;
-  int fileIndex, fileFrameIndex=0,startdet=0, tenGiga=-1 ;
+  int fileIndex, fileFrameIndex=0,startdet=0, tenGiga = 0;
   bool isFileFrameIndex = false;
-  getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, fileFrameIndex, npix_x_user, npix_y_user, startdet);
+  getParameters(argc, argv, file, fileIndex, isFileFrameIndex, fileFrameIndex, tenGiga, npix_x_user, npix_y_user, startdet);
 
 
   //number of modules in vertical and horizontal
@@ -75,6 +68,7 @@ int main(int argc, char *argv[]) {
   if( npix_y_user==256)  n_v=1;
   int n_h = npix_x_user/npix_x_sm;
   //Gap pixels
+  //note bad coded valid only to 1.5M
   const int GapPixelsBetweenChips_x = 2;
   const int GapPixelsBetweenChips_y = 2;
   const int GapPixelsBetweenModules_x = 8;
@@ -89,7 +83,8 @@ int main(int argc, char *argv[]) {
   if( npix_y_user==256)  npix_y_g = npix_y_user;
   //map including gap pixels
   int map[npix_x_g*npix_y_g];
-
+  int mapspecial[256*npix_y_g];
+  
   cprintf(BLUE,
 	  "Number of Pixels (incl gap pixels) in x dir : %d\n"
 	  "Number of Pixels (incl gap pixels) in y dir : %d\n"
@@ -114,8 +109,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-
-
   //get dynamic range and configure receiverdata depending on top and bottom
   char fname[1000];
   char frames[20]="";
@@ -127,21 +120,40 @@ int main(int argc, char *argv[]) {
   int nfile=startdet;
   //put master on top always
   nr=0;
-  int dataSize, packetsPerFrame;
-  int headersize, packetSize;
-  int xpix, ypix;
+  int bufferSize, dataSize, packetsPerFrame;
+
   for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
     for(int imod_h=0; imod_h<n_h; imod_h++){
       for( int it=0;it<2;it++){
 	if( npix_y_user==256 && it==1 ) continue;  
 
 	sprintf(fname,"%s_d%d%s_%d.raw",file.c_str(),nfile,frames,fileIndex);
-	//read file to get parameters
-	if(getFileParameters(file, headersize, dynamicrange, packetSize, xpix, ypix) != slsReceiverDefs::OK)
-	  return -1;
+	//read file to get dynamic range
+	infile[nr].open(fname,ios::in | ios::binary);
+	if (infile[nr].is_open()) {
+	  if(infile[nr].read(data,1024)){
+	    dynamicrange2 = eigerHalfModuleData::getDynamicRange(data);
+	    if(dynamicrange == -100)
+	      dynamicrange = dynamicrange2;
+	    else if(dynamicrange != dynamicrange2){
+	      cprintf(RED, "Error: The dynamic range read from: %s does not match dynamic range from previous files\n", fname);
+	    }
+	  }
+	  infile[nr].close();
+	}else cprintf(RED, "Error: Could not read top file: %s\n", fname);
+
+	//initialize variables for 1g and 10g
+	bufferSize = 1040;
+	dataSize = 1024;
+	packetsPerFrame = 16 * dynamicrange * 2;
+	if(tenGiga){
+	  packetsPerFrame = 4 * dynamicrange*2;
+	  bufferSize = 4112;
+	  dataSize = 4096;
+	}
 
 	//construct datamapping object
-	receiverdata[nr] = new eigerHalfModuleData(dynamicrange,packetsPerFrame, packetSize, dataSize, it==0 ? true : false);
+	receiverdata[nr] = new eigerHalfModuleData(dynamicrange,packetsPerFrame,bufferSize, dataSize, it==0 ? true : false);
 	nr++;
 	nfile++;
       }
@@ -149,8 +161,8 @@ int main(int argc, char *argv[]) {
   }
   delete [] data;
 
-  //Create cbf files with data
-  cbf_handle cbf;
+  cprintf(BLUE, "Dynamic Range read from file                : %d\n\n",dynamicrange);
+ 
   vector <char*> buffer;
   buffer.reserve(n_v *n_h*2);
   FILE *out;
@@ -175,8 +187,7 @@ int main(int argc, char *argv[]) {
 	/**************USE THIS IF YOU ARE USING MASTER BRANCH INSTEAD OF CHECKFRAMES()*****************/
 	//if(fnum[inr] ==-1) continue;
 	if(fnum[inr]==-1) exit(0);
-	if(!CheckFrames(fnum[inr],numFrames))
-	  continue;
+	if(!CheckFrames(fnum[inr],numFrames)) continue;
 	buffer.push_back(tempbuffer);
       }
     }//loop on receivers
@@ -184,23 +195,25 @@ int main(int argc, char *argv[]) {
     if(buffer.size()!=nr) continue;
     cout << "Number of Frames:" << numFrames << endl;
 
-    //get a 2d map of the image
+ //get a 2d map of the image
     int inr=0;
     for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
       for(int imod_h=0; imod_h<n_h;imod_h++){
 	for( int it=0;it<2;it++){	
-	   if( npix_y_user==256 && it==1) continue; 
-
-	   /* Make a cbf version of the image */
+	  if( npix_y_user==256 && it==1) continue; 
+	  /* Make a cbf version of the image */
 	  //getting values //top
 	  if(it==0){
 			      
 	    //initialize the first time
-	    if(inr==0)
+	    if(inr==0){
 	      for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
 		map[ik]=-1;
-			    
-		if( npix_y_user!=256 ){			      
+	      for(int ik=0; ik<npix_y_g*256;++ik)
+		mapspecial[ik]=-1;
+	    }
+		    
+	if( npix_y_user!=256 ){		      
 	    for(int ichipy=1; ichipy<2;ichipy++){
 	      for(int iy=0; iy<256;iy++){
 		for(int ichipx=0; ichipx<4;ichipx++){
@@ -215,16 +228,16 @@ int main(int argc, char *argv[]) {
 		}
 	      }
 	    }
-	  }
 	}else{
 	  for(int ichipy=0; ichipy<1;ichipy++){
 	      for(int iy=0; iy<256;iy++){
-		for(int ichipx=0; ichipx<4;ichipx++){
+		for(int ichipx=0; ichipx<1;ichipx++){
 		  for(int ix=0; ix<256;ix++){
 				    
-		    int k= ix+(256+2)*ichipx+(256*4+6+8)*imod_h + npix_x_g*(iy+(256+2)*ichipy+(256*2+2+36)*imod_v);
+		    //  int k= ix+(256+2)*ichipx+(256*4+6+8)*imod_h + npix_x_g*(iy+(256+2)*ichipy+(256*2+2+36)*imod_v);
+		    int k= ix+256*iy;
 				    
-		    map[k]=(receiverdata[inr]->getValue(buffer.at(inr),
+		    mapspecial[k]=(receiverdata[inr]->getValue(buffer.at(inr),
 							       ix+256*ichipx,iy,     
 							       dynamicrange));
 		  }
@@ -232,6 +245,7 @@ int main(int argc, char *argv[]) {
 	      }
 	    }
 	}
+	  }
 	  //getting values for bottom
 	  if(it==1 ) {
 			      
@@ -254,39 +268,41 @@ int main(int argc, char *argv[]) {
 	}
       }
     } //close all loops
-		
-    buffer.clear();
-	
-    //---> here I should also fill
-    /* Create and initializes new internal CBF Object*/
-    cbf_failnez (cbf_make_handle (&cbf));
-    sprintf(fname, "%s_%d_%d.cbf",file.c_str(),fileIndex, numFrames);
-    out = fopen (fname, "w");
-		
-    //fake headers
+
+   buffer.clear();
+
+   //Create cbf files with data
+   cbf_handle cbf;
+   /* Create and initializes new internal CBF Object*/
+   cbf_failnez (cbf_make_handle (&cbf));
+     
+   sprintf(fname, "%s_%d_%d.cbf",file.c_str(),fileIndex, numFrames);
+   out = fopen (fname, "w");
+   
+   //fake headers
     fprintf(out,
 	    "###CBF: VERSION 1.0, CBFlib v0.9.5 - SLS EIGER detector\r\n"
 	    "# Detector: Eiger\r\n"
 	    );
+
+
     //timestamp
     time_t rawtime = time(NULL);
     struct tm *timeinfo = localtime(&rawtime);
     char date[100],printDate[100];
-    fprintf(out,"_array_data.header_contents\r\n"
-	    ";\r\n");
     strftime(date, sizeof(date), "%Y/%b/%d %H:%M:%S.%j %Z", timeinfo);
     sprintf(printDate,"# %s\r\n",date);
-    fprintf(out,printDate);
-    fprintf(out,
-	    "# Exposure_time 1.0000000 s\r\n"
-	    "# Exposure_period 1.0000000 s\r\n"
-	    "# Tau = 0 s\r\n"
-	    "# Count_cutoff 0 counts\r\n"
-	    "# Threshold_setting 8000 eV\r\n"
-	    ";\r\n"
-	    );
-    
-		
+    //fprintf(out,printDate);
+    //fprintf(out,
+    //	    "#Exposure_time 1.0000000 s\r\n"
+    //	    "#Exposure_period 1.0000000 s\r\n"
+    //	    "#Tau = 0 s\r\n"
+    //	    "#Count_cutoff 0 counts\r\n"
+    //	    "#Threshold_setting 8000 eV\r\n"
+    ////	    ";\r\n"
+    //	    );
+
+
     /* Make a new data block */
     cbf_failnez (cbf_new_datablock (cbf, "image_1"))  //why not: cbf_new_saveframe(cbf,"image 1")
       /* Make the _diffrn category */
@@ -300,25 +316,22 @@ int main(int argc, char *argv[]) {
       /* Make new column at current data category */
       cbf_failnez (cbf_new_column   (cbf, "data"))
 		  
-		  
-		  
       /* Create the binary data */
       cbf_failnez (cbf_set_integerarray_wdims_fs (
 						  cbf, 								//cbf_handle handle
 						  CBF_BYTE_OFFSET| CBF_FLAT_IMAGE, 	// unsigned int compression
 						  1,									//int binary_id
-						  &(map[0]), 						//void *array
+						  &(mapspecial[0]), 						//void *array
 						  sizeof (int),						 //size_t elsize
 						  1,									//int elsigned
-						  npix_y_g * npix_x_g,				//size_t elements
+						  256*256,// npix_y_g * npix_x_g,				//size_t elements
 						  "little_endian",					 // const char *byteorder
-						  npix_x_g,							 //size_t dimfast
-						  npix_y_g,							//size_t dimmid
+						  256,256,// npix_x_g,							 //size_t dimfast
+						  //npix_y_g,							//size_t dimmid
 						  0,									//size_t dimslow
 						  4095 								//size_t padding
 						  ));
-
-
+	
     /** write everything to file */
     cbf_failnez (cbf_write_file (
 				 cbf, 		//cbf_handle handle
@@ -327,11 +340,16 @@ int main(int argc, char *argv[]) {
 				 CBF, 		//int ciforcbf
 				 MSG_DIGEST | MIME_HEADERS  , //int headers
 				 0));		//int encoding
-
+    
+    
+  
+   
     cprintf(GREEN,"CBF File Created: %s\n\n",fname);
+    
     numFrames++;
-
-    cbf_failnez (cbf_free_handle (cbf));
+    
+     cbf_failnez (cbf_free_handle (cbf));
+    
   }
 
   //close file when not frame yet
@@ -344,14 +362,21 @@ int main(int argc, char *argv[]) {
   /* Free the cbf */
   //cbf_failnez (cbf_free_handle (cbf));
 	
-  for(int inr=0; inr<nr; ++inr) delete receiverdata[inr];
-  
+  for(int inr=0; inr<nr; ++inr){
+    delete receiverdata[inr];
+  }
+
+
+
   return slsReceiverDefs::OK;
 }
 
-int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int &startdet){
+
+
+
+void getParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &tenGiga, int &npix_x_user, int &npix_y_user, int &startdet){
   if(argc < 2){
-    cprintf(RED, "Error: Not enough arguments: cnbfMaker [file_name_with_dir] \nExiting.\n");
+    cprintf(RED, "Error: Not enough arguments: bcfMaker [file_name_with_dir] \nExiting.\n");
     exit(-1);
   }
   file=argv[1];
@@ -389,14 +414,15 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
 
     //more parameters for ten giga, user pixels, startdet
     if(argc>2){
-      if(argc < 5){
-	cprintf(RED, "Error: Not enough arguments: cbfMaker [file_name_with_dir] "
-		"[numpixels_x][numpixels_y] [start_detector_Index]\nExiting.\n");
+      if(argc < 6){
+	cprintf(RED, "Error: Not enough arguments: bcfMaker [file_name_with_dir] "
+		"[tengiga] [numpixels_x][numpixels_y] [start_detector_Index]\nExiting.\n");
 	exit(-1);
       }
-      npix_x_user=atoi(argv[2]);
-      npix_y_user=atoi(argv[3]);
-      startdet=atoi(argv[4]);
+      tenGiga =atoi(argv[2]);
+      npix_x_user=atoi(argv[3]);
+      npix_y_user=atoi(argv[4]);
+      startdet=atoi(argv[5]);
 
       cprintf(BLUE,
 	      "\n"
@@ -404,15 +430,13 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
 	      "File Index                : %d\n"
 	      "Frame Index Enable        : %d\n"
 	      "Frame Index               : %d\n"
+	      "Ten Giga                  : %d\n"
 	      "Number of pixels in x dir : %d\n"
 	      "Number of pixels in y dir : %d\n"
 	      "Start detector index      : %d\n",
-	      file.c_str(),fileIndex,isFileFrameIndex,fileFrameIndex, npix_x_user,npix_y_user,startdet);
-      return 1;
-    }else{
-      npix_x_user=1024;
-      npix_y_user=512;
-      startdet=0;
+	      file.c_str(),fileIndex,isFileFrameIndex,fileFrameIndex, tenGiga,npix_x_user,npix_y_user,startdet);
+      return;
+    }
     cprintf(BLUE,
 	    "\n"
 	    "File Name                   : %s\n"
@@ -420,7 +444,7 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
 	    "Frame Index Enable          : %d\n"
 	    "File Frame Index            : %d\n",
 	    file.c_str(),fileIndex,isFileFrameIndex,fileFrameIndex);
-    }
+
 }
 
 
@@ -435,56 +459,4 @@ bool CheckFrames( int fnum, int numFrames)
 int local_exit(int status) {
   exit(status);
   return status;    /* to avoid warning messages */
-}
-
-int getFileParameters(string file, int &hs, int &dr, int &ps, int &x, int &y){
-	cout << "Getting File Parameters from " << file << endl;
-	string str;
-	ifstream infile;
-
-	infile.open(file.c_str(),ios::in | ios::binary);
-	if (infile.is_open()) {
-
-		//empty line
-		getline(infile,str);
-
-		//header size
-		if(getline(infile,str)){
-			istringstream sstr(str);
-			cout<<"headerStr:"<<str<<endl;
-			sstr >> str >> hs;
-		}
-
-		//dynamic range
-		if(getline(infile,str)){
-			istringstream sstr(str);
-			cout<<"Str:"<<str<<endl;
-			sstr >> str >> str >> dr;
-		}
-
-		//packet size
-		if(getline(infile,str)){
-			istringstream sstr(str);
-			sstr >> str >> ps;
-		}
-
-		//x
-		if(getline(infile,str)){
-			istringstream sstr(str);
-			sstr >> str >> x;
-		}
-
-		//y
-		if(getline(infile,str)){
-			istringstream sstr(str);
-			sstr >> str >> y;
-		}
-
-		infile.close();
-	}else{
-		cprintf(RED, "Error: Could not read file: %s\n", file.c_str());
-		return slsReceiverDefs::FAIL;
-	}
-
-	return slsReceiverDefs::OK;
 }
