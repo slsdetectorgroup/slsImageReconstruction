@@ -296,9 +296,9 @@ int main(int argc, char *argv[]) {
 	    "# Exposure_time 1.0000000 s\r\n"
 	    "# Exposure_period 1.0000000 s\r\n"
 	    "# Tau = 0 s\r\n");
-    int max=max=pow(2,dynamicrange)-1;
+    long int max=max=pow(2,dynamicrange)-1;
     if(dynamicrange==16) max=pow(2,12)-1;
-    sprintf(limits, "# Count_cutoff %d counts\r\n",max );
+    sprintf(limits, "# Count_cutoff %ld counts\r\n",max );
     fprintf(out,limits);
     fprintf(out,
 	    "# Threshold_setting 8000 eV\r\n"
