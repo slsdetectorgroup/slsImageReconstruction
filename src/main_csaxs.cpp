@@ -18,6 +18,7 @@
 #include <stdlib.h>			
 #include <map>
 #include <getopt.h>
+#include <cmath>
 
 #include <cassert>	
 #include <algorithm> 
@@ -45,8 +46,6 @@ bool CheckFrames( int fnum, int numFrames);
 int local_exit(int status);
 
 
-
-
 int main(int argc, char *argv[]) {
 
   //geometry
@@ -65,7 +64,7 @@ int main(int argc, char *argv[]) {
 
   //get command line arguments
   string file;
-  int fileIndex, fileFrameIndex=0,startdet=0, tenGiga=-1 ;
+  int fileIndex, fileFrameIndex=0,startdet=0;
   bool isFileFrameIndex = false;
   getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, fileFrameIndex, npix_x_user, npix_y_user, startdet);
 
@@ -109,7 +108,7 @@ int main(int argc, char *argv[]) {
       for(int it=0;it<2;it++){
 	if( npix_y_user==256 && it==1 ) continue;
 	receiverdata[nr]=NULL;
-	fnum[nr]=-1;
+	fnum[nr]=0;
 	nr++;
       }
     }
@@ -127,7 +126,8 @@ int main(int argc, char *argv[]) {
   //put master on top always
   nr=0;
   int dataSize, packetsPerFrame;
-  int headersize, packetSize;
+  int headersize[numModules];
+  int  packetSize;
   int xpix, ypix;
   for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
     for(int imod_h=0; imod_h<n_h; imod_h++){
@@ -136,9 +136,18 @@ int main(int argc, char *argv[]) {
 
 	sprintf(fname,"%s_d%d%s_%d.raw",file.c_str(),nfile,frames,fileIndex);
 	//read file to get parameters
-	if(getFileParameters(fname, headersize, dynamicrange, packetSize, xpix, ypix) != slsReceiverDefs::OK)
+	if(getFileParameters(fname, headersize[nr], dynamicrange, packetSize, xpix, ypix) != slsReceiverDefs::OK)
 	  return -1;
 
+	int dataSize, packetsPerFrame;
+	switch(packetSize){
+	case 1040: dataSize = 1024; packetsPerFrame = 16 * dynamicrange * 2; break;
+	case 4112: dataSize = 4096; packetsPerFrame = 4 * dynamicrange * 2;  break;
+	default:
+	  cprintf(RED, "Error: Invalid packet size %d read from file %s\n", packetSize,file.c_str());
+	  return -1;
+	}
+	
 	//construct datamapping object
 	receiverdata[nr] = new eigerHalfModuleData(dynamicrange,packetsPerFrame, packetSize, dataSize, it==0 ? true : false);
 	nr++;
@@ -170,20 +179,20 @@ int main(int argc, char *argv[]) {
       if(!infile[inr].is_open())
 	infile[inr].open(fname,ios::in | ios::binary);
       if(infile[inr].is_open()){
+	if( numFrames == 1){
 	//get frame buffer
-	char data[headersize];
-	infile[inr].read(data,headersize);
-	char* tempbuffer;
-	while( tempbuffer=(receiverdata[inr]->readNextFrame(infile[inr], fnum[inr])) ){ /*creating memory has to be deleted*/
+	int localheadersize=headersize[inr];
+	char data[localheadersize];
+	infile[inr].read(data,localheadersize);
+	}
+	
+	char* tempbuffer=(receiverdata[inr]->readNextFrame(infile[inr], fnum[inr])) ; /*creating memory has to be deleted*/
 	/**************USE THIS IF YOU ARE USING MASTER BRANCH INSTEAD OF CHECKFRAMES()*****************/
-
-	cout<<fnum[inr]<<endl;
 
 	if(!CheckFrames(fnum[inr],numFrames))
 	  continue;
 	buffer.push_back(tempbuffer);
-      }
-      }
+      } 
     }//loop on receivers
 
     if(buffer.size()!=nr) continue;
@@ -277,6 +286,7 @@ int main(int argc, char *argv[]) {
     time_t rawtime = time(NULL);
     struct tm *timeinfo = localtime(&rawtime);
     char date[100],printDate[100];
+    char limits[100];
     fprintf(out,"_array_data.header_contents\r\n"
 	    ";\r\n");
     strftime(date, sizeof(date), "%Y/%b/%d %H:%M:%S.%j %Z", timeinfo);
@@ -285,8 +295,12 @@ int main(int argc, char *argv[]) {
     fprintf(out,
 	    "# Exposure_time 1.0000000 s\r\n"
 	    "# Exposure_period 1.0000000 s\r\n"
-	    "# Tau = 0 s\r\n"
-	    "# Count_cutoff 0 counts\r\n"
+	    "# Tau = 0 s\r\n");
+    int max=max=pow(2,dynamicrange)-1;
+    if(dynamicrange==16) max=pow(2,12)-1;
+    sprintf(limits, "# Count_cutoff %d counts\r\n",max );
+    fprintf(out,limits);
+    fprintf(out,
 	    "# Threshold_setting 8000 eV\r\n"
 	    ";\r\n"
 	    );
@@ -304,8 +318,7 @@ int main(int argc, char *argv[]) {
       cbf_failnez (cbf_new_column   (cbf, "header_contents"))
       /* Make new column at current data category */
       cbf_failnez (cbf_new_column   (cbf, "data"))
-		  
-		  
+      		  
 		  
       /* Create the binary data */
       cbf_failnez (cbf_set_integerarray_wdims_fs (
@@ -445,47 +458,47 @@ int local_exit(int status) {
 int getFileParameters(string file, int &hs, int &dr, int &ps, int &x, int &y){
 	cout << "Getting File Parameters from " << file << endl;
 	string str;
-	ifstream infile;
+	ifstream ifile;
 
-	infile.open(file.c_str(),ios::in | ios::binary);
-	if (infile.is_open()) {
+	ifile.open(file.c_str(),ios::in | ios::binary);
+	if (ifile.is_open()) {
 
 		//empty line
-		getline(infile,str);
+		getline(ifile,str);
 
 		//header size
-		if(getline(infile,str)){
+		if(getline(ifile,str)){
 			istringstream sstr(str);
 			cout<<"headerStr:"<<str<<endl;
 			sstr >> str >> hs;
 		}
 
 		//dynamic range
-		if(getline(infile,str)){
+		if(getline(ifile,str)){
 			istringstream sstr(str);
 			cout<<"Str:"<<str<<endl;
 			sstr >> str >> str >> dr;
 		}
 
 		//packet size
-		if(getline(infile,str)){
+		if(getline(ifile,str)){
 			istringstream sstr(str);
 			sstr >> str >> ps;
 		}
 
 		//x
-		if(getline(infile,str)){
+		if(getline(ifile,str)){
 			istringstream sstr(str);
 			sstr >> str >> x;
 		}
 
 		//y
-		if(getline(infile,str)){
+		if(getline(ifile,str)){
 			istringstream sstr(str);
 			sstr >> str >> y;
 		}
 
-		infile.close();
+		ifile.close();
 	}else{
 		cprintf(RED, "Error: Could not read file: %s\n", file.c_str());
 		return slsReceiverDefs::FAIL;
