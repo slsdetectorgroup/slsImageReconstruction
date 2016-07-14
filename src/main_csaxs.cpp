@@ -100,6 +100,7 @@ int main(int argc, char *argv[]) {
 
   //initialize receiverdata and fnum for all half modules
   int numModules = n_v *n_h*NumHalfModules;
+  if( npix_y_user==256)   numModules=1;
   slsReceiverData <uint32_t> *receiverdata[numModules];
   int fnum[( npix_y_user!=256) ? n_v *n_h*2 : 1];
   int nr=0;
@@ -108,13 +109,11 @@ int main(int argc, char *argv[]) {
       for(int it=0;it<2;it++){
 	if( npix_y_user==256 && it==1 ) continue;
 	receiverdata[nr]=NULL;
-	fnum[nr]=0;
+	fnum[nr]=-1;
 	nr++;
       }
     }
   }
-
-
 
   //get dynamic range and configure receiverdata depending on top and bottom
   char fname[1000];
@@ -137,7 +136,7 @@ int main(int argc, char *argv[]) {
 
 	sprintf(fname,"%s_d%d%s_%d.raw",file.c_str(),nfile,frames,fileIndex);
 	//read file to get parameters
-	if(getFileParameters(file, headersize, dynamicrange, packetSize, xpix, ypix) != slsReceiverDefs::OK)
+	if(getFileParameters(fname, headersize, dynamicrange, packetSize, xpix, ypix) != slsReceiverDefs::OK)
 	  return -1;
 
 	//construct datamapping object
@@ -166,18 +165,24 @@ int main(int argc, char *argv[]) {
       sprintf(fname, "%s_d%d%s_%d.raw",file.c_str(),inr,frames,fileIndex);
       if( numFrames == 1)
 	cout << "Reading file:" << fname << endl;
+      
       //open file
       if(!infile[inr].is_open())
 	infile[inr].open(fname,ios::in | ios::binary);
       if(infile[inr].is_open()){
 	//get frame buffer
-	char* tempbuffer=(receiverdata[inr]->readNextFrame(infile[inr], fnum[inr])); /*creating memory has to be deleted*/
+	char data[headersize];
+	infile[inr].read(data,headersize);
+	char* tempbuffer;
+	while( tempbuffer=(receiverdata[inr]->readNextFrame(infile[inr], fnum[inr])) ){ /*creating memory has to be deleted*/
 	/**************USE THIS IF YOU ARE USING MASTER BRANCH INSTEAD OF CHECKFRAMES()*****************/
-	//if(fnum[inr] ==-1) continue;
-	if(fnum[inr]==-1) exit(0);
+
+	cout<<fnum[inr]<<endl;
+
 	if(!CheckFrames(fnum[inr],numFrames))
 	  continue;
 	buffer.push_back(tempbuffer);
+      }
       }
     }//loop on receivers
 

@@ -29,7 +29,7 @@ DESTDIR				= 	bin
 INSTMODE			= 	0777
 
 
-SRC_CLNT		=	src/main.cpp 
+SRC_CLNT		=	src/dummymain.cpp 
 SRC_CSAXS_CLNT	=	src/main_csaxs.cpp 
 SRC_HALF_CLNT	=	src/main_half.cpp 
 SRC_CSAXS_MULTI	=	src/main_csaxs_multi.cpp 
@@ -38,7 +38,7 @@ OBJSCSAXS 		= 	$(SRC_CSAXS_CLNT:.cpp=.o)
 OBJSCSAXSMULTI	= 	$(SRC_CSAXS_MULTI:.cpp=.o)
 
 
-all: clean $(PROGS_CSAXS) $(PROGS_HALF) $(PROGS_CSAXS_MULTI) $(PROGS) 
+all: clean $(PROGS_CSAXS) $(PROGS) #$(PROGS_HALF) $(PROGS_CSAXS_MULTI) 
 
 boot: $(OBJS) $(OBJSCSAXS) $(OBJSHALF) $(OBJSCSAXSMULTI)
 
