@@ -94,14 +94,56 @@ int main(int argc, char *argv[]) {
 				cout << "Reading values for frame #" << fnum << endl;
 				//getting values
 
-
-				for(iy = 0; iy < 5; iy++){
-					for(ix = 0; ix < 2; ix++)
-						cprintf(BLUE,"%d,%d :%f\n",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
-					for(ix = 254; ix < 258; ix++)
-						cprintf(BLUE,"%d,%d :%f\n",ix,iy,(receiverdata->getValue((char*)buffer,ix,iy,dynamicrange)));
+				double value=0;
+				double defaultvalue;
+				switch(dynamicrange){
+				case 16: defaultvalue = 2; break;
+				case 32: defaultvalue = 640; break;
 				}
 
+
+				ix = 10; iy = 251; value = receiverdata->getValue((char*)buffer,ix,iy,dynamicrange);cprintf(BLUE,"%d,%d :%f\n",ix,iy,value);
+
+				for(iy = 0; iy < 256; iy++){
+					for(ix = 0; ix < 1024; ix++){
+						value = receiverdata->getValue((char*)buffer,ix,iy,dynamicrange);
+					}
+				}
+
+
+
+				for(iy = 0; iy < 256; iy++){
+					for(ix = 0; ix < 1024; ix++){
+						value = receiverdata->getValue((char*)buffer,ix,iy,dynamicrange);
+						if(ix<256){
+							if(!bottom){if(value != defaultvalue) cprintf(BLUE,"%d,%d :%f must be %f\n",ix,iy,value,defaultvalue);}
+							else {if(value != 0) cprintf(BLUE,"%d,%d :%f must be %f\n",ix,iy,value,0.0);}
+						}else if(ix<512){
+							if(!bottom){if(value != 0) cprintf(BLUE,"%d,%d :%f must be %f\n",ix,iy,value,0.0);}
+							else {if(value != defaultvalue) cprintf(BLUE,"%d,%d :%f must be %f\n",ix,iy,value,defaultvalue);}
+						}else if(ix<768){
+							if(!bottom){if(value != defaultvalue) cprintf(BLUE,"%d,%d :%f must be %f\n",ix,iy,value,defaultvalue);}
+							else {if(value != 0) cprintf(BLUE,"%d,%d :%f must be %f\n",ix,iy,value,0.0);}
+						}else{
+							if(!bottom){if(value != 0) cprintf(BLUE,"%d,%d :%f must be %f\n",ix,iy,value,0.0);}
+							else {if(value != defaultvalue) cprintf(BLUE,"%d,%d :%f must be %f\n",ix,iy,value,defaultvalue);}
+						}
+					}
+				}
+
+
+/*
+				for(iy = 0; iy < 2; iy++){
+					for(ix = 0; ix < 2; ix++){
+						value = receiverdata->getValue((char*)buffer,ix,iy,dynamicrange);
+						cprintf(BLUE,"%d,%d :%f\n",ix,iy,value);
+					}
+					for(ix = 254; ix < 258; ix++){
+						value = receiverdata->getValue((char*)buffer,ix,iy,dynamicrange);
+						cprintf(BLUE,"%d,%d :%f\n",ix,iy,value);
+					}
+				}
+*/
 				delete [] buffer;
 				numFrames++;
 			}
