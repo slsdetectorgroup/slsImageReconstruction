@@ -102,11 +102,11 @@ int main(int argc, char *argv[]) {
 				}
 
 
-				ix = 10; iy = 251; value = receiverdata->getValue((char*)buffer,ix,iy,dynamicrange);cprintf(BLUE,"%d,%d :%f\n",ix,iy,value);
+				ix = 10; iy = 251; value = receiverdata->getValue((char*)buffer,ix,iy);cprintf(BLUE,"%d,%d :%f\n",ix,iy,value);
 
 				for(iy = 0; iy < 256; iy++){
 					for(ix = 0; ix < 1024; ix++){
-						value = receiverdata->getValue((char*)buffer,ix,iy,dynamicrange);
+						value = receiverdata->getValue((char*)buffer,ix,iy);
 					}
 				}
 
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
 
 				for(iy = 0; iy < 256; iy++){
 					for(ix = 0; ix < 1024; ix++){
-						value = receiverdata->getValue((char*)buffer,ix,iy,dynamicrange);
+						value = receiverdata->getValue((char*)buffer,ix,iy);
 						if(ix<256){
 							if(!bottom){if(value != defaultvalue) cprintf(BLUE,"%d,%d :%f must be %f\n",ix,iy,value,defaultvalue);}
 							else {if(value != 0) cprintf(BLUE,"%d,%d :%f must be %f\n",ix,iy,value,0.0);}
@@ -135,11 +135,11 @@ int main(int argc, char *argv[]) {
 /*
 				for(iy = 0; iy < 2; iy++){
 					for(ix = 0; ix < 2; ix++){
-						value = receiverdata->getValue((char*)buffer,ix,iy,dynamicrange);
+						value = receiverdata->getValue((char*)buffer,ix,iy);
 						cprintf(BLUE,"%d,%d :%f\n",ix,iy,value);
 					}
 					for(ix = 254; ix < 258; ix++){
-						value = receiverdata->getValue((char*)buffer,ix,iy,dynamicrange);
+						value = receiverdata->getValue((char*)buffer,ix,iy);
 						cprintf(BLUE,"%d,%d :%f\n",ix,iy,value);
 					}
 				}
