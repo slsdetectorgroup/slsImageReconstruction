@@ -223,8 +223,7 @@ int main(int argc, char *argv[]) {
 		    int k= ix+(256+2)*ichipx+(256*4+6+8)*imod_h + npix_x_g*(iy+(256+2)*ichipy+(256*2+2+36)*imod_v);
 				    
 		    map[k]=(receiverdata[inr]->getValue(buffer.at(inr),
-							ix+256*ichipx,iy,     
-							dynamicrange));
+							ix+256*ichipx,iy));
 		  }
 		}
 	      }
@@ -239,8 +238,7 @@ int main(int argc, char *argv[]) {
 		    int k= ix+(256+2)*ichipx+(256*4+6+8)*imod_h + npix_x_g*(iy+(256+2)*ichipy+(256*2+2+36)*imod_v);
 				    
 		    map[k]=(receiverdata[inr]->getValue(buffer.at(inr),
-							       ix+256*ichipx,iy,     
-							       dynamicrange));
+							       ix+256*ichipx,iy));
 		  }
 		}
 	      }
@@ -257,8 +255,7 @@ int main(int argc, char *argv[]) {
 		    int k= ix+(256+2)*ichipx+(256*4+6+8)*imod_h + npix_x_g*(iy+(256+2)*ichipy+(256*2+2+36)*imod_v);
 				      
 		    map[k]= (receiverdata[inr]->getValue(buffer.at(inr),
-							 ix+256*ichipx,iy,
-							 dynamicrange));
+							 ix+256*ichipx,iy));
 		  }
 		}
 	      }
