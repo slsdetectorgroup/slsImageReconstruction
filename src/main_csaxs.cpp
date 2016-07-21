@@ -87,8 +87,8 @@ int main(int argc, char *argv[]) {
   int npix_y_g = npix_y_sm * n_v  +  gap_pix_y_sm *  n_v + GapPixelsBetweenModules_y  * (n_v-1);
   if( npix_y_user==256)  npix_y_g = npix_y_user;
   //map including gap pixels
-  int map[npix_x_g*npix_y_g];
-
+  int* map=new int[npix_x_g*npix_y_g];
+ 
   cprintf(BLUE,
 	  "Number of Pixels (incl gap pixels) in x dir : %d\n"
 	  "Number of Pixels (incl gap pixels) in y dir : %d\n"
@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) {
     //---> here I should also fill
     /* Create and initializes new internal CBF Object*/
     cbf_failnez (cbf_make_handle (&cbf));
-    sprintf(fname, "%s_%d_%d.cbf",file.c_str(),fileIndex, numFrames);
+    sprintf(fname, "%s_%05d_%05d.cbf",file.c_str(),fileIndex, numFrames);
     out = fopen (fname, "w");
 		
     //fake headers
