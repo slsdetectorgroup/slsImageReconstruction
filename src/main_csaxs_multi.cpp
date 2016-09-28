@@ -24,13 +24,26 @@ int main(int argc, char *argv[]) {
 	}
 
 	string exe = string(argv[0]);
-	size_t exePos = exe.rfind("Multi");
-	exe.erase(exePos,5);
+	size_t exePos = exe.rfind("1.5M");
+	if( exePos!= string::npos){
+	  exe.erase(exePos,4);
+	  
+	  //1.5M
+	  string command = exe + " " + string(argv[1]) + " 3072 512 1";
+	  cout<<"command:"<<command<<endl;
+	  system(command.c_str());
+	}
 
-	string command = exe + " " + string(argv[1]) + " 3072 512 0";
-	cout<<"command:"<<command<<endl;
-	system(command.c_str());
+	exePos = exe.rfind("9M");
+	if( exePos!= string::npos){
+	  exe.erase(exePos,2);
+	  //9M
+	  string command = exe + " " + string(argv[1]) + " 3072 3072 0";
+	  cout<<"command:"<<command<<endl;
+	  system(command.c_str());
+	}
 
+	
 	return slsReceiverDefs::OK;
 }
 

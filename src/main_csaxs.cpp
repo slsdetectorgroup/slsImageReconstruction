@@ -37,7 +37,7 @@ using namespace std;
     }							\
   }
 
-int getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int &startdet);
+int getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int& longedge_x, int &startdet);
 
 int getFileParameters(string file, int &hs, int &dr, int &ps, int &x, int &y);
 
@@ -61,13 +61,12 @@ int main(int argc, char *argv[]) {
   int npix_x_user= npix_x_sm;
   int npix_y_user= npix_y_sm;
 
-
   //get command line arguments
   string file;
   int fileIndex, fileFrameIndex=0,startdet=0;
+  int longedge_x;
   bool isFileFrameIndex = false;
-  getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, fileFrameIndex, npix_x_user, npix_y_user, startdet);
-
+  getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, fileFrameIndex, npix_x_user, npix_y_user, longedge_x,startdet);
 
   //number of modules in vertical and horizontal
   int n_v = npix_y_user/npix_y_sm;
@@ -94,7 +93,10 @@ int main(int argc, char *argv[]) {
 	  "Number of Pixels (incl gap pixels) in y dir : %d\n"
 	  "Number of modules in horizontal             : %d\n"
 	  "Number of modules in vertical               : %d\n",
-	  npix_x_g,npix_y_g,n_h,n_v);
+	  longedge_x ? npix_x_g : npix_y_g ,
+	  longedge_x ? npix_y_g : npix_x_g ,
+	  longedge_x ? n_h: n_v,
+	  longedge_x ? n_v : n_h);
 
 
   //initialize receiverdata and fnum for all half modules
@@ -215,47 +217,62 @@ int main(int argc, char *argv[]) {
 		map[ik]=-1;
 			    
 		if( npix_y_user!=256 ){			      
-	    for(int ichipy=1; ichipy<2;ichipy++){
-	      for(int iy=0; iy<256;iy++){
-		for(int ichipx=0; ichipx<4;ichipx++){
-		  for(int ix=0; ix<256;ix++){
-				    
-		    int k= ix+(256+2)*ichipx+(256*4+6+8)*imod_h + npix_x_g*(iy+(256+2)*ichipy+(256*2+2+36)*imod_v);
-				    
-		    map[k]=(receiverdata[inr]->getValue(buffer.at(inr),
-							ix+256*ichipx,iy));
+		  for(int ichipy=1; ichipy<NumChip_y;ichipy++){
+		    for(int iy=0; iy<NumChanPerChip_y;iy++){
+		      for(int ichipx=0; ichipx<NumChip_x;ichipx++){
+			for(int ix=0; ix<NumChanPerChip_x;ix++){
+			  int x_t= ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+3*GapPixelsBetweenChips_x+GapPixelsBetweenModules_x)*imod_h ;
+			  int y_t= iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
+			  
+			  int k= x_t+ npix_x_g*y_t;
+			  if(!longedge_x) {
+			    //now apply rotation 
+			    //y'=x
+			    //x'=(ngap_pix_y-iy)
+			    k=(npix_y_g-y_t)+ npix_y_g*x_t;
+			  }
+			  
+			  map[k]=(receiverdata[inr]->getValue(buffer.at(inr),
+							      ix+NumChanPerChip_x*ichipx,iy));
+			}
+		      }
+		    }
 		  }
 		}
-	      }
-	    }
+		else{
+		  for(int ichipy=0; ichipy<1;ichipy++){
+		    for(int iy=0; iy<NumChanPerChip_y;iy++){
+		      for(int ichipx=0; ichipx<NumChip_x;ichipx++){
+			for(int ix=0; ix<NumChanPerChip_x;ix++){
+			  
+			  int k= ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+3*GapPixelsBetweenChips_x+ GapPixelsBetweenModules_x)*imod_h + npix_x_g*(iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+GapPixelsBetweenChips_y +GapPixelsBetweenModules_y )*imod_v);
+			  
+			    map[k]=(receiverdata[inr]->getValue(buffer.at(inr),
+			  					ix+NumChanPerChip_x*ichipx,iy));
+			}
+		      }
+		    }
+		  }
+		}
 	  }
-	}else{
-	  for(int ichipy=0; ichipy<1;ichipy++){
-	      for(int iy=0; iy<256;iy++){
-		for(int ichipx=0; ichipx<4;ichipx++){
-		  for(int ix=0; ix<256;ix++){
-				    
-		    int k= ix+(256+2)*ichipx+(256*4+6+8)*imod_h + npix_x_g*(iy+(256+2)*ichipy+(256*2+2+36)*imod_v);
-				    
-		    map[k]=(receiverdata[inr]->getValue(buffer.at(inr),
-							       ix+256*ichipx,iy));
-		  }
-		}
-	      }
-	    }
-	}
 	  //getting values for bottom
 	  if(it==1 ) {
-			      
 	    for(int ichipy=0; ichipy<1;ichipy++){
-	      for(int iy=0; iy<256;iy++){
-		for(int ichipx=0; ichipx<4;ichipx++){
-		  for(int ix=0; ix<256;ix++){
-				      
-		    int k= ix+(256+2)*ichipx+(256*4+6+8)*imod_h + npix_x_g*(iy+(256+2)*ichipy+(256*2+2+36)*imod_v);
-				      
+	      for(int iy=0; iy<NumChanPerChip_y;iy++){
+		for(int ichipx=0; ichipx<NumChip_x;ichipx++){
+		  for(int ix=0; ix<NumChanPerChip_x;ix++){
+		    int x_t=ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+3*GapPixelsBetweenChips_x+GapPixelsBetweenModules_x)*imod_h;
+		    int y_t= iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
+		      
+		    int k=  x_t+npix_x_g*y_t;
+		    if(!longedge_x){//now apply rotation 
+		      //y'=x
+		      //x'=(ngap_pix_y-iy)
+		      k=(npix_y_g-y_t)+ npix_y_g*x_t;
+		    }
+
 		    map[k]= (receiverdata[inr]->getValue(buffer.at(inr),
-							 ix+256*ichipx,iy));
+		    					 ix+NumChanPerChip_x*ichipx,iy));
 		  }
 		}
 	      }
@@ -325,11 +342,11 @@ int main(int argc, char *argv[]) {
 						  &(map[0]), 						//void *array
 						  sizeof (int),						 //size_t elsize
 						  1,									//int elsigned
-						  npix_y_g * npix_x_g,				//size_t elements
+						  longedge_x ?  npix_y_g * npix_x_g: npix_x_g * npix_y_g,	    //size_t elements
 						  "little_endian",					 // const char *byteorder
-						  npix_x_g,							 //size_t dimfast
-						  npix_y_g,							//size_t dimmid
-						  0,									//size_t dimslow
+						  longedge_x? npix_x_g : npix_y_g,		       		 //size_t dimfast
+						  longedge_x? npix_y_g : npix_x_g,				  //size_t dimmid
+						  0,							       	//size_t dimslow
 						  4095 								//size_t padding
 						  ));
 
@@ -364,7 +381,7 @@ int main(int argc, char *argv[]) {
   return slsReceiverDefs::OK;
 }
 
-int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int &startdet){
+int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int& longedge_x, int &startdet){
   if(argc < 2){
     cprintf(RED, "Error: Not enough arguments: cnbfMaker [file_name_with_dir] \nExiting.\n");
     exit(-1);
@@ -404,14 +421,17 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
 
     //more parameters for ten giga, user pixels, startdet
     if(argc>2){
-      if(argc < 5){
+      if(argc < 4){
 	cprintf(RED, "Error: Not enough arguments: cbfMaker [file_name_with_dir] "
-		"[numpixels_x][numpixels_y] [start_detector_Index]\nExiting.\n");
+		"[numpixels_x][numpixels_y] [modulelongedge_x] [start_detector_Index]\nExiting.\n");
 	exit(-1);
       }
       npix_x_user=atoi(argv[2]);
       npix_y_user=atoi(argv[3]);
-      startdet=atoi(argv[4]);
+      if(argc>4)longedge_x=atoi(argv[4]);
+      else longedge_x=1;
+      if(argc>5) startdet=atoi(argv[5]);
+      else startdet=0;
 
       cprintf(BLUE,
 	      "\n"
@@ -421,20 +441,22 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
 	      "Frame Index               : %d\n"
 	      "Number of pixels in x dir : %d\n"
 	      "Number of pixels in y dir : %d\n"
+              "Module long edge is on x  : %d\n"
 	      "Start detector index      : %d\n",
-	      file.c_str(),fileIndex,isFileFrameIndex,fileFrameIndex, npix_x_user,npix_y_user,startdet);
+	      file.c_str(),fileIndex,isFileFrameIndex,fileFrameIndex, npix_x_user,npix_y_user,longedge_x,startdet);
       return 1;
     }else{
       npix_x_user=1024;
       npix_y_user=512;
+      longedge_x=1;
       startdet=0;
-    cprintf(BLUE,
-	    "\n"
-	    "File Name                   : %s\n"
-	    "File Index                  : %d\n"
-	    "Frame Index Enable          : %d\n"
-	    "File Frame Index            : %d\n",
-	    file.c_str(),fileIndex,isFileFrameIndex,fileFrameIndex);
+      cprintf(BLUE,
+	      "\n"
+	      "File Name                   : %s\n"
+	      "File Index                  : %d\n"
+	      "Frame Index Enable          : %d\n"
+	      "File Frame Index            : %d\n",
+	      file.c_str(),fileIndex,isFileFrameIndex,fileFrameIndex);
     }
 }
 
