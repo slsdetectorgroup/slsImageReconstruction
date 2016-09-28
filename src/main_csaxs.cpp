@@ -228,8 +228,8 @@ int main(int argc, char *argv[]) {
 		}
 	      }
 	    }
-	  }
-	}else{
+		}
+	  else{
 	  for(int ichipy=0; ichipy<1;ichipy++){
 	      for(int iy=0; iy<256;iy++){
 		for(int ichipx=0; ichipx<4;ichipx++){
@@ -244,6 +244,7 @@ int main(int argc, char *argv[]) {
 	      }
 	    }
 	}
+	  }
 	  //getting values for bottom
 	  if(it==1 ) {
 			      
