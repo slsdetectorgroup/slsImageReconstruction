@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
 	  exe.erase(exePos,4);
 	  
 	  //1.5M
-	  string command = exe + " " + string(argv[1]) + " 3072 512 1";
+	  string command = exe + " " + string(argv[1]) + " 512 3072 0";
 	  cout<<"command:"<<command<<endl;
 	  system(command.c_str());
 	}

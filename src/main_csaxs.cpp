@@ -68,6 +68,14 @@ int main(int argc, char *argv[]) {
   bool isFileFrameIndex = false;
   getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, fileFrameIndex, npix_x_user, npix_y_user, longedge_x,startdet);
 
+  //cheat and reverse if it is in vertical orientation 
+  if (!longedge_x){
+    int nxt=npix_x_user;
+    int nyt=npix_y_user;
+    npix_x_user=nyt;
+    npix_y_user=nxt;
+  }
+  
   //number of modules in vertical and horizontal
   int n_v = npix_y_user/npix_y_sm;
   if( npix_y_user==256)  n_v=1;
@@ -97,7 +105,7 @@ int main(int argc, char *argv[]) {
 	  longedge_x ? npix_y_g : npix_x_g ,
 	  longedge_x ? n_h: n_v,
 	  longedge_x ? n_v : n_h);
-
+  
 
   //initialize receiverdata and fnum for all half modules
   int numModules = n_v *n_h*NumHalfModules;
