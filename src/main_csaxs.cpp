@@ -229,8 +229,8 @@ int main(int argc, char *argv[]) {
 		    for(int iy=0; iy<NumChanPerChip_y;iy++){
 		      for(int ichipx=0; ichipx<NumChip_x;ichipx++){
 			for(int ix=0; ix<NumChanPerChip_x;ix++){
-			  int x_t= ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+3*GapPixelsBetweenChips_x+GapPixelsBetweenModules_x)*imod_h ;
-			  int y_t= iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
+			  int x_t= ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+(NumChip_x-1)*GapPixelsBetweenChips_x+GapPixelsBetweenModules_x)*imod_h ;
+			  int y_t= iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+(NumChip_y-1)*GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
 			  
 			  int k= x_t+ npix_x_g*y_t;
 			  if(!longedge_x) {
@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
 		      for(int ichipx=0; ichipx<NumChip_x;ichipx++){
 			for(int ix=0; ix<NumChanPerChip_x;ix++){
 			  
-			  int k= ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+3*GapPixelsBetweenChips_x+ GapPixelsBetweenModules_x)*imod_h + npix_x_g*(iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+GapPixelsBetweenChips_y +GapPixelsBetweenModules_y )*imod_v);
+			  int k= ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+(NumChip_x-1)*GapPixelsBetweenChips_x+ GapPixelsBetweenModules_x)*imod_h + npix_x_g*(iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+(NumChip_y-1)*GapPixelsBetweenChips_y +GapPixelsBetweenModules_y )*imod_v);
 			  
 			    map[k]=(receiverdata[inr]->getValue(buffer.at(inr),
 			  					ix+NumChanPerChip_x*ichipx,iy));
@@ -269,8 +269,8 @@ int main(int argc, char *argv[]) {
 	      for(int iy=0; iy<NumChanPerChip_y;iy++){
 		for(int ichipx=0; ichipx<NumChip_x;ichipx++){
 		  for(int ix=0; ix<NumChanPerChip_x;ix++){
-		    int x_t=ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+3*GapPixelsBetweenChips_x+GapPixelsBetweenModules_x)*imod_h;
-		    int y_t= iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
+		    int x_t=ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+(NumChip_x-1)*GapPixelsBetweenChips_x+GapPixelsBetweenModules_x)*imod_h;
+		    int y_t= iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+(NumChip_y-1)*GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
 		      
 		    int k=  x_t+npix_x_g*y_t;
 		    if(!longedge_x){//now apply rotation 
