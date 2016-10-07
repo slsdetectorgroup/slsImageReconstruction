@@ -301,11 +301,16 @@ int main(int argc, char *argv[]) {
       
       runningFrameIndex++;
     }//here close the loop on the images to sum
-    //if(fnum[0]==-1) continue;
+
       
     //---> here I should also fill
     /* Create and initializes new internal CBF Object*/
-    cbf_failnez (cbf_make_handle (&cbf));
+ 
+    // if(fnum[0]==-1) continue;
+  
+    if(numFrames == runningFrameIndex) continue;
+  
+   cbf_failnez (cbf_make_handle (&cbf));
     sprintf(fname, "%s_SUM_%05d_%05d.cbf",file.c_str(),fileIndex, (numFrames+Nimgs-1));
     out = fopen (fname, "w");
     
