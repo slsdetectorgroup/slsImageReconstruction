@@ -37,10 +37,9 @@ using namespace std;
     }							\
   }
 
-int getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int &startdet);
+int getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int &startdet, int& Nimgs);
 
 int getFileParameters(string file, int &hs, int &dr, int &ps, int &x, int &y);
-
 
 bool CheckFrames( int fnum, int numFrames);
 int local_exit(int status);
@@ -61,13 +60,12 @@ int main(int argc, char *argv[]) {
   int npix_x_user= npix_x_sm;
   int npix_y_user= npix_y_sm;
 
-
   //get command line arguments
   string file;
   int fileIndex, fileFrameIndex=0,startdet=0;
   bool isFileFrameIndex = false;
-  getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, fileFrameIndex, npix_x_user, npix_y_user, startdet);
-
+  int Nimgs=1;
+  getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, fileFrameIndex, npix_x_user, npix_y_user, startdet,Nimgs);
 
   //number of modules in vertical and horizontal
   int n_v = npix_y_user/npix_y_sm;
@@ -88,14 +86,14 @@ int main(int argc, char *argv[]) {
   if( npix_y_user==256)  npix_y_g = npix_y_user;
   //map including gap pixels
   int* map=new int[npix_x_g*npix_y_g];
- 
-  cprintf(BLUE,
+  int* map2=new int[npix_x_g*npix_y_g];
+
+    cprintf(BLUE,
 	  "Number of Pixels (incl gap pixels) in x dir : %d\n"
 	  "Number of Pixels (incl gap pixels) in y dir : %d\n"
 	  "Number of modules in horizontal             : %d\n"
 	  "Number of modules in vertical               : %d\n",
 	  npix_x_g,npix_y_g,n_h,n_v);
-
 
   //initialize receiverdata and fnum for all half modules
   int numModules = n_v *n_h*NumHalfModules;
@@ -121,7 +119,7 @@ int main(int argc, char *argv[]) {
     sprintf(frames,"_f%012d",fileFrameIndex);//"f000000000000";
   ifstream infile[numModules];
   char *data = new char[1024];
-  int dynamicrange = -100, dynamicrange2=-1;
+  int dynamicrange = -100;
   int nfile=startdet;
   //put master on top always
   nr=0;
@@ -164,117 +162,153 @@ int main(int argc, char *argv[]) {
   FILE *out;
   //nr high again
   int numFrames = fileFrameIndex+1 ;
-
-  //for each frame
+ 
+  //for every frame but while 1 now..
   while(fnum[0]>-1){
+    
+    //reset running frame index
+    int runningFrameIndex=numFrames;
+    //re-inizialize map here
+    for(int ik=0; ik<npix_y_g*npix_x_g;++ik) map[ik]=0;
 
-    //here nr is not volatile anymore
-    //loop on each receiver to get frame buffer
-    for(int inr=0; inr<nr; inr++){
-      sprintf(fname, "%s_d%d%s_%d.raw",file.c_str(),inr,frames,fileIndex);
-      if( numFrames == fileFrameIndex+1)
-	cout << "Reading file:" << fname << endl;
-      
-      //open file
-      if(!infile[inr].is_open())
-	infile[inr].open(fname,ios::in | ios::binary);
-      if(infile[inr].is_open()){
-	if( numFrames == fileFrameIndex+1){
-	//get frame buffer
-	int localheadersize=headersize[inr];
-	char data[localheadersize];
-	infile[inr].read(data,localheadersize);
-	}
-	
-	char* tempbuffer=(receiverdata[inr]->readNextFrame(infile[inr], fnum[inr])) ; /*creating memory has to be deleted*/
-	/**************USE THIS IF YOU ARE USING MASTER BRANCH INSTEAD OF CHECKFRAMES()*****************/
-
-	if(!CheckFrames(fnum[inr],numFrames))
-	  continue;
-	buffer.push_back(tempbuffer);
-      } 
-    }//loop on receivers
-
-    if(buffer.size()!=nr) continue;
-    cout << "Number of Frames:" << numFrames << endl;
-
-    //get a 2d map of the image
-    int inr=0;
-    for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
-      for(int imod_h=0; imod_h<n_h;imod_h++){
-	for( int it=0;it<2;it++){	
-	   if( npix_y_user==256 && it==1) continue; 
-
-	   /* Make a cbf version of the image */
-	  //getting values //top
-	  if(it==0){
-			      
-	    //initialize the first time
-	    if(inr==0)
-	      for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
-		map[ik]=-1;
-			    
-		if( npix_y_user!=256 ){			      
-	    for(int ichipy=1; ichipy<2;ichipy++){
-	      for(int iy=0; iy<256;iy++){
-		for(int ichipx=0; ichipx<4;ichipx++){
-		  for(int ix=0; ix<256;ix++){
-				    
-		    int k= ix+(256+2)*ichipx+(256*4+6+8)*imod_h + npix_x_g*(iy+(256+2)*ichipy+(256*2+2+36)*imod_v);
-				    
-		    map[k]=(receiverdata[inr]->getValue(buffer.at(inr),
-							ix+256*ichipx,iy));
-		  }
-		}
-	      }
-	    }
-		}
-	  else{
-	  for(int ichipy=0; ichipy<1;ichipy++){
-	      for(int iy=0; iy<256;iy++){
-		for(int ichipx=0; ichipx<4;ichipx++){
-		  for(int ix=0; ix<256;ix++){
-				    
-		    int k= ix+(256+2)*ichipx+(256*4+6+8)*imod_h + npix_x_g*(iy+(256+2)*ichipy+(256*2+2+36)*imod_v);
-				    
-		    map[k]=(receiverdata[inr]->getValue(buffer.at(inr),
-							       ix+256*ichipx,iy));
-		  }
-		}
-	      }
-	    }
-	}
-	  }
-	  //getting values for bottom
-	  if(it==1 ) {
-			      
-	    for(int ichipy=0; ichipy<1;ichipy++){
-	      for(int iy=0; iy<256;iy++){
-		for(int ichipx=0; ichipx<4;ichipx++){
-		  for(int ix=0; ix<256;ix++){
-				      
-		    int k= ix+(256+2)*ichipx+(256*4+6+8)*imod_h + npix_x_g*(iy+(256+2)*ichipy+(256*2+2+36)*imod_v);
-				      
-		    map[k]= (receiverdata[inr]->getValue(buffer.at(inr),
-							 ix+256*ichipx,iy));
-		  }
-		}
-	      }
-	    }
-	  }
-	  inr++;
-	}
-      }
-    } //close all loops
+    //loop over images to sum
+    while(runningFrameIndex<(numFrames+Nimgs)){
+      if(fnum[0]==-1) break;
+      	
+      //here nr is not volatile anymore
+      //loop on each receiver to get frame buffer
+      for(int inr=0; inr<nr; inr++){
+	sprintf(fname, "%s_d%d%s_%d.raw",file.c_str(),inr,frames,fileIndex);
+	if( runningFrameIndex == fileFrameIndex+1)
+	  cout << "Reading file:" << fname << endl;
 		
-    buffer.clear();
-	
+	//open file
+	if(!infile[inr].is_open())
+	  infile[inr].open(fname,ios::in | ios::binary);
+	if(infile[inr].is_open()){
+	  if( runningFrameIndex == fileFrameIndex+1){
+	    //get frame buffer
+	    int localheadersize=headersize[inr];
+	    char data[localheadersize];
+	    infile[inr].read(data,localheadersize);
+	  }
+	  
+	  char* tempbuffer=(receiverdata[inr]->readNextFrame(infile[inr], fnum[inr])) ; /*creating memory has to be deleted*/
+	  
+	  if(!CheckFrames(fnum[inr],runningFrameIndex))
+	    continue;
+	  
+	  buffer.push_back(tempbuffer);
+	}
+      }//loop on receivers
+      
+      if(buffer.size()!=nr) continue;
+           
+      //get a 2d map of the image
+      int inr=0;
+      for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
+	for(int imod_h=0; imod_h<n_h;imod_h++){
+	  for( int it=0;it<2;it++){	
+	    if( npix_y_user==256 && it==1) continue; 
+	    
+	    /* Make a cbf version of the image */
+	    //getting values //top
+	    if(it==0){
+	      
+	      //initialize the first time
+	      if(inr==0)
+		for(int ik=0; ik<npix_y_g*npix_x_g;++ik) map2[ik]=-1;
+	    
+	      //bool addimage=true;
+	      
+	      if( npix_y_user!=256 ){			      
+		for(int ichipy=1; ichipy<2;ichipy++){
+		  for(int iy=0; iy<256;iy++){
+		    for(int ichipx=0; ichipx<4;ichipx++){
+		      for(int ix=0; ix<256;ix++){
+			
+			//if(addimage==false) continue;
+			int k= ix+(256+2)*ichipx+(256*4+6+8)*imod_h + npix_x_g*(iy+(256+2)*ichipy+(256*2+2+36)*imod_v);
+			int v=receiverdata[inr]->getValue(buffer.at(inr),
+							  ix+256*ichipx,iy);	
+			//if(v==-1) addimage=false; 
+			map2[k]=v;
+		      }
+		    }
+		  }
+		}
+	      }
+	      else{
+		for(int ichipy=0; ichipy<1;ichipy++){
+		  for(int iy=0; iy<256;iy++){
+		    for(int ichipx=0; ichipx<4;ichipx++){
+		      for(int ix=0; ix<256;ix++){
+			//if(addimage==false) continue;
+
+			int k= ix+(256+2)*ichipx+(256*4+6+8)*imod_h + npix_x_g*(iy+(256+2)*ichipy+(256*2+2+36)*imod_v);
+			int v=receiverdata[inr]->getValue(buffer.at(inr),
+							  ix+256*ichipx,iy);
+			//if(v==-1) addimage=false; 
+			map2[k]=v;
+		      }
+		    }
+		  }
+		}
+	      }
+	    }
+	    //getting values for bottom
+	    if(it==1 ) {
+	      
+	      for(int ichipy=0; ichipy<1;ichipy++){
+		for(int iy=0; iy<256;iy++){
+		  for(int ichipx=0; ichipx<4;ichipx++){
+		    for(int ix=0; ix<256;ix++){
+		      //if(addimage==false) continue;
+
+		      int k= ix+(256+2)*ichipx+(256*4+6+8)*imod_h + npix_x_g*(iy+(256+2)*ichipy+(256*2+2+36)*imod_v);
+		      int v=receiverdata[inr]->getValue(buffer.at(inr),
+							ix+256*ichipx,iy);
+		      map2[k]= v;
+		      //if(v==-1) addimage=false;
+		    }
+		  }
+		}
+	      }
+	    }
+	    inr++;
+	  } //top and bottom
+	}
+      } //loop over geometry closed
+      
+      //clear at every image
+      buffer.clear();
+      for(int ik=0; ik< npix_x_g*npix_y_g; ik++) {
+	if(map2[ik]>-1) map[ik]+=map2[ik];
+	/*else{
+	 //to debug for 1 module and missing packets
+	  if( ik%1030 == 256) continue;
+	  if( ik%1030 == 257) continue;
+	  if( ik%1030 == 514) continue;
+	  if( ik%1030 == 515) continue;
+	  if( ik%1030 == 772) continue;
+	  if( ik%1030 == 773) continue;
+	  if( ik/1030 == 257) continue;
+	  if( ik/1030 == 256) continue;
+	  cout<<runningFrameIndex<<"    "<<ik%1030<<"    "<<ik/1030<<endl;
+	}
+	*/
+      }
+      
+      runningFrameIndex++;
+    }//here close the loop on the images to sum
+    //if(fnum[0]==-1) continue;
+      
     //---> here I should also fill
     /* Create and initializes new internal CBF Object*/
     cbf_failnez (cbf_make_handle (&cbf));
-    sprintf(fname, "%s_%05d_%05d.cbf",file.c_str(),fileIndex, numFrames);
+    sprintf(fname, "%s_SUM_%05d_%05d.cbf",file.c_str(),fileIndex, (numFrames+Nimgs-1));
     out = fopen (fname, "w");
-		
+    
     //fake headers
     fprintf(out,
 	    "###CBF: VERSION 1.0, CBFlib v0.9.5 - SLS EIGER detector\r\n"
@@ -344,11 +378,13 @@ int main(int argc, char *argv[]) {
 				 MSG_DIGEST | MIME_HEADERS  , //int headers
 				 0));		//int encoding
 
-    cprintf(GREEN,"CBF File Created: %s\n\n",fname);
-    numFrames++;
+    //    cprintf(GREEN,"CBF File Created: %s\n\n",fname);
+
 
     cbf_failnez (cbf_free_handle (cbf));
-  }
+
+    numFrames=runningFrameIndex;
+  }    //here close the loop on images if (numf)
 
   //close file when not frame yet
   for(int inr=0; inr<nr; inr++)
@@ -365,7 +401,7 @@ int main(int argc, char *argv[]) {
   return slsReceiverDefs::OK;
 }
 
-int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int &startdet){
+int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int &startdet, int& Nimgs){
   if(argc < 2){
     cprintf(RED, "Error: Not enough arguments: cnbfMaker [file_name_with_dir] \nExiting.\n");
     exit(-1);
@@ -413,7 +449,8 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
       npix_x_user=atoi(argv[2]);
       npix_y_user=atoi(argv[3]);
       startdet=atoi(argv[4]);
-
+      if(argc==6) Nimgs=atoi(argv[5]); //is one by default
+      	
       cprintf(BLUE,
 	      "\n"
 	      "File Name                 : %s\n"
@@ -446,6 +483,7 @@ bool CheckFrames( int fnum, int numFrames)
   if(fnum!= numFrames) return false;
   return true;
 }
+
 
 
 int local_exit(int status) {

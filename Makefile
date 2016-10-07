@@ -23,6 +23,7 @@ LDLIBS		+= 	-lm  -lstdc++
 
 PROGS				= 	image
 PROGS_CSAXS			= 	cbfMaker
+PROGS_SUM			= 	cbfMakerSum
 PROGS_HALF			= 	cbfMakerHalf
 PROGS_CSAXS_MULTI	= 	cbfMakerMulti
 DESTDIR				= 	bin
@@ -31,16 +32,18 @@ INSTMODE			= 	0777
 
 SRC_CLNT		=	src/dummymain.cpp 
 SRC_CSAXS_CLNT	=	src/main_csaxs.cpp 
+SRC_SUM_CLNT	=	src/main_pxSum.cpp
 SRC_HALF_CLNT	=	src/main_half.cpp 
 SRC_CSAXS_MULTI	=	src/main_csaxs_multi.cpp 
 OBJS 			= 	$(SRC_CLNT:.cpp=.o)
 OBJSCSAXS 		= 	$(SRC_CSAXS_CLNT:.cpp=.o)
+OBJSSUM 		= 	$(SRC_SUM_CLNT:.cpp=.o)	
 OBJSCSAXSMULTI	= 	$(SRC_CSAXS_MULTI:.cpp=.o)
 
 
-all: clean $(PROGS_CSAXS) $(PROGS) $(PROGS_CSAXS_MULTI)  #$(PROGS_HALF) 
+all: clean $(PROGS_CSAXS) $(PROGS) $(PROGS_CSAXS_MULTI) $(PROGS_SUM) #$(PROGS_HALF) 
 
-boot: $(OBJS) $(OBJSCSAXS) $(OBJSHALF) $(OBJSCSAXSMULTI)
+boot: $(OBJS) $(OBJSCSAXS) $(OBJSHALF) $(OBJSCSAXSMULTI) $(OBJSSUM)
 
 $(PROGS): 
 	@echo $(WD)
@@ -70,9 +73,16 @@ $(PROGS_CSAXS_MULTI):
 	cp $(PROGS_CSAXS_MULTI) ../bin
 	mv $(PROGS_CSAXS_MULTI) $(DESTDIR)
 
+$(PROGS_SUM): 
+	@echo $(WD)
+	echo $(OBJS_SUM)
+	$(CCX)  -o $@  $(SRC_SUM_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5) $(LDFLAGDET) $(CFLAGS) $(LDLIBS) 
+	cp $(PROGS_SUM) ../bin
+	mv $(PROGS_SUM) $(DESTDIR)
 
 clean:
 	rm -rf ../bin/$(PROGS)  *.o $(DESTDIR)/$(PROGS)
 	rm -rf ../bin/$(PROGS_CSAXS)  *.o $(DESTDIR)/$(PROGS_CSAXS)
 	rm -rf ../bin/$(PROGS_HALF)  *.o $(DESTDIR)/$(PROGS_HALF)
 	rm -rf ../bin/$(PROGS_CSAXS_MULTI)  *.o $(DESTDIR)/$(PROGS_CSAXS_MULTI)
+	rm -rf ../bin/$(PROGS_SUM)  *.o $(DESTDIR)/$(PROGS_SUM)
