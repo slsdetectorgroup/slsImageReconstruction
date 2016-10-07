@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
   buffer.reserve(n_v *n_h*2);
   FILE *out;
   //nr high again
-  int numFrames = fileFrameIndex==0? fileFrameIndex+1 :fileFrameIndex+2 ;
+  int numFrames = fileFrameIndex+1 ;
 
   //for each frame
   while(fnum[0]>-1){
@@ -182,14 +182,14 @@ int main(int argc, char *argv[]) {
     //loop on each receiver to get frame buffer
     for(int inr=0; inr<nr; inr++){
       sprintf(fname, "%s_d%d%s_%d.raw",file.c_str(),inr,frames,fileIndex);
-      if( numFrames == 1)
+      if( numFrames == fileFrameIndex+1)
 	cout << "Reading file:" << fname << endl;
       
       //open file
       if(!infile[inr].is_open())
 	infile[inr].open(fname,ios::in | ios::binary);
       if(infile[inr].is_open()){
-	if( numFrames == 1){
+	if( numFrames == fileFrameIndex+1){
 	//get frame buffer
 	int localheadersize=headersize[inr];
 	char data[localheadersize];
@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
     }//loop on receivers
 
     if(buffer.size()!=nr) continue;
-    cout << "Number of Frames:" << numFrames << endl;
+    // cout << "Number of Frames:" << numFrames << endl;
 
     //get a 2d map of the image
     int inr=0;
@@ -368,7 +368,7 @@ int main(int argc, char *argv[]) {
 				 MSG_DIGEST | MIME_HEADERS  , //int headers
 				 0));		//int encoding
 
-    cprintf(GREEN,"CBF File Created: %s\n\n",fname);
+    //cprintf(GREEN,"CBF File Created: %s\n\n",fname);
     numFrames++;
 
     cbf_failnez (cbf_free_handle (cbf));
