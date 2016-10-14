@@ -17,12 +17,13 @@
 #include <stdlib.h>			
 #include <map>
 #include <getopt.h>
+#include <time.h>
 
 using namespace std;
 
 int getCommandParameters(int argc, char *argv[], string &file);
 
-int getFileParameters(string file, int &hs, int &tp, int &lt, int &dr, int &tg, int &ps, int &ds, int &x, int &y);
+int getFileParameters(string file, int &hs, int &tp, int &lt, int &act, int& mp,  int &dr, int &tg, int &ps, int &ds, int &x, int &y);
 
 
 int main(int argc, char *argv[]) {
@@ -32,14 +33,14 @@ int main(int argc, char *argv[]) {
 	char* buffer = NULL;
 	ifstream infile;
 	string file = "";
-	int headersize, top, left, dynamicrange, tenGiga, packetSize, dataSize, xpix, ypix;
+	int headersize, top, left, active, missingpackets, dynamicrange, tenGiga, packetSize, dataSize, xpix, ypix;
 
 	//get command parameters
 	if(getCommandParameters(argc,argv,file) != slsReceiverDefs::OK)
 		return -1;
 
 	//get file parameters
-	if(getFileParameters(file, headersize, top, left, dynamicrange, tenGiga, packetSize, dataSize, xpix, ypix) != slsReceiverDefs::OK)
+	if(getFileParameters(file, headersize, top, left, active, missingpackets, dynamicrange, tenGiga, packetSize, dataSize, xpix, ypix) != slsReceiverDefs::OK)
 		return -1;
 
 	//validations
@@ -80,7 +81,9 @@ int main(int argc, char *argv[]) {
 	cout << "\n\nFile name\t:" << file <<
 			"\nHalfMoule\t:";	if(top)	cout << "top ";	else cout << "bottom ";
 								if(left)cout << "left";	else cout << "right";
-	cout <<	"\nDynamic range\t:"<< dynamicrange <<
+	if(active) cout << "\nActive"; else cout << "\nInactive";
+	cout << "\nMissing Packets:\t" << missingpackets <<
+			"\nDynamic range\t:"<< dynamicrange <<
 			"\nTen giga\t:" << tenGiga <<
 			"\nPackets/Frame\t:" << packetsPerFrame <<
 			"\nPacket Size\t:" << packetSize <<
@@ -92,10 +95,126 @@ int main(int argc, char *argv[]) {
 	int ix=0, iy=0, numFrames, fnum;
 
 	if(!file.empty()){
-		//construct top datamapping object
+		struct timespec begin,end; //requires -lrt in Makefile
+		int oneframesize = packetsPerFrame * packetSize;
+		int* intbuffer = NULL;
+
+
+
+
+
+/*
+
+		clock_gettime(CLOCK_REALTIME, &begin);
+		double** value =new double*[ypix];
+		for(int i=0;i<ypix;i++)
+			value[i] = new double[xpix];
+		if(!active){
+			for(iy = 0; iy < ypix; iy++){
+				for(ix = 0; ix < xpix; ix++){
+					value[iy][ix] = -1;
+				}
+			}
+		}else{
+			numFrames = 0;
+			fnum = -1;
+			receiverdata = new eigerHalfModuleData(top, left, dynamicrange, tenGiga, packetSize, dataSize, packetsPerFrame, xpix, ypix);
+			//open file
+			infile.open(file.c_str(),ios::in | ios::binary);
+			if(infile.is_open()){
+
+				char data[headersize];
+				infile.read(data,headersize);
+
+				//get frame buffer
+				while((buffer = receiverdata->readNextFrame(infile, fnum))){
+					//cout << "Reading values for frame #" << fnum << endl;
+					//getting values
+					for(iy = 0; iy < ypix; iy++){
+						for(ix = 0; ix < xpix; ix++){
+							value[iy][ix] = receiverdata->getValue((char*)buffer,ix,iy);
+							//cprintf(BLUE,"%d,%d :%f\n",ix,iy,value[iy][ix]);
+						}
+					}
+
+
+					delete [] buffer;
+					numFrames++;
+				}
+				//close file
+				infile.close();
+			}else cprintf(RED, "Error: Could not read file: %s\n", file.c_str());
+			delete receiverdata;
+		}
+		for(int i=0;i<ypix;i++)
+			delete [] value[i];
+		clock_gettime(CLOCK_REALTIME, &end);
+		cprintf(BLUE,"1 Elapsed time:%f seconds\n",( end.tv_sec - begin.tv_sec )	+ ( end.tv_nsec - begin.tv_nsec ) / 1000000000.0);
+
+
+
+
+
+
+
+		clock_gettime(CLOCK_REALTIME, &begin);
+		double* value2 = new double[xpix*ypix];
+		if(!active){
+			for(iy = 0; iy < ypix; iy++){
+				for(ix = 0; ix < xpix; ix++){
+					value2[iy*xpix+ix] = -1;
+				}
+			}
+		}else{
+			numFrames = 0;
+			fnum = -1;
+			receiverdata = new eigerHalfModuleData(top, left, dynamicrange, tenGiga, packetSize, dataSize, packetsPerFrame, xpix, ypix);
+			//open file
+			infile.open(file.c_str(),ios::in | ios::binary);
+			if(infile.is_open()){
+
+				char data[headersize];
+				infile.read(data,headersize);
+
+				buffer = new char[oneframesize];
+				while(infile.read(buffer,oneframesize)) {
+					fnum = receiverdata->getFrameNumber(buffer);
+					//cout << "Reading values for frame #" << fnum << endl;
+					receiverdata->getChannelArray(value2,buffer);
+					//for(int i=0;i<xpix*ypix;++i)
+					//		cprintf(BLUE,"%d,%d :%f\n",ix,iy,value2[i]);
+					numFrames++;
+					delete [] buffer;
+					buffer = new char[oneframesize];
+				}
+
+				delete [] buffer;
+				//close file
+				infile.close();
+			}else cprintf(RED, "Error: Could not read file: %s\n", file.c_str());
+			delete receiverdata;
+		}
+		delete [] value2;
+		clock_gettime(CLOCK_REALTIME, &end);
+		cprintf(BLUE,"2 Elapsed time:%f seconds\n",( end.tv_sec - begin.tv_sec )	+ ( end.tv_nsec - begin.tv_nsec ) / 1000000000.0);
+
+
+
+
+
+
+		clock_gettime(CLOCK_REALTIME, &begin);
+		int* value3 = new int[xpix*ypix];
+		if(!active){
+			for(iy = 0; iy < ypix; iy++){
+				for(ix = 0; ix < xpix; ix++){
+					value3[iy*xpix+ix] = -1;
+				}
+			}
+		}else{
+		receiverdata = new eigerHalfModuleData(top, left, dynamicrange, tenGiga, packetSize, dataSize, packetsPerFrame, xpix, ypix);
 		numFrames = 0;
 		fnum = -1;
-		receiverdata = new eigerHalfModuleData(top, left, dynamicrange, tenGiga, packetSize, dataSize, packetsPerFrame, xpix, ypix);
 		//open file
 		infile.open(file.c_str(),ios::in | ios::binary);
 		if(infile.is_open()){
@@ -103,28 +222,81 @@ int main(int argc, char *argv[]) {
 			char data[headersize];
 			infile.read(data,headersize);
 
-			//get frame buffer
-			while((buffer = receiverdata->readNextFrame(infile, fnum))){
-				//while((buffer = receiverdata->readNextFrame(infile))){
-				cout << "Reading values for frame #" << fnum << endl;
-				//getting values
-				double value=0;
-
-				for(iy = 0; ypix < 1; iy++){
-					for(ix = 0; ix < xpix; ix++){
-						value = receiverdata->getValue((char*)buffer,ix,iy);
-						//cprintf(BLUE,"%d,%d :%f\n",ix,iy,value);
+			while((intbuffer = receiverdata->readNextFrameOnlyData(infile,fnum))) {
+				//cout << "Reading values for frame #" << fnum << endl;
+				value3 = receiverdata->decodeData(intbuffer);
+				/*if(fnum==1){
+					for(iy = 60; iy < 61; iy++){
+						for(ix = 90; ix < 140; ix++){
+							cprintf(BLUE,"%d,%d :%d\n",ix,iy,value3[iy*xpix+ix]);
+						}
 					}
-				}
-
-
-				delete [] buffer;
+				}*/
+/*
 				numFrames++;
+				delete [] intbuffer;
 			}
+
 			//close file
 			infile.close();
 		}else cprintf(RED, "Error: Could not read file: %s\n", file.c_str());
 		delete receiverdata;
+		}
+		delete [] value3;
+		clock_gettime(CLOCK_REALTIME, &end);
+		cprintf(BLUE,"3 Elapsed time:%f seconds\n",( end.tv_sec - begin.tv_sec )	+ ( end.tv_nsec - begin.tv_nsec ) / 1000000000.0);
+
+
+
+*/
+
+
+		clock_gettime(CLOCK_REALTIME, &begin);
+		int* value4 = new int[xpix*ypix];
+		if(!active){
+			for(iy = 0; iy < ypix; iy++){
+				for(ix = 0; ix < xpix; ix++){
+					value4[iy*xpix+ix] = -1;
+				}
+			}
+		}else{
+		receiverdata = new eigerHalfModuleData(top, left, dynamicrange, tenGiga, packetSize, dataSize, packetsPerFrame, xpix, ypix);
+		numFrames = 0;
+		fnum = -1;
+		//open file
+		infile.open(file.c_str(),ios::in | ios::binary);
+		if(infile.is_open()){
+			char data[headersize];
+			infile.read(data,headersize);
+
+			while((intbuffer = receiverdata->readNextFramewithMissingPackets(infile,fnum))) {
+				//cout << "Reading values for frame #" << fnum << endl;
+				value4 = receiverdata->decodeData(intbuffer);
+				/*if(fnum==1)
+					for(iy = 60; iy < 61; iy++){
+						for(ix = 90; ix < 140; ix++){
+							cprintf(BLUE,"%d,%d :%d\n",ix,iy,value4[iy*xpix+ix]);
+						}
+					}
+*/
+				numFrames++;
+				delete [] intbuffer;
+			}
+
+			//close file
+			infile.close();
+		}else cprintf(RED, "Error: Could not read file: %s\n", file.c_str());
+		delete receiverdata;
+		}
+
+		clock_gettime(CLOCK_REALTIME, &end);
+		cprintf(BLUE,"4 Elapsed time:%f seconds\n",( end.tv_sec - begin.tv_sec )	+ ( end.tv_nsec - begin.tv_nsec ) / 1000000000.0);
+
+
+
+
+
+
 		cout  << "Found " << numFrames << " frames in file." << endl << endl;
 	}
 
@@ -180,10 +352,25 @@ int getCommandParameters(int argc, char *argv[], string &file){
 
 
 
-int getFileParameters(string file, int &hs, int &tp, int &lt, int &dr, int &tg, int &ps, int &ds, int &x, int &y){
+int getFileParameters(string file, int &hs, int &tp, int &lt, int &act, int& mp, int &dr, int &tg, int &ps, int &ds, int &x, int &y){
 	cout << "Getting File Parameters from " << file << endl;
 	string str;
 	ifstream infile;
+
+/*
+	Header		 	400 bytes
+	Top		 		1
+	Left		 	1
+	Active		 	1
+	Packets Lost	6
+	Dynamic Range	16
+	Ten Giga	 	0
+	Packet		 	1040 bytes
+	Data		 	1024 bytes
+	x		 		512 pixels
+	y		 		256 pixels
+*/
+
 
 	infile.open(file.c_str(),ios::in | ios::binary);
 	if (infile.is_open()) {
@@ -212,6 +399,18 @@ int getFileParameters(string file, int &hs, int &tp, int &lt, int &dr, int &tg, 
 			sstr >> str >> lt;
 		}
 
+		//active
+		if(getline(infile,str)){
+			istringstream sstr(str);
+			//cout<<"Str:"<<str<<endl;
+			sstr >> str >> act;
+		}
+		//missing packets
+		if(getline(infile,str)){
+			istringstream sstr(str);
+			//cout<<"Str:"<<str<<endl;
+			sstr >> str >> mp;
+		}
 		//dynamic range
 		if(getline(infile,str)){
 			istringstream sstr(str);
