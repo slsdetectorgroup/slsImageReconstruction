@@ -13,7 +13,7 @@ INCLUDESDET		=	-I $(LIBRARYDETDIR)/slsDetector -I $(LIBRARYDETDIR)/slsDetectorAn
 
 
 CCX			=	g++
-CFLAGS		+=  -Wall 
+CFLAGS		+=  -Wall -g -lrt
 LDLIBS		+= 	-lm  -lstdc++ 
 
 PROGS		= 	imagedhanya
