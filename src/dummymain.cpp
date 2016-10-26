@@ -409,7 +409,7 @@ int getFileParameters(string file, int &hs, int &tp, int &lt, int &act, int& mp,
 		if(getline(infile,str)){
 			istringstream sstr(str);
 			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> mp;
+			sstr >> str >> str>> mp;
 		}
 		//dynamic range
 		if(getline(infile,str)){
