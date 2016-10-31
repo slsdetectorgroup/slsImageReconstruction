@@ -314,18 +314,18 @@ int main(int argc, char *argv[]) {
   slsReceiverData <uint32_t> *receiverdata[numModules];
   int fnum;
   int nr=0;
-  for(int imod_v=0; imod_v<n_v; imod_v++){
     for(int imod_h=0; imod_h<n_h; imod_h++){
-      for(int it=0;it<2;it++){
-	for(int ileft=0; ileft<2;ileft++){
-	  if( npix_y_user==256 && it==1 ) continue;
-	  receiverdata[nr]=NULL;
-	  fnum=0;
-	  nr++;
+      for(int imod_v=0; imod_v<n_v; imod_v++){
+	for(int it=0;it<2;it++){
+	  for(int ileft=0; ileft<2;ileft++){
+	    if( npix_y_user==256 && it==1 ) continue;
+	    receiverdata[nr]=NULL;
+	    fnum=0;
+	    nr++;
+	  }
 	}
       }
     }
-  }
 
   //get dynamic range and configure receiverdata depending on top and bottom
   char fname[1000];
@@ -340,12 +340,12 @@ int main(int argc, char *argv[]) {
   int headersize, top, left, active, missingpackets, dynamicrange, tenGiga, packetSize, dataSize, xpix, ypix;
   string timestamp;
 
-  for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
     for(int imod_h=0; imod_h<n_h; imod_h++){
-      for( int it=0;it<2;it++){
-	for( int ileft=0;ileft<2;ileft++){
-	  if( npix_y_user==256 && it==1 ) continue;  
-	  
+      for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
+	for( int it=0;it<2;it++){
+	  for( int ileft=0;ileft<2;ileft++){
+	    if( npix_y_user==256 && it==1 ) continue;  
+	    
 	  sprintf(fname,"%s_d%d%s_%d.raw",file.c_str(),nfile,frames,fileIndex);
 	  //read file to get parameters
 	  //if(getFileParameters(fname, headersize, dynamicrange, packetSize, xpix, ypix) != slsReceiverDefs::OK)
@@ -464,8 +464,9 @@ int main(int argc, char *argv[]) {
     for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
       map[ik]=-1; 
 
-    for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
-      for(int imod_h=0; imod_h<n_h;imod_h++){
+
+    for(int imod_h=0; imod_h<n_h;imod_h++){
+      for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
 	for( int it=0;it<2;it++){	
 	  for( int ileft=0;ileft<2;ileft++){	
 	    if( npix_y_user==256 && it==1) continue; 
