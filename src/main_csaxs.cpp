@@ -103,9 +103,9 @@ int main(int argc, char *argv[]) {
   slsReceiverData <uint32_t> *receiverdata[numModules];
   int fnum[( npix_y_user!=256) ? n_v *n_h*2 : 1];
   int nr=0;
-  for(int imod_v=0; imod_v<n_v; imod_v++){
-    for(int imod_h=0; imod_h<n_h; imod_h++){
-      for(int it=0;it<2;it++){
+  for(int imod_h=0; imod_h<n_h; imod_h++){
+    for(int imod_v=0; imod_v<n_v; imod_v++){
+    for(int it=0;it<2;it++){
 	if( npix_y_user==256 && it==1 ) continue;
 	receiverdata[nr]=NULL;
 	fnum[nr]=0;
@@ -129,9 +129,9 @@ int main(int argc, char *argv[]) {
   int headersize[numModules];
   int  packetSize;
   int xpix, ypix;
-  for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
-    for(int imod_h=0; imod_h<n_h; imod_h++){
-      for( int it=0;it<2;it++){
+  for(int imod_h=0; imod_h<n_h; imod_h++){
+    for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
+    for( int it=0;it<2;it++){
 	if( npix_y_user==256 && it==1 ) continue;  
 
 	sprintf(fname,"%s_d%d%s_%d.raw",file.c_str(),nfile,frames,fileIndex);
@@ -200,11 +200,11 @@ int main(int argc, char *argv[]) {
 
     //get a 2d map of the image
     int inr=0;
-    for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
       for(int imod_h=0; imod_h<n_h;imod_h++){
-	for( int it=0;it<2;it++){	
-	   if( npix_y_user==256 && it==1) continue; 
-
+	for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
+	  for( int it=0;it<2;it++){	
+	    if( npix_y_user==256 && it==1) continue; 
+	    
 	   /* Make a cbf version of the image */
 	  //getting values //top
 	  if(it==0){
