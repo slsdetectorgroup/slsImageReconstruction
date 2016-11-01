@@ -314,6 +314,7 @@ int main(int argc, char *argv[]) {
   slsReceiverData <uint32_t> *receiverdata[numModules];
   int fnum;
   int nr=0;
+<<<<<<< HEAD
     for(int imod_h=0; imod_h<n_h; imod_h++){
       for(int imod_v=0; imod_v<n_v; imod_v++){
 	for(int it=0;it<2;it++){
@@ -324,6 +325,15 @@ int main(int argc, char *argv[]) {
 	    nr++;
 	  }
 	}
+=======
+  for(int imod_h=0; imod_h<n_h; imod_h++){
+    for(int imod_v=0; imod_v<n_v; imod_v++){
+    for(int it=0;it<2;it++){
+	if( npix_y_user==256 && it==1 ) continue;
+	receiverdata[nr]=NULL;
+	fnum[nr]=0;
+	nr++;
+>>>>>>> ca4a71ab9563c37661136f4e71af79aa3c981448
       }
     }
 
@@ -337,6 +347,7 @@ int main(int argc, char *argv[]) {
   int nfile=startdet;
   //put master on top always
   nr=0;
+<<<<<<< HEAD
   int headersize, top, left, active, missingpackets, dynamicrange, tenGiga, packetSize, dataSize, xpix, ypix;
   string timestamp;
 
@@ -408,6 +419,29 @@ int main(int argc, char *argv[]) {
 	    nr++;
 	    nfile++;
 	  }
+=======
+  int dataSize, packetsPerFrame;
+  int headersize[numModules];
+  int  packetSize;
+  int xpix, ypix;
+  for(int imod_h=0; imod_h<n_h; imod_h++){
+    for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
+    for( int it=0;it<2;it++){
+	if( npix_y_user==256 && it==1 ) continue;  
+
+	sprintf(fname,"%s_d%d%s_%d.raw",file.c_str(),nfile,frames,fileIndex);
+	//read file to get parameters
+	if(getFileParameters(fname, headersize[nr], dynamicrange, packetSize, xpix, ypix) != slsReceiverDefs::OK)
+	  return -1;
+
+	int dataSize, packetsPerFrame;
+	switch(packetSize){
+	case 1040: dataSize = 1024; packetsPerFrame = 16 * dynamicrange * 2; break;
+	case 4112: dataSize = 4096; packetsPerFrame = 4 * dynamicrange * 2;  break;
+	default:
+	  cprintf(RED, "Error: Invalid packet size %d read from file %s\n", packetSize,file.c_str());
+	  return -1;
+>>>>>>> ca4a71ab9563c37661136f4e71af79aa3c981448
 	}
       }
     }
@@ -460,6 +494,7 @@ int main(int argc, char *argv[]) {
 
     //get a 2d map of the image
     int inr=0;
+<<<<<<< HEAD
     //initialize
     for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
       map[ik]=-1; 
@@ -476,6 +511,22 @@ int main(int argc, char *argv[]) {
 	    if(it==0){
 	      if(ileft==0){
 
+=======
+      for(int imod_h=0; imod_h<n_h;imod_h++){
+	for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
+	  for( int it=0;it<2;it++){	
+	    if( npix_y_user==256 && it==1) continue; 
+	    
+	   /* Make a cbf version of the image */
+	  //getting values //top
+	  if(it==0){
+			      
+	    //initialize the first time
+	    if(inr==0)
+	      for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
+		map[ik]=-1;
+			    
+>>>>>>> ca4a71ab9563c37661136f4e71af79aa3c981448
 		if( npix_y_user!=256 ){			      
 		 
 		  for(int ichipy=1; ichipy<NumChip_y;ichipy++){
