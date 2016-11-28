@@ -21,28 +21,30 @@
 
 using namespace std;
 
+int* decodeData(int *datain, const int size, const int nx, const int ny, const int dynamicRange);
+
 int getCommandParameters(int argc, char *argv[], string &file);
 
-int getFileParameters(string file, int &hs, int &tp, int &lt, int &act, int& mp,  int &dr, int &tg, int &ps, int &ds, int &x, int &y);
+int getFileParameters(string file, int &hs, int &tp, int &lt, int &act, int &dr, int &tg, int &is, int &x, int &y);
 
 
 int main(int argc, char *argv[]) {
 
 	//declare variables
 	slsReceiverData <uint32_t> *receiverdata = NULL;
-	char* buffer = NULL;
 	ifstream infile;
 	string file = "";
-	int headersize, top, left, active, missingpackets, dynamicrange, tenGiga, packetSize, dataSize, xpix, ypix;
+	int fileheadersize, top, left, active, dynamicrange, tenGiga, imageSize, xpix, ypix;
 
 	//get command parameters
 	if(getCommandParameters(argc,argv,file) != slsReceiverDefs::OK)
 		return -1;
 
 	//get file parameters
-	if(getFileParameters(file, headersize, top, left, active, missingpackets, dynamicrange, tenGiga, packetSize, dataSize, xpix, ypix) != slsReceiverDefs::OK)
+	if(getFileParameters(file, fileheadersize, top, left, active, dynamicrange, tenGiga, imageSize, xpix, ypix) != slsReceiverDefs::OK)
 		return -1;
 
+	cout<<"dynamicrange:"<<dynamicrange<<endl;
 	//validations
 	switch(dynamicrange){
 	case 4: case 8: case 16: case 32: break;
@@ -50,252 +52,87 @@ int main(int argc, char *argv[]) {
 		cout << "Error: Invalid dynamic range " << dynamicrange << " read from file " << file << endl;
 		return -1;
 	}
-	if(!tenGiga){
-		if(packetSize!=1040){
-			cout << "Error: Invalid packet size " << packetSize << " for 1g read from file " << file << endl;
-			return -1;
-		}
-		if(dataSize!=1024){
-			cout << "Error: Invalid data size " << dataSize << " for 1g read from file " << file << endl;
-			return -1;
-		}
-	}else{
-		if(packetSize!=4112){
-			cout << "Error: Invalid packet size " << packetSize << " for 10g read from file " << file << endl;
-			return -1;
-		}
-		if(dataSize!=4096){
-			cout << "Error: Invalid data size " << dataSize << " for 10g read from file " << file << endl;
-			return -1;
-		}
-	}
-
-
 	int packetsPerFrame;
 	if(!tenGiga)
 		packetsPerFrame = 16 * dynamicrange;
 	else
 		packetsPerFrame = 4 * dynamicrange;
+	if(!tenGiga){
+		if(imageSize!=(packetsPerFrame*1024)){
+			cout << "Error: Invalid packet size " << imageSize << " for 1g read from file " << file << endl;
+			return -1;
+		}
+	}else{
+		if(imageSize!=(packetsPerFrame*4096)){
+			cout << "Error: Invalid packet size " << imageSize << " for 10g read from file " << file << endl;
+			return -1;
+		}
+	}
 
 	//print variables
 	cout << "\n\nFile name\t:" << file <<
 			"\nHalfMoule\t:";	if(top)	cout << "top ";	else cout << "bottom ";
 								if(left)cout << "left";	else cout << "right";
 	if(active) cout << "\nActive"; else cout << "\nInactive";
-	cout << "\nMissing Packets:\t" << missingpackets <<
-			"\nDynamic range\t:"<< dynamicrange <<
+	cout << "\nDynamic range\t:"<< dynamicrange <<
 			"\nTen giga\t:" << tenGiga <<
 			"\nPackets/Frame\t:" << packetsPerFrame <<
-			"\nPacket Size\t:" << packetSize <<
-			"\nData Size\t:" << dataSize <<
+			"\nImage Size\t:" << imageSize <<
 			"\nX pixels\t:" << xpix <<
 			"\nY pixels\t:" << ypix << endl << endl;
 
 	//read values
 	int ix=0, iy=0, numFrames, fnum;
 
+	const static int imageHeader = 16;
+	int* value;
+
+
 	if(!file.empty()){
 		struct timespec begin,end; //requires -lrt in Makefile
-		int oneframesize = packetsPerFrame * packetSize;
-		int* intbuffer = NULL;
-
-
-
-
-
-/*
-
-		clock_gettime(CLOCK_REALTIME, &begin);
-		double** value =new double*[ypix];
-		for(int i=0;i<ypix;i++)
-			value[i] = new double[xpix];
-		if(!active){
-			for(iy = 0; iy < ypix; iy++){
-				for(ix = 0; ix < xpix; ix++){
-					value[iy][ix] = -1;
-				}
-			}
-		}else{
-			numFrames = 0;
-			fnum = -1;
-			receiverdata = new eigerHalfModuleData(top, left, dynamicrange, tenGiga, packetSize, dataSize, packetsPerFrame, xpix, ypix);
-			//open file
-			infile.open(file.c_str(),ios::in | ios::binary);
-			if(infile.is_open()){
-
-				char data[headersize];
-				infile.read(data,headersize);
-
-				//get frame buffer
-				while((buffer = receiverdata->readNextFrame(infile, fnum))){
-					//cout << "Reading values for frame #" << fnum << endl;
-					//getting values
-					for(iy = 0; iy < ypix; iy++){
-						for(ix = 0; ix < xpix; ix++){
-							value[iy][ix] = receiverdata->getValue((char*)buffer,ix,iy);
-							//cprintf(BLUE,"%d,%d :%f\n",ix,iy,value[iy][ix]);
-						}
-					}
-
-
-					delete [] buffer;
-					numFrames++;
-				}
-				//close file
-				infile.close();
-			}else cprintf(RED, "Error: Could not read file: %s\n", file.c_str());
-			delete receiverdata;
-		}
-		for(int i=0;i<ypix;i++)
-			delete [] value[i];
-		clock_gettime(CLOCK_REALTIME, &end);
-		cprintf(BLUE,"1 Elapsed time:%f seconds\n",( end.tv_sec - begin.tv_sec )	+ ( end.tv_nsec - begin.tv_nsec ) / 1000000000.0);
-
-
-
-
-
+		int* intbuffer = new int[imageSize];
 
 
 		clock_gettime(CLOCK_REALTIME, &begin);
-		double* value2 = new double[xpix*ypix];
-		if(!active){
-			for(iy = 0; iy < ypix; iy++){
-				for(ix = 0; ix < xpix; ix++){
-					value2[iy*xpix+ix] = -1;
-				}
-			}
-		}else{
-			numFrames = 0;
-			fnum = -1;
-			receiverdata = new eigerHalfModuleData(top, left, dynamicrange, tenGiga, packetSize, dataSize, packetsPerFrame, xpix, ypix);
-			//open file
-			infile.open(file.c_str(),ios::in | ios::binary);
-			if(infile.is_open()){
-
-				char data[headersize];
-				infile.read(data,headersize);
-
-				buffer = new char[oneframesize];
-				while(infile.read(buffer,oneframesize)) {
-					fnum = receiverdata->getFrameNumber(buffer);
-					//cout << "Reading values for frame #" << fnum << endl;
-					receiverdata->getChannelArray(value2,buffer);
-					//for(int i=0;i<xpix*ypix;++i)
-					//		cprintf(BLUE,"%d,%d :%f\n",ix,iy,value2[i]);
-					numFrames++;
-					delete [] buffer;
-					buffer = new char[oneframesize];
-				}
-
-				delete [] buffer;
-				//close file
-				infile.close();
-			}else cprintf(RED, "Error: Could not read file: %s\n", file.c_str());
-			delete receiverdata;
-		}
-		delete [] value2;
-		clock_gettime(CLOCK_REALTIME, &end);
-		cprintf(BLUE,"2 Elapsed time:%f seconds\n",( end.tv_sec - begin.tv_sec )	+ ( end.tv_nsec - begin.tv_nsec ) / 1000000000.0);
 
 
-
-
-
-
-		clock_gettime(CLOCK_REALTIME, &begin);
-		int* value3 = new int[xpix*ypix];
-		if(!active){
-			for(iy = 0; iy < ypix; iy++){
-				for(ix = 0; ix < xpix; ix++){
-					value3[iy*xpix+ix] = -1;
-				}
-			}
-		}else{
-		receiverdata = new eigerHalfModuleData(top, left, dynamicrange, tenGiga, packetSize, dataSize, packetsPerFrame, xpix, ypix);
 		numFrames = 0;
 		fnum = -1;
 		//open file
 		infile.open(file.c_str(),ios::in | ios::binary);
 		if(infile.is_open()){
 
-			char data[headersize];
-			infile.read(data,headersize);
+			//read file header
+			char data[fileheadersize];
+			infile.read(data,fileheadersize);
 
-			while((intbuffer = receiverdata->readNextFrameOnlyData(infile,fnum))) {
-				//cout << "Reading values for frame #" << fnum << endl;
-				value3 = receiverdata->decodeData(intbuffer);
-				/*if(fnum==1){
+			//read data
+			while(infile.read((char*)intbuffer,(imageSize+imageHeader))) {
+				fnum = (*((uint64_t*)(char*)intbuffer));
+				cout << "Reading values for frame #" << fnum << endl;
+				value = decodeData(intbuffer, imageSize, xpix, ypix, dynamicrange);
+				if(fnum==1)
 					for(iy = 60; iy < 61; iy++){
 						for(ix = 90; ix < 140; ix++){
-							cprintf(BLUE,"%d,%d :%d\n",ix,iy,value3[iy*xpix+ix]);
+							cprintf(BLUE,"%d,%d :%d\n",ix,iy,value[iy*xpix+ix]);
 						}
 					}
-				}*/
-/*
+
 				numFrames++;
-				delete [] intbuffer;
+				delete [] value;
 			}
 
 			//close file
 			infile.close();
 		}else cprintf(RED, "Error: Could not read file: %s\n", file.c_str());
-		delete receiverdata;
-		}
-		delete [] value3;
-		clock_gettime(CLOCK_REALTIME, &end);
-		cprintf(BLUE,"3 Elapsed time:%f seconds\n",( end.tv_sec - begin.tv_sec )	+ ( end.tv_nsec - begin.tv_nsec ) / 1000000000.0);
 
-
-
-*/
-
-
-		clock_gettime(CLOCK_REALTIME, &begin);
-		int* value4 = new int[xpix*ypix];
-		if(!active){
-			for(iy = 0; iy < ypix; iy++){
-				for(ix = 0; ix < xpix; ix++){
-					value4[iy*xpix+ix] = -1;
-				}
-			}
-		}else{
-		receiverdata = new eigerHalfModuleData(top, left, dynamicrange, tenGiga, packetSize, dataSize, packetsPerFrame, xpix, ypix);
-		numFrames = 0;
-		fnum = -1;
-		//open file
-		infile.open(file.c_str(),ios::in | ios::binary);
-		if(infile.is_open()){
-			char data[headersize];
-			infile.read(data,headersize);
-
-			while((intbuffer = receiverdata->readNextFramewithMissingPackets(infile,fnum))) {
-				//cout << "Reading values for frame #" << fnum << endl;
-				value4 = receiverdata->decodeData(intbuffer);
-				/*if(fnum==1)
-					for(iy = 60; iy < 61; iy++){
-						for(ix = 90; ix < 140; ix++){
-							cprintf(BLUE,"%d,%d :%d\n",ix,iy,value4[iy*xpix+ix]);
-						}
-					}
-*/
-				numFrames++;
-				delete [] intbuffer;
-			}
-
-			//close file
-			infile.close();
-		}else cprintf(RED, "Error: Could not read file: %s\n", file.c_str());
-		delete receiverdata;
-		}
 
 		clock_gettime(CLOCK_REALTIME, &end);
-		cprintf(BLUE,"4 Elapsed time:%f seconds\n",( end.tv_sec - begin.tv_sec )	+ ( end.tv_nsec - begin.tv_nsec ) / 1000000000.0);
+		cprintf(BLUE,"Elapsed time:%f seconds\n",( end.tv_sec - begin.tv_sec )	+ ( end.tv_nsec - begin.tv_nsec ) / 1000000000.0);
 
 
 
-
-
+		delete [] intbuffer;
 
 		cout  << "Found " << numFrames << " frames in file." << endl << endl;
 	}
@@ -305,6 +142,61 @@ int main(int argc, char *argv[]) {
 	return slsReceiverDefs::OK;
 
 }
+
+
+
+int* decodeData(int *datain, const int size, const int nx, const int ny, const int dynamicRange) {
+
+		int dataBytes = size;
+		int nch = nx*ny;
+		int* dataout = new int [nch];
+		char *ptr=(char*)datain;
+		char iptr;
+
+		const int bytesize=8;
+		int ival=0;
+		int  ipos=0, ichan=0, ibyte;
+
+		switch (dynamicRange) {
+		case 4:
+			for (ibyte=0; ibyte<dataBytes; ++ibyte) {//for every byte (1 pixel = 1/2 byte)
+				iptr=ptr[ibyte]&0xff;				//???? a byte mask
+				for (ipos=0; ipos<2; ++ipos) {		//loop over the 8bit (twice)
+					ival=(iptr>>(ipos*4))&0xf;		//pick the right 4bit
+					dataout[ichan]=ival;
+					ichan++;
+				}
+			}
+			break;
+		case 8:
+			for (ichan=0; ichan<dataBytes; ++ichan) {//for every pixel (1 pixel = 1 byte)
+				ival=ptr[ichan]&0xff;				//????? a byte mask
+				dataout[ichan]=ival;
+			}
+			break;
+		case 16:
+			for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
+				ival=0;
+				for (ibyte=0; ibyte<2; ++ibyte) { 	//for each byte (concatenate 2 bytes to get 16 bit value)
+					iptr=ptr[ichan*2+ibyte];
+					ival|=((iptr<<(ibyte*bytesize))&(0xff<<(ibyte*bytesize)));
+				}
+				dataout[ichan]=ival;
+			}
+			break;
+		default:
+													//for every 32 bit (every element in datain array)
+			for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
+				ival=datain[ichan]&0xffffff;
+				dataout[ichan]=ival;
+			}
+		}
+
+
+
+		return dataout;
+
+	};
 
 
 /**
@@ -352,23 +244,24 @@ int getCommandParameters(int argc, char *argv[], string &file){
 
 
 
-int getFileParameters(string file, int &hs, int &tp, int &lt, int &act, int& mp, int &dr, int &tg, int &ps, int &ds, int &x, int &y){
+int getFileParameters(string file, int &hs, int &tp, int &lt, int &act,int &dr, int &tg, int &is, int &x, int &y){
 	cout << "Getting File Parameters from " << file << endl;
 	string str;
 	ifstream infile;
 
 /*
-	Header		 	400 bytes
-	Top		 		1
-	Left		 	1
-	Active		 	1
-	Packets Lost	6
-	Dynamic Range	16
-	Ten Giga	 	0
-	Packet		 	1040 bytes
-	Data		 	1024 bytes
-	x		 		512 pixels
-	y		 		256 pixels
+	Header			: 500 bytes
+	Top				: 1
+	Left			: 1
+	Active			: 1
+	Frames Caught	: 15
+	Frames Lost		: 0
+	Dynamic Range	: 16
+	Ten Giga		: 0
+	Image Size		: 262144 bytes
+	x				: 512 pixels
+	y				: 256 pixels
+
 */
 
 
@@ -381,75 +274,70 @@ int getFileParameters(string file, int &hs, int &tp, int &lt, int &act, int& mp,
 		//header size
 		if(getline(infile,str)){
 			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> hs;
+			//cout<<"Str header size:"<<str<<endl;
+			sstr >> str >> str >> hs;
 		}
 
-		//bottom
+		//top
 		if(getline(infile,str)){
 			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> tp;
+			//cout<<"Str top:"<<str<<endl;
+			sstr >> str >> str >> tp;
 		}
 
-		//right
+		//left
 		if(getline(infile,str)){
 			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> lt;
+			//cout<<"Str left:"<<str<<endl;
+			sstr >> str >> str >> lt;
 		}
 
 		//active
 		if(getline(infile,str)){
 			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> act;
+			//cout<<"Str active:"<<str<<endl;
+			sstr >> str >> str >> act;
 		}
-		//missing packets
-		if(getline(infile,str)){
-			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> str>> mp;
-		}
+
+		//frames caught
+		getline(infile,str);
+		//cout<<"Str frames caught:"<<str<<endl;
+		//frames lost
+		getline(infile,str);
+		//cout<<"Str frames lost:"<<str<<endl;
+
 		//dynamic range
 		if(getline(infile,str)){
 			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> str >> dr;
+			//cout<<"Str dynamic range:"<<str<<endl;
+			sstr >> str >> str >>  str >> dr;
 		}
 
 		//ten giga
 		if(getline(infile,str)){
 			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> str >> tg;
+			//cout<<"Str ten giga:"<<str<<endl;
+			sstr >> str >> str >> str >> tg;
 		}
 
-		//packet size
+		//image size
 		if(getline(infile,str)){
 			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> ps;
-		}
-
-		//data size
-		if(getline(infile,str)){
-			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> ds;
+			//cout<<"Str image size:"<<str<<endl;
+			sstr >> str >> str >> str >> is;
 		}
 		//x
 		if(getline(infile,str)){
 			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> x;
+			//cout<<"Str x:"<<str<<endl;
+			sstr >> str >> str >> x;
 		}
 
 		//y
 		if(getline(infile,str)){
 			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> y;
+			//cout<<"Str y:"<<str<<endl;
+			sstr >> str >> str >> y;
 		}
 
 
