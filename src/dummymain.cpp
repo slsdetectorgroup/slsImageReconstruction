@@ -6,8 +6,6 @@
  */
 
 #include "sls_receiver_defs.h"
-#include "slsReceiverData.h"
-#include "eigerHalfModuleData.h"
 #include "ansi.h"
 
 #include <iostream>
@@ -31,7 +29,6 @@ int getFileParameters(string file, int &hs, int &tp, int &lt, int &act, int &dr,
 int main(int argc, char *argv[]) {
 
 	//declare variables
-	slsReceiverData <uint32_t> *receiverdata = NULL;
 	ifstream infile;
 	string file = "";
 	int fileheadersize, top, left, active, dynamicrange, tenGiga, imageSize, xpix, ypix;
@@ -44,7 +41,6 @@ int main(int argc, char *argv[]) {
 	if(getFileParameters(file, fileheadersize, top, left, active, dynamicrange, tenGiga, imageSize, xpix, ypix) != slsReceiverDefs::OK)
 		return -1;
 
-	cout<<"dynamicrange:"<<dynamicrange<<endl;
 	//validations
 	switch(dynamicrange){
 	case 4: case 8: case 16: case 32: break;
@@ -82,7 +78,7 @@ int main(int argc, char *argv[]) {
 			"\nY pixels\t:" << ypix << endl << endl;
 
 	//read values
-	int ix=0, iy=0, numFrames, fnum;
+	int numFrames, fnum;
 
 	const static int imageHeader = 16;
 	int* value;
@@ -111,13 +107,13 @@ int main(int argc, char *argv[]) {
 				fnum = (*((uint64_t*)(char*)intbuffer));
 				cout << "Reading values for frame #" << fnum << endl;
 				value = decodeData(intbuffer, imageSize, xpix, ypix, dynamicrange);
-				if(fnum==1)
-					for(iy = 60; iy < 61; iy++){
-						for(ix = 90; ix < 140; ix++){
+				/*if(fnum==1)
+					for(int iy = 60; iy < 61; iy++){
+						for(int ix = 90; ix < 140; ix++){
 							cprintf(BLUE,"%d,%d :%d\n",ix,iy,value[iy*xpix+ix]);
 						}
 					}
-
+*/
 				numFrames++;
 				delete [] value;
 			}
