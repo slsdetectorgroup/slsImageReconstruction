@@ -69,7 +69,9 @@ int main(int argc, char *argv[]) {
 	cout << "\n\nFile name\t:" << file <<
 			"\nHalfMoule\t:";	if(top)	cout << "top ";	else cout << "bottom ";
 								if(left)cout << "left";	else cout << "right";
-	if(active) cout << "\nActive"; else cout << "\nInactive";
+
+	cout<<"\nStatus\t\t:";
+	if(active) cout << "active"; else cout << "inactive";
 	cout << "\nDynamic range\t:"<< dynamicrange <<
 			"\nTen giga\t:" << tenGiga <<
 			"\nPackets/Frame\t:" << packetsPerFrame <<
@@ -294,7 +296,7 @@ int getFileParameters(string file, int &hs, int &tp, int &lt, int &act,int &dr, 
 			//cout<<"Str active:"<<str<<endl;
 			sstr >> str >> str >> act;
 		}
-
+cout<<"activeL:"<<act<<endl;
 		//frames caught
 		getline(infile,str);
 		//cout<<"Str frames caught:"<<str<<endl;
