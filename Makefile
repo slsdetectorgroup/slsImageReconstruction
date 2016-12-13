@@ -5,7 +5,7 @@ LIBRARYRXRDIR 	=	$(WD)/../slsReceiverSoftware
 LIBRARYDETDIR 	=	$(WD)/../slsDetectorSoftware
 LIBRARYCALDIR	=	$(WD)/../slsDetectorCalibration
 
-CBFLIBDIR		=	/scratch/CBFlib-0.9.5
+CBFLIBDIR		=	/sls/X12SA/data/x12saop/EigerPackage/CBFlib-0.9.5
 #CBFLIBDIR		=	~/local/Software/CBFlib/CBFlib-0.9.5
 LIBRARYCBF		=	$(CBFLIBDIR)/lib/*.o
 LIBHDF5			=	-L$(CBFLIBDIR)/lib/ -lhdf5
