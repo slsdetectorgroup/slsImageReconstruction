@@ -6,8 +6,6 @@
  */
 
 #include "sls_receiver_defs.h"
-#include "slsReceiverData.h"
-#include "eigerHalfModuleData.h"
 #include "ansi.h"
 
 #include <iostream>
@@ -48,28 +46,30 @@ int local_exit(int status) {
   return status;    /* to avoid warning messages */
 }
 
-int getFileParameters(string file, int &hs, int &tp, int &lt, int &act, int& mp, int &dr, int &tg, int &ps, int &ds, int &x, int &y,
-		      string& timestamp){
-	cout << "Getting File Parameters from " << file << endl;
+int getFileParameters(string file,  int &hs, int &tp, int &lt, int &act, int &dr, int &tg, int &is, int &x, int &y,
+		      string& timestamp, int& expTime, int& period){
+   	cout << "Getting File Parameters from " << file << endl;
 	string str;
 	string strdayw, strmonth, strday, strtime,  stryear;
 	ifstream infile;
-
-/*
-	Header		 	400 bytes
-	Top		 		1
-	Left		 	1
-	Active		 	1
-	Packets Lost	6
-	Dynamic Range	16
-	Ten Giga	 	0
-	Packet		 	1040 bytes
-	Data		 	1024 bytes
-	x		 		512 pixels
-	y		 		256 pixels
-	Timestamp	 Wed Oct 26 11:26:16 2016
-*/
-
+	int dummyint;
+	/*
+	  Header		: 500 bytes
+	  Top		: 1
+	  Left		: 1
+	  Active		: 1
+	  Frames Caught	: 1
+	  Frames Lost	: 0
+	  Dynamic Range	: 16
+	  Ten Giga	: 0
+	  Image Size	: 262144 bytes
+	  x		: 512 pixels
+	  y		: 256 pixels
+	  Total Frames	: 1
+	  Exptime (ns)	: 1000000000
+	  Period (ns)	: 1000000000
+	  Timestamp	: Fri Dec  2 12:40:33 2016
+	*/
 
 	infile.open(file.c_str(),ios::in | ios::binary);
 	if (infile.is_open()) {
@@ -77,85 +77,98 @@ int getFileParameters(string file, int &hs, int &tp, int &lt, int &act, int& mp,
 		//empty line
 		getline(infile,str);
 
-		//header size
+	//header size
 		if(getline(infile,str)){
 			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> hs;
+			//cout<<"Str header size:"<<str<<endl;
+			sstr >> str >> str >> hs;
 		}
 
-		//bottom
+		//top
 		if(getline(infile,str)){
 			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> tp;
+			//cout<<"Str top:"<<str<<endl;
+			sstr >> str >> str >> tp;
 		}
 
-		//right
+		//left
 		if(getline(infile,str)){
 			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> lt;
+			//cout<<"Str left:"<<str<<endl;
+			sstr >> str >> str >> lt;
 		}
 
 		//active
 		if(getline(infile,str)){
 			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> act;
+			//cout<<"Str active:"<<str<<endl;
+			sstr >> str >> str >> act;
 		}
-		//missing packets
-		if(getline(infile,str)){
-			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> str>> mp;
-		}
+		
+		//frames caught
+		getline(infile,str);
+		//cout<<"Str frames caught:"<<str<<endl;
+		//frames lost
+		getline(infile,str);
+		//cout<<"Str frames lost:"<<str<<endl;
+
 		//dynamic range
 		if(getline(infile,str)){
 			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> str >> dr;
+			//cout<<"Str dynamic range:"<<str<<endl;
+			sstr >> str >> str >>  str >> dr;
 		}
 
 		//ten giga
 		if(getline(infile,str)){
 			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> str >> tg;
+			//cout<<"Str ten giga:"<<str<<endl;
+			sstr >> str >> str >> str >> tg;
 		}
 
-		//packet size
+		//image size
 		if(getline(infile,str)){
 			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> ps;
-		}
-
-		//data size
-		if(getline(infile,str)){
-			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> ds;
+			//cout<<"Str image size:"<<str<<endl;
+			sstr >> str >> str >> str >> is;
 		}
 		//x
 		if(getline(infile,str)){
 			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> x;
+			//cout<<"Str x:"<<str<<endl;
+			sstr >> str >> str >> x;
 		}
 
 		//y
 		if(getline(infile,str)){
 			istringstream sstr(str);
-			//cout<<"Str:"<<str<<endl;
-			sstr >> str >> y;
+			//cout<<"Str y:"<<str<<endl;
+			sstr >> str >> str >> y;
+		}
+
+		//Total Frames 
+		if(getline(infile,str)){
+		  istringstream sstr(str);
+		  sstr >> str >> str >> str >> dummyint;
+		}
+
+
+		// Exptime (ns)	: 1000000000
+		if(getline(infile,str)){
+		  istringstream sstr(str);
+		  sstr >> str >> str >> str >> expTime;
+		}
+		//Period (ns)	: 1000000000
+		if(getline(infile,str)){
+		  istringstream sstr(str);
+		  sstr >> str >> str >> str >> period;
 		}
 
 		//Timestamp
 		if(getline(infile,str)){
 		  istringstream sstr(str);
 		  //cout<<"Str:"<<str<<endl;
-		  sstr >> str >> strdayw >> strmonth >> strday>> strtime >> stryear;
+		  sstr >> str >> str>> strdayw >> strmonth >> strday>> strtime >> stryear;
 		  timestamp = stryear+"/"+strmonth+"/"+strday+" "+strtime+".000 CEST";
 		}
 		
@@ -247,6 +260,60 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
     }
 }
 
+int* decodeData(int *datain, const int size, const int nx, const int ny, const int dynamicRange) 
+{
+  
+  int dataBytes = size;
+  int nch = nx*ny;
+  int* dataout = new int [nch];
+  char *ptr=(char*)datain;
+  char iptr;
+
+  const int bytesize=8;
+  int ival=0;
+  int  ipos=0, ichan=0, ibyte;
+  
+  switch (dynamicRange) {
+  case 4:
+    for (ibyte=0; ibyte<dataBytes; ++ibyte) {//for every byte (1 pixel = 1/2 byte)
+      iptr=ptr[ibyte]&0xff;				//???? a byte mask
+      for (ipos=0; ipos<2; ++ipos) {		//loop over the 8bit (twice)
+	ival=(iptr>>(ipos*4))&0xf;		//pick the right 4bit
+	dataout[ichan]=ival;
+	ichan++;
+      }
+    }
+    break;
+  case 8:
+    for (ichan=0; ichan<dataBytes; ++ichan) {//for every pixel (1 pixel = 1 byte)
+      ival=ptr[ichan]&0xff;				//????? a byte mask
+      dataout[ichan]=ival;
+    }
+    break;
+  case 16:
+    for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
+      ival=0;
+      for (ibyte=0; ibyte<2; ++ibyte) { 	//for each byte (concatenate 2 bytes to get 16 bit value)
+	iptr=ptr[ichan*2+ibyte];
+	ival|=((iptr<<(ibyte*bytesize))&(0xff<<(ibyte*bytesize)));
+      }
+      dataout[ichan]=ival;
+    }
+    break;
+  default:
+    ; //for every 32 bit (every element in datain array)
+    //for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
+    //		ival=datain[ichan]&0xffffff;
+    //		dataout[ichan]=ival;
+    //	}
+  }
+  
+  
+  
+  return dataout;
+  
+}
+
 int main(int argc, char *argv[]) {
 
   //geometry
@@ -311,7 +378,6 @@ int main(int argc, char *argv[]) {
   //initialize receiverdata and fnum for all half modules
   int numModules = n_v *n_h*NumHalfModules*2;
   if( npix_y_user==256)   numModules=2;
-  slsReceiverData <uint32_t> *receiverdata[numModules];
   int fnum;
   int nr=0;
     for(int imod_h=0; imod_h<n_h; imod_h++){
@@ -319,7 +385,6 @@ int main(int argc, char *argv[]) {
 	for(int it=0;it<2;it++){
 	  for(int ileft=0; ileft<2;ileft++){
 	    if( npix_y_user==256 && it==1 ) continue;
-	    receiverdata[nr]=NULL;
 	    fnum=0;
 	    nr++;
 	  }
@@ -328,31 +393,31 @@ int main(int argc, char *argv[]) {
     }
 
   //get dynamic range and configure receiverdata depending on top and bottom
-  char fname[1000];
+  char fname[1000]; 
   char frames[20]="";
   if(isFileFrameIndex)
     sprintf(frames,"_f%012d",fileFrameIndex);//"f000000000000";
   ifstream infile[numModules];
-  //char *data = new char[1024];
   int nfile=startdet;
   //put master on top always
-  nr=0;
-  int headersize, top, left, active, missingpackets, dynamicrange, tenGiga, packetSize, dataSize, xpix, ypix;
+  int fileheadersize, top, left, active, dynamicrange, tenGiga, packetSize, xpix, ypix, imageSize;
   string timestamp;
+  double expTime, period;
+ int iexpTime, iperiod;
 
-    for(int imod_h=0; imod_h<n_h; imod_h++){
-      for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
-	for( int it=0;it<2;it++){
-	  for( int ileft=0;ileft<2;ileft++){
-	    if( npix_y_user==256 && it==1 ) continue;  
-	    
+  for(int imod_h=0; imod_h<n_h; imod_h++){
+    for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
+      for( int it=0;it<2;it++){
+	for( int ileft=0;ileft<2;ileft++){
+	  if( npix_y_user==256 && it==1 ) continue;  
+	  
 	  sprintf(fname,"%s_d%d%s_%d.raw",file.c_str(),nfile,frames,fileIndex);
-	  //read file to get parameters
-	  //if(getFileParameters(fname, headersize, dynamicrange, packetSize, xpix, ypix) != slsReceiverDefs::OK)
 	  //get file parameters
-	  if(getFileParameters(fname, headersize, top, left, active, missingpackets, dynamicrange, tenGiga, packetSize, dataSize, xpix, 
-			       ypix, timestamp) != slsReceiverDefs::OK)
-	    return -1;
+	  if(getFileParameters(fname, fileheadersize, top, left, active, dynamicrange, tenGiga, imageSize, xpix, 
+			       ypix, timestamp, iexpTime, iperiod ) != slsReceiverDefs::OK)return -1;
+	  
+	  expTime=iexpTime*1e-9;
+	  period=iperiod* 1e-9;
 	  
 	  //validations
 	  switch(dynamicrange){
@@ -361,59 +426,29 @@ int main(int argc, char *argv[]) {
 	    cout << "Error: Invalid dynamic range " << dynamicrange << " read from file " << file << endl;
 	    return -1;
 	  }
-	  if(!tenGiga){
-	    if(packetSize!=1040){
-	      cout << "Error: Invalid packet size " << packetSize << " for 1g read from file " << file << endl;
-	      return -1;
-	    }
-	    if(dataSize!=1024){
-	      cout << "Error: Invalid data size " << dataSize << " for 1g read from file " << file << endl;
-	      return -1;
-	    }
-	  }else{
-	    if(packetSize!=4112){
-	      cout << "Error: Invalid packet size " << packetSize << " for 10g read from file " << file << endl;
-	      return -1;
-	    }
-	    if(dataSize!=4096){
-	      cout << "Error: Invalid data size " << dataSize << " for 10g read from file " << file << endl;
-	      return -1;
-	    }
-	  }
-	  
 	  int packetsPerFrame;
 	  if(!tenGiga)
 	    packetsPerFrame = 16 * dynamicrange;
 	  else
-	  packetsPerFrame = 4 * dynamicrange;
-	  
-	//read values
-	  int ix=0, iy=0, numFrames;
-	  
-	  if(!file.empty()){
-	    //	int* value4 = new int[xpix*ypix];
-	    //if(!active){
-	    //for(iy = 0; iy < ypix; iy++){
-	    //  for(ix = 0; ix < xpix; ix++){
-	    //    value4[iy*xpix+ix] = -1;
-	    //  }
-	    // }
-	    //}
-	    //else{
-	    
-	    receiverdata[nr] = new eigerHalfModuleData(top, left, dynamicrange, tenGiga, packetSize, dataSize, packetsPerFrame, xpix, ypix);	
-	    
-	    //construct datamapping object
-	    //receiverdata[nr] = new eigerHalfModuleData(dynamicrange,packetsPerFrame, packetSize, dataSize, it==0 ? true : false);
-	    nr++;
-	    nfile++;
+	    packetsPerFrame = 4 * dynamicrange;
+	  if(!tenGiga){
+	    if(imageSize!=(packetsPerFrame*1024)){
+	      cout << "Error: Invalid packet size " << imageSize << " for 1g read from file " << file << endl;
+	      return -1;
+	    }
 	  }
+	  else{
+	    if(imageSize!=(packetsPerFrame*4096)){
+	      cout << "Error: Invalid packet size " << imageSize << " for 10g read from file " << file << endl;
+	      return -1;
+	    }
+	  }
+	  
+	  nfile++; 	  
 	}
       }
     }
   }
-  
-    // delete [] data;
   
   //Create cbf files with data
   cbf_handle cbf;
@@ -423,62 +458,65 @@ int main(int argc, char *argv[]) {
   //nr high again
   int numFrames = fileFrameIndex+1 ;
 
+  const static int imageHeader = 16;
+  
+    
   //for each frame
   while(fnum>-1){
-    
+    int* value;
+  
     //here nr is not volatile anymore
     //loop on each receiver to get frame buffer
     for(int inr=0; inr<nr; inr++){
       sprintf(fname, "%s_d%d%s_%d.raw",file.c_str(),inr,frames,fileIndex);
-      //if( numFrames == fileFrameIndex+1)
-      //cout << "Reading file:" << fname << "   "<<nr<< "   "<<nfile<<endl;
-      
+    
       //open file
       if(!infile[inr].is_open())
 	infile[inr].open(fname,ios::in | ios::binary);
       if(infile[inr].is_open()){
-	//read header
+
+	//read file header
 	if( numFrames == fileFrameIndex+1){
-	  //get frame buffer
-	  int localheadersize=headersize;
-	  char data[localheadersize];
-	  infile[inr].read(data,localheadersize);
+	  //read file header
+	  char data[fileheadersize];
+	  infile[inr].read(data,fileheadersize);
 	}
-	int* tempbuffer=receiverdata[inr]->readNextFramewithMissingPackets(infile[inr],fnum);	
+	int* intbuffer = new int[imageSize];
+	//read data
+	infile[inr].read((char*)intbuffer,(imageSize+imageHeader));
+	fnum = (*((uint64_t*)(char*)intbuffer));
+	if(!CheckFrames(fnum,numFrames)) continue; 	
+	buffer.push_back(decodeData(intbuffer, imageSize, xpix, ypix, dynamicrange));
 	
-	if(!CheckFrames(fnum,numFrames)) continue;
-	buffer.push_back(receiverdata[inr]->decodeData(tempbuffer));
-      }
+      } //while read images
     }//loop on receivers
-    
-    if(fnum==-1) {
-      exit(1);
-    }
-
-    if(buffer.size()!=nr) continue;
-    // cout << "Number of Frames:" << numFrames << endl;
-
-    //get a 2d map of the image
-    int inr=0;
-    //initialize
-    for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
-      map[ik]=-1; 
-
-
-    for(int imod_h=0; imod_h<n_h;imod_h++){
-      for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
-	for( int it=0;it<2;it++){	
-	  for( int ileft=0;ileft<2;ileft++){	
-	    if( npix_y_user==256 && it==1) continue; 
-	    
-	    /* Make a cbf version of the image */
-	    //getting values //top
-	    if(it==0){
-	      if(ileft==0){
-
-		if( npix_y_user!=256 ){			      
-		 
-		  for(int ichipy=1; ichipy<NumChip_y;ichipy++){
+	
+	if(fnum==-1) {
+	  exit(1);
+	}
+	
+	if(buffer.size()!=nr) continue;
+	
+	//get a 2d map of the image
+	int inr=0;
+	//initialize
+	for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
+	  map[ik]=-1; 
+	
+	for(int imod_h=0; imod_h<n_h;imod_h++){
+	  for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
+	    for( int it=0;it<2;it++){	
+	      for( int ileft=0;ileft<2;ileft++){	
+		if( npix_y_user==256 && it==1) continue; 
+		
+		/* Make a cbf version of the image */
+		//getting values //top
+		if(it==0){
+		  if(ileft==0){
+		    
+		    if( npix_y_user!=256 ){			      
+		      
+		      for(int ichipy=1; ichipy<NumChip_y;ichipy++){
 		    for(int iy=0; iy<NumChanPerChip_y;iy++){
 		      for(int ichipx=0; ichipx<NumChip_x-2;ichipx++){
 			for(int ix=0; ix<NumChanPerChip_x;ix++){
@@ -613,7 +651,7 @@ int main(int argc, char *argv[]) {
       }
     } //close all loops
 		
-
+  
     
     buffer.clear();
     
@@ -630,20 +668,17 @@ int main(int argc, char *argv[]) {
 	    );
     //timestamp
     time_t rawtime = time(NULL);
-    struct tm *timeinfo = localtime(&rawtime);
-    char date[100],printDate[100];
+    char printDate[100];
     char limits[100];
     fprintf(out,"_array_data.header_contents\r\n"
 	    ";\r\n");
-    //  strftime(date, sizeof(date), "%Y/%b/%d %H:%M:%S.%j %Z", timeinfo);
-    // sprintf(printDate,"# %s\r\n",date);
     sprintf(printDate,"# %s\r\n",timestamp.c_str());
     fprintf(out,printDate);
     fprintf(out,
 	    "# Exposure_time 1.0000000 s\r\n"
 	    "# Exposure_period 1.0000000 s\r\n"
 	    "# Tau = 0 s\r\n");
-    long int max=max=pow(2,dynamicrange)-1;
+    long int max=pow(2,dynamicrange)-1;
     if(dynamicrange==16) max=pow(2,12)-1;
     sprintf(limits, "# Count_cutoff %ld counts\r\n",max );
     fprintf(out,limits);
@@ -709,18 +744,12 @@ int main(int argc, char *argv[]) {
       infile[inr].close();
 	
   //buffer.clear();
-	
+  
   /* Free the cbf */
   cbf_failnez (cbf_free_handle (cbf));
-
-	
-  for(int inr=0; inr<nr; ++inr) delete receiverdata[inr];
   
-  return slsReceiverDefs::OK;
-
-
-
-  }
+  return 1;
+}
 
 
 

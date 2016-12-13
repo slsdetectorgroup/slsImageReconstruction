@@ -183,11 +183,11 @@ int* decodeData(int *datain, const int size, const int nx, const int ny, const i
 			}
 			break;
 		default:
-													//for every 32 bit (every element in datain array)
-			for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
-				ival=datain[ichan]&0xffffff;
-				dataout[ichan]=ival;
-			}
+		  ;								//for every 32 bit (every element in datain array)
+		  //for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
+			  //ival=datain[ichan]&0xffffff;
+		  //	dataout[ichan]=ival;
+		  //	}
 		}
 
 
