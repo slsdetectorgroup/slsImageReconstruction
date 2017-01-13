@@ -8,6 +8,8 @@ include_directories(
 add_executable (image
     src/dummymain.cpp
 )
+target_link_libraries(image rt)
+
 if (${CBF_FOUND})
     include_directories(
         ${CBF_INCLUDE_DIRS}
