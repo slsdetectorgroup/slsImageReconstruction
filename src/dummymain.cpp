@@ -88,8 +88,8 @@ int main(int argc, char *argv[]) {
 
 	if(!file.empty()){
 		struct timespec begin,end; //requires -lrt in Makefile
-		int* intbuffer = new int[imageSize];
-
+		int* intbuffer = new int[imageSize+1];
+		int* bufferheader=new int[imageHeader+1];
 
 		clock_gettime(CLOCK_REALTIME, &begin);
 
@@ -105,9 +105,10 @@ int main(int argc, char *argv[]) {
 			infile.read(data,fileheadersize);
 
 			//read data
-			while(infile.read((char*)intbuffer,(imageSize+imageHeader))) {
-				fnum = (*((uint64_t*)(char*)intbuffer));
+			while(infile.read((char*)bufferheader,imageHeader)) {
+				fnum = (*((uint64_t*)(char*)bufferheader));
 				cout << "Reading values for frame #" << fnum << endl;
+				infile.read((char*)intbuffer,imageSize);
 				value = decodeData(intbuffer, imageSize, xpix, ypix, dynamicrange);
 				/*if(fnum==1)
 					for(int iy = 60; iy < 61; iy++){
@@ -184,14 +185,13 @@ int* decodeData(int *datain, const int size, const int nx, const int ny, const i
 			break;
 		default:
 		  ;								//for every 32 bit (every element in datain array)
-		  //for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
-			  //ival=datain[ichan]&0xffffff;
-		  //	dataout[ichan]=ival;
-		  //	}
+		  for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
+		    //  ival=datain[ichan]&0xffffff;
+		    //dataout[ichan]=ival;
+		    dataout[ichan]=datain[ichan];
+		  }
 		}
-
-
-
+		
 		return dataout;
 
 	};
