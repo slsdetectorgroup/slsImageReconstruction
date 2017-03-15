@@ -106,8 +106,6 @@ int main(int argc, char *argv[]) {
 			char data[fileheadersize];
 			infile.read(data,fileheadersize);
 
-
-
 			//read header
 			while(infile.read((char*)&detheader,sizeof(detheader))) {
 				fnum = detheader.frameNumber;
@@ -192,14 +190,13 @@ int* decodeData(int *datain, const int size, const int nx, const int ny, const i
 			break;
 		default:
 		  ;								//for every 32 bit (every element in datain array)
-		  //for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
-			  //ival=datain[ichan]&0xffffff;
-		  //	dataout[ichan]=ival;
-		  //	}
+		  for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
+		    //  ival=datain[ichan]&0xffffff;
+		    //dataout[ichan]=ival;
+		    dataout[ichan]=datain[ichan];
+		  }
 		}
-
-
-
+		
 		return dataout;
 
 	};

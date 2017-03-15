@@ -48,137 +48,137 @@ int local_exit(int status) {
 
 int getFileParameters(string file,  int &hs, int &tp, int &lt, int &act, int &dr, int &tg, int &is, int &x, int &y,
 		      string& timestamp, int& expTime, int& period){
-   	cout << "Getting File Parameters from " << file << endl;
-	string str;
-	string strdayw, strmonth, strday, strtime,  stryear;
-	ifstream infile;
-	int dummyint;
-	/*
-	  Header		: 500 bytes
-	  Top		: 1
-	  Left		: 1
-	  Active		: 1
-	  Frames Caught	: 1
-	  Frames Lost	: 0
-	  Dynamic Range	: 16
-	  Ten Giga	: 0
-	  Image Size	: 262144 bytes
-	  x		: 512 pixels
-	  y		: 256 pixels
-	  Total Frames	: 1
-	  Exptime (ns)	: 1000000000
-	  Period (ns)	: 1000000000
-	  Timestamp	: Fri Dec  2 12:40:33 2016
-	*/
+  cout << "Getting File Parameters from " << file << endl;
+  string str;
+  string strdayw, strmonth, strday, strtime,  stryear;
+  ifstream infile;
+  int dummyint;
+  /*
+    Header		: 500 bytes
+    Top		: 1
+    Left		: 1
+    Active		: 1
+    Frames Caught	: 1
+    Frames Lost	: 0
+    Dynamic Range	: 16
+    Ten Giga	: 0
+    Image Size	: 262144 bytes
+    x		: 512 pixels
+    y		: 256 pixels
+    Total Frames	: 1
+    Exptime (ns)	: 1000000000
+    Period (ns)	: 1000000000
+    Timestamp	: Fri Dec  2 12:40:33 2016
+  */
 
-	infile.open(file.c_str(),ios::in | ios::binary);
-	if (infile.is_open()) {
+  infile.open(file.c_str(),ios::in | ios::binary);
+  if (infile.is_open()) {
 
-		//empty line
-		getline(infile,str);
+    //empty line
+    getline(infile,str);
 
-	//header size
-		if(getline(infile,str)){
-			istringstream sstr(str);
-			//cout<<"Str header size:"<<str<<endl;
-			sstr >> str >> str >> hs;
-		}
+    //header size
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      //cout<<"Str header size:"<<str<<endl;
+      sstr >> str >> str >> hs;
+    }
 
-		//top
-		if(getline(infile,str)){
-			istringstream sstr(str);
-			//cout<<"Str top:"<<str<<endl;
-			sstr >> str >> str >> tp;
-		}
+    //top
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      //cout<<"Str top:"<<str<<endl;
+      sstr >> str >> str >> tp;
+    }
 
-		//left
-		if(getline(infile,str)){
-			istringstream sstr(str);
-			//cout<<"Str left:"<<str<<endl;
-			sstr >> str >> str >> lt;
-		}
+    //left
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      //cout<<"Str left:"<<str<<endl;
+      sstr >> str >> str >> lt;
+    }
 
-		//active
-		if(getline(infile,str)){
-			istringstream sstr(str);
-			//cout<<"Str active:"<<str<<endl;
-			sstr >> str >> str >> act;
-		}
+    //active
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      //cout<<"Str active:"<<str<<endl;
+      sstr >> str >> str >> act;
+    }
 		
-		//frames caught
-		getline(infile,str);
-		//cout<<"Str frames caught:"<<str<<endl;
-		//frames lost
-		getline(infile,str);
-		//cout<<"Str frames lost:"<<str<<endl;
+    //frames caught
+    getline(infile,str);
+    //cout<<"Str frames caught:"<<str<<endl;
+    //frames lost
+    getline(infile,str);
+    //cout<<"Str frames lost:"<<str<<endl;
 
-		//dynamic range
-		if(getline(infile,str)){
-			istringstream sstr(str);
-			//cout<<"Str dynamic range:"<<str<<endl;
-			sstr >> str >> str >>  str >> dr;
-		}
+    //dynamic range
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      //cout<<"Str dynamic range:"<<str<<endl;
+      sstr >> str >> str >>  str >> dr;
+    }
 
-		//ten giga
-		if(getline(infile,str)){
-			istringstream sstr(str);
-			//cout<<"Str ten giga:"<<str<<endl;
-			sstr >> str >> str >> str >> tg;
-		}
+    //ten giga
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      //cout<<"Str ten giga:"<<str<<endl;
+      sstr >> str >> str >> str >> tg;
+    }
 
-		//image size
-		if(getline(infile,str)){
-			istringstream sstr(str);
-			//cout<<"Str image size:"<<str<<endl;
-			sstr >> str >> str >> str >> is;
-		}
-		//x
-		if(getline(infile,str)){
-			istringstream sstr(str);
-			//cout<<"Str x:"<<str<<endl;
-			sstr >> str >> str >> x;
-		}
+    //image size
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      //cout<<"Str image size:"<<str<<endl;
+      sstr >> str >> str >> str >> is;
+    }
+    //x
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      //cout<<"Str x:"<<str<<endl;
+      sstr >> str >> str >> x;
+    }
 
-		//y
-		if(getline(infile,str)){
-			istringstream sstr(str);
-			//cout<<"Str y:"<<str<<endl;
-			sstr >> str >> str >> y;
-		}
+    //y
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      //cout<<"Str y:"<<str<<endl;
+      sstr >> str >> str >> y;
+    }
 
-		//Total Frames 
-		if(getline(infile,str)){
-		  istringstream sstr(str);
-		  sstr >> str >> str >> str >> dummyint;
-		}
+    //Total Frames 
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str >> dummyint;
+    }
 
 
-		// Exptime (ns)	: 1000000000
-		if(getline(infile,str)){
-		  istringstream sstr(str);
-		  sstr >> str >> str >> str >> expTime;
-		}
-		//Period (ns)	: 1000000000
-		if(getline(infile,str)){
-		  istringstream sstr(str);
-		  sstr >> str >> str >> str >> period;
-		}
+    // Exptime (ns)	: 1000000000
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str >> expTime;
+    }
+    //Period (ns)	: 1000000000
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str >> period;
+    }
 
-		//Timestamp
-		if(getline(infile,str)){
-		  istringstream sstr(str);
-		  //cout<<"Str:"<<str<<endl;
-		  sstr >> str >> str>> strdayw >> strmonth >> strday>> strtime >> stryear;
-		  timestamp = stryear+"/"+strmonth+"/"+strday+" "+strtime+".000 CEST";
-		}
+    //Timestamp
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      //cout<<"Str:"<<str<<endl;
+      sstr >> str >> str>> strdayw >> strmonth >> strday>> strtime >> stryear;
+      timestamp = stryear+"/"+strmonth+"/"+strday+" "+strtime+".000 CEST";
+    }
 		
-		infile.close();
-	}else{
-		cprintf(RED, "Error: Could not read file: %s\n", file.c_str());
-		return slsReceiverDefs::FAIL;
-	}
+    infile.close();
+  }else{
+    cprintf(RED, "Error: Could not read file: %s\n", file.c_str());
+    return slsReceiverDefs::FAIL;
+  }
 
-	return slsReceiverDefs::OK;
+  return slsReceiverDefs::OK;
 }
 
 int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int& longedge_x, int &startdet){
@@ -265,7 +265,7 @@ int* decodeData(int *datain, const int size, const int nx, const int ny, const i
   
   int dataBytes = size;
   int nch = nx*ny;
-  int* dataout = new int [nch];
+  int* dataout = new int [nch+1];
   char *ptr=(char*)datain;
   char iptr;
 
@@ -301,11 +301,12 @@ int* decodeData(int *datain, const int size, const int nx, const int ny, const i
     }
     break;
   default:
-    ; //for every 32 bit (every element in datain array)
-    //for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
-    //		ival=datain[ichan]&0xffffff;
-    //		dataout[ichan]=ival;
-    //	}
+    //for every 32 bit (every element in datain array)
+    for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
+      //		ival=datain[ichan]&0xffffff;
+      //  dataout[ichan]=ival;
+      dataout[ichan]=datain[ichan];
+    }
   }
   
   
@@ -349,9 +350,9 @@ int main(int argc, char *argv[]) {
   if( npix_y_user==256)  n_v=1;
   int n_h = npix_x_user/npix_x_sm;
   //Gap pixels
-  const int GapPixelsBetweenChips_x = 2;
-  const int GapPixelsBetweenChips_y = 2;
-  const int GapPixelsBetweenModules_x = 8;
+  const int GapPixelsBetweenChips_x =2;
+  const int GapPixelsBetweenChips_y =2;
+  const int GapPixelsBetweenModules_x =8;
   const int GapPixelsBetweenModules_y = 36;
   int gap_pix_x_sm = GapPixelsBetweenChips_x * (NumChip_x-1);
   int gap_pix_y_sm = GapPixelsBetweenChips_y * (NumChip_y-1);
@@ -360,7 +361,10 @@ int main(int argc, char *argv[]) {
   //+ gap pixels between modules * (number of modules -1)
   int npix_x_g = npix_x_sm * n_h  +  gap_pix_x_sm *  n_h + GapPixelsBetweenModules_x  * (n_h-1);
   int npix_y_g = npix_y_sm * n_v  +  gap_pix_y_sm *  n_v + GapPixelsBetweenModules_y  * (n_v-1);
-  if( npix_y_user==256)  npix_y_g = npix_y_user;
+  if( npix_y_user==256) { 
+    npix_y_g = npix_y_user;
+  }
+ 
   //map including gap pixels
   int* map=new int[npix_x_g*npix_y_g];
   
@@ -374,23 +378,22 @@ int main(int argc, char *argv[]) {
 	  longedge_x ? n_h: n_v,
 	  longedge_x ? n_v : n_h);
   
-
   //initialize receiverdata and fnum for all half modules
   int numModules = n_v *n_h*NumHalfModules*2;
   if( npix_y_user==256)   numModules=2;
   int fnum;
   int nr=0;
-    for(int imod_h=0; imod_h<n_h; imod_h++){
-      for(int imod_v=0; imod_v<n_v; imod_v++){
-	for(int it=0;it<2;it++){
-	  for(int ileft=0; ileft<2;ileft++){
-	    if( npix_y_user==256 && it==1 ) continue;
-	    fnum=0;
-	    nr++;
-	  }
+  for(int imod_h=0; imod_h<n_h; imod_h++){
+    for(int imod_v=0; imod_v<n_v; imod_v++){
+      for(int it=0;it<2;it++){
+	for(int ileft=0; ileft<2;ileft++){
+	  if( npix_y_user==256 && it==1 ) continue;
+	  fnum=0;
+	  nr++;
 	}
       }
     }
+  }
 
   //get dynamic range and configure receiverdata depending on top and bottom
   char fname[1000]; 
@@ -403,8 +406,8 @@ int main(int argc, char *argv[]) {
   int fileheadersize, top, left, active, dynamicrange, tenGiga, packetSize, xpix, ypix, imageSize;
   string timestamp;
   double expTime, period;
- int iexpTime, iperiod;
-
+  int iexpTime, iperiod;
+  
   for(int imod_h=0; imod_h<n_h; imod_h++){
     for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
       for( int it=0;it<2;it++){
@@ -418,6 +421,7 @@ int main(int argc, char *argv[]) {
 	  
 	  expTime=iexpTime*1e-9;
 	  period=iperiod* 1e-9;
+	  
 	  
 	  //validations
 	  switch(dynamicrange){
@@ -450,19 +454,20 @@ int main(int argc, char *argv[]) {
     }
   }
   
-  //Create cbf files with data
-  cbf_handle cbf;
+  
   vector <int*> buffer;
   buffer.reserve(n_v *n_h*2);
   FILE *out;
   //nr high again
   int numFrames = fileFrameIndex+1 ;
-
+  
   const static int imageHeader = 16;
   
-    
   //for each frame
   while(fnum>-1){
+    
+    //Create cbf files with data
+    cbf_handle cbf;
     int* value;
   
     //here nr is not volatile anymore
@@ -481,175 +486,122 @@ int main(int argc, char *argv[]) {
 	  char data[fileheadersize];
 	  infile[inr].read(data,fileheadersize);
 	}
-	int* intbuffer = new int[imageSize];
+	int* intbuffer = new int[imageSize+1];
+      	int* bufferheader=new int[imageHeader+1];
 	//read data
-	infile[inr].read((char*)intbuffer,(imageSize+imageHeader));
-	fnum = (*((uint64_t*)(char*)intbuffer));
-	if(!CheckFrames(fnum,numFrames)) continue; 	
-	buffer.push_back(decodeData(intbuffer, imageSize, xpix, ypix, dynamicrange));
-	
-      } //while read images
-    }//loop on receivers
-	
+	if(infile[inr].read((char*)bufferheader,imageHeader))
+	  fnum = (*((uint64_t*)(char*)bufferheader));
+	else fnum=-1;
 	if(fnum==-1) {
 	  exit(1);
 	}
-	
-	if(buffer.size()!=nr) continue;
-	
-	//get a 2d map of the image
-	int inr=0;
-	//initialize
-	for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
-	  map[ik]=-1; 
-	
-	for(int imod_h=0; imod_h<n_h;imod_h++){
-	  for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
-	    for( int it=0;it<2;it++){	
-	      for( int ileft=0;ileft<2;ileft++){	
-		if( npix_y_user==256 && it==1) continue; 
 		
-		/* Make a cbf version of the image */
-		//getting values //top
-		if(it==0){
-		  if(ileft==0){
-		    
-		    if( npix_y_user!=256 ){			      
-		      
-		      for(int ichipy=1; ichipy<NumChip_y;ichipy++){
-		    for(int iy=0; iy<NumChanPerChip_y;iy++){
-		      for(int ichipx=0; ichipx<NumChip_x-2;ichipx++){
-			for(int ix=0; ix<NumChanPerChip_x;ix++){
-			  int x_t= ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+(NumChip_x-1)*GapPixelsBetweenChips_x+GapPixelsBetweenModules_x)*imod_h ;
-			  int y_t= iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+(NumChip_y-1)*GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
-			  
-			  int k= x_t+ npix_x_g*y_t;
-			  if(!longedge_x) {
-			    //now apply rotation 
-			    //y'=x
-			    //x'=(ngap_pix_y-iy)
-			    k=(npix_y_g-y_t)+ npix_y_g*x_t;
-			  }
-			  
-			  // map2[ix+(NumChanPerChip_x)*ichipx + 1024*iy ]=buffer[inr][ix+ichipx*256+ 512*iy]; 
-			  map[k]=buffer[inr][ix+ichipx*256+ 512*iy];
-			}
+	infile[inr].read((char*)intbuffer,imageSize);
+	if(!CheckFrames(fnum,numFrames)) continue; 	
+     
+	buffer.push_back(decodeData(intbuffer, imageSize, xpix, ypix, dynamicrange));
+	
+      } //while read images
+      //close files
+      infile[inr].close();
+    }//loop on receivers
+
+    if(buffer.size()!=nr) continue;
+    
+    //get a 2d map of the image
+    //initialize
+    for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
+      map[ik]=4095;//-1; 
+	
+    int startchipx=0;
+    int startchipy=0;
+    int endchipx=4;
+    int endchipy=1;
+
+
+    for(int imod_h=0; imod_h<n_h;imod_h++){
+      for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
+	for( int it=0;it<2;it++){	
+	  for( int ileft=0;ileft<2;ileft++){
+		
+	    if( npix_y_user==256 && it==1) continue; 
+		
+	    /* Make a cbf version of the image */
+	    //getting values //top
+	    if(it==0){
+	      startchipy=1;    
+	      endchipy=2;
+
+	      if(ileft==0){		  
+		startchipx=0;
+		endchipx=2;
+	      }
+	      if(ileft==1){		  
+		startchipx=2;
+		endchipx=4;
+	      }
+	      if(npix_y_user==256){
+		startchipy=0;    
+		endchipy=1;
+	      } 
+	      for(int ichipy=startchipy; ichipy<endchipy;ichipy++){
+		for(int iy=0; iy<NumChanPerChip_y;iy++){
+		  for(int ichipx=startchipx; ichipx<endchipx;ichipx++){
+		    for(int ix=0; ix<NumChanPerChip_x;ix++){
+		      int x_t= ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+(NumChip_x-1)*GapPixelsBetweenChips_x+GapPixelsBetweenModules_x)*imod_h ;
+		      int y_t= iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+(NumChip_y-1)*GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
+
+		      int k= x_t+ npix_x_g*y_t;
+		      if(!longedge_x) {
+			//now apply rotation 
+			//y'=x
+			//x'=(ngap_pix_y-iy)
+			k=(npix_y_g-y_t)+ npix_y_g*x_t;
 		      }
-		    }
-		  }
-		}
-		else{
-		  //single half module
-		  for(int ichipy=0; ichipy<1;ichipy++){
-		    for(int iy=0; iy<NumChanPerChip_y;iy++){
-		      for(int ichipx=0; ichipx<NumChip_x;ichipx++){
-			for(int ix=0; ix<NumChanPerChip_x;ix++){
-			  
-			  int k= ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+(NumChip_x-1)*GapPixelsBetweenChips_x+ GapPixelsBetweenModules_x)*imod_h + npix_x_g*(iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+(NumChip_y-1)*GapPixelsBetweenChips_y +GapPixelsBetweenModules_y )*imod_v);
-			  map[k]=buffer[inr][ix+ichipx*256+ 512*iy];
-			}
-		      }
+		      map[k]=buffer[2*it+ileft][ix+(ichipx%2)*256+ 256*2*iy];
 		    }
 		  }
 		}
 	      }
-	      //right 
-	      else{
-
-		if( npix_y_user!=256 ){			      
-
-		  for(int ichipy=1; ichipy<NumChip_y;ichipy++){
-		    for(int iy=0; iy<NumChanPerChip_y;iy++){
-		      for(int ichipx=2; ichipx<NumChip_x;ichipx++){
-			for(int ix=0; ix<NumChanPerChip_x;ix++){
-			  int x_t= ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+(NumChip_x-1)*GapPixelsBetweenChips_x+GapPixelsBetweenModules_x)*imod_h ;
-			  int y_t= iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+(NumChip_y-1)*GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
-			  
-			  int k= x_t+ npix_x_g*y_t;
-			  if(!longedge_x) {
-			    //now apply rotation 
-			    //y'=x
-			    //x'=(ngap_pix_y-iy)
-			    k=(npix_y_g-y_t)+ npix_y_g*x_t;
-			  }
-
-			  // map2[ix+ichipx*256+ 1024*iy]=buffer[inr][ix+(ichipx-2)*256+ 512*iy];
-			  map[k]=buffer[inr][ix+(ichipx-2)*256+ 512*iy];
-			}
-		      }
-		    }
-		  }
-		}
-		else{
-		  //single half module		
-		  for(int ichipy=0; ichipy<1;ichipy++){
-		    for(int iy=0; iy<NumChanPerChip_y;iy++){
-		      for(int ichipx=0; ichipx<NumChip_x;ichipx++){
-			for(int ix=0; ix<NumChanPerChip_x;ix++){
-			  
-			  int k= ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+(NumChip_x-1)*GapPixelsBetweenChips_x+ GapPixelsBetweenModules_x)*imod_h + npix_x_g*(iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+(NumChip_y-1)*GapPixelsBetweenChips_y +GapPixelsBetweenModules_y )*imod_v);
-			  map[k]=buffer[inr][ix+(ichipx-2)*256+ 512*iy];
-			}
-		      }
-		    }
-		  }
-		}
-	      }
-
-
-	    }
-
+		  
+	    } //it ==0 		
 	    //getting values for bottom
 	    if(it==1 ) {
-	      //left
-	    if(ileft==0){
-
-	      for(int ichipy=0; ichipy<1;ichipy++){
-		for(int iy=0; iy<NumChanPerChip_y;iy++){
-		  for(int ichipx=0; ichipx<NumChip_x-2;ichipx++){
-		    for(int ix=0; ix<NumChanPerChip_x;ix++){
-		      int x_t=ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+(NumChip_x-1)*GapPixelsBetweenChips_x+GapPixelsBetweenModules_x)*imod_h;
-		      int y_t= iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+(NumChip_y-1)*GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
-		      
-		      int k=  x_t+npix_x_g*y_t;
-		      if(!longedge_x){//now apply rotation 
-			//y'=x
-			//x'=(ngap_pix_y-iy)
-			k=(npix_y_g-y_t)+ npix_y_g*x_t;
-		      }
-		      map[k]=buffer[inr][ix+ichipx*256+ 512*(255-iy)];
-		  }
-		}
+	      startchipy=0;    
+	      endchipy=1;
+	      if(ileft==0){		  
+		startchipx=0;
+		endchipx=2;
 	      }
-	    }
-	  }
-	    else {
-	      //right
-	      for(int ichipy=0; ichipy<1;ichipy++){
+	      if(ileft==1){		  
+		startchipx=2;
+		endchipx=4;
+	      }		 
+		 		    
+	      for(int ichipy=startchipy; ichipy<endchipy;ichipy++){
 		for(int iy=0; iy<NumChanPerChip_y;iy++){
-		  for(int ichipx=2; ichipx<NumChip_x;ichipx++){
+		  for(int ichipx=startchipx; ichipx<endchipx;ichipx++){
 		    for(int ix=0; ix<NumChanPerChip_x;ix++){
 		      int x_t=ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+(NumChip_x-1)*GapPixelsBetweenChips_x+GapPixelsBetweenModules_x)*imod_h;
 		      int y_t= iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+(NumChip_y-1)*GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
-		      
+			    
 		      int k=  x_t+npix_x_g*y_t;
 		      if(!longedge_x){//now apply rotation 
 			//y'=x
 			//x'=(ngap_pix_y-iy)
 			k=(npix_y_g-y_t)+ npix_y_g*x_t;
 		      }
-		      map[k]=buffer[inr][ix+(ichipx-2)*256 + 512*(255-iy)];
+		      map[k]=buffer[2*it+ileft][ix+(ichipx%2)*256+ 256*2*(255-iy)];
 		    }
 		  }
 		}
 	      }
-	    }
-	    } 
-	    inr++;
-	  }
-	}
-      }
-    } //close all loops
+	    } //it==1
+	  }//ileft
+	} //it
+	    
+      }//v mods
+    } //h mods close all loops
 		
   
     
@@ -701,7 +653,6 @@ int main(int argc, char *argv[]) {
       /* Make new column at current data category */
       cbf_failnez (cbf_new_column   (cbf, "data"))
       	
-		  
       /* Create the binary data */
       cbf_failnez (cbf_set_integerarray_wdims_fs (
 						  cbf, 								//cbf_handle handle
@@ -718,7 +669,7 @@ int main(int argc, char *argv[]) {
 						  4095 								//size_t padding
 						  ));
 
-
+  
     /** write everything to file */
     cbf_failnez (cbf_write_file (
 				 cbf, 		//cbf_handle handle
@@ -727,27 +678,19 @@ int main(int argc, char *argv[]) {
 				 CBF, 		//int ciforcbf
 				 MSG_DIGEST | MIME_HEADERS  , //int headers
 				 0));		//int encoding
+    
 
-    //cprintf(GREEN,"CBF File Created: %s\n\n",fname);
-
-    numFrames++;
-
+    
     cbf_failnez (cbf_free_handle (cbf));
+    numFrames++;
+    
+    buffer.clear();
 
+  } //loop on frames
   
-  }
-
-
-  //close file when not frame yet
-  for(int inr=0; inr<nr; inr++)
-    if (infile[inr].is_open())
-      infile[inr].close();
-	
   //buffer.clear();
-  
-  /* Free the cbf */
-  cbf_failnez (cbf_free_handle (cbf));
-  
+
+
   return 1;
 }
 
