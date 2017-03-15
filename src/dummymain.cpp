@@ -83,13 +83,12 @@ int main(int argc, char *argv[]) {
 	int numFrames;
 	uint64_t fnum, snum, bnum;
 
-	const static int imageHeader = (3*8);
 	int* value;
 
 
 	if(!file.empty()){
 		struct timespec begin,end; //requires -lrt in Makefile
-		char* cimageheader = new char[imageHeader];
+		slsReceiverDefs::sls_detector_header detheader;
 		int* intbuffer = new int[imageSize];
 
 		clock_gettime(CLOCK_REALTIME, &begin);
@@ -108,12 +107,12 @@ int main(int argc, char *argv[]) {
 			infile.read(data,fileheadersize);
 
 
+
 			//read header
-			while(infile.read(cimageheader,(imageHeader))) {
-				fnum = (*((uint64_t*)cimageheader));
-				bnum = (*((uint64_t*)(cimageheader+8)));
-				snum = (*((uint64_t*)(cimageheader+16)));
-				cout << "Reading values for frame #" << fnum << "\ttimestamp#" << bnum << "\texplength#" << snum << endl;
+			while(infile.read((char*)&detheader,sizeof(detheader))) {
+				fnum = detheader.frameNumber;
+				cout << "Reading values for frame #" << fnum << endl;
+				cout <<"bunchid#" << detheader.bunchId << "\texplength#" << detheader.expLength << endl;
 
 				//read data
 				if(!infile.read((char*)intbuffer,(imageSize)))
@@ -139,7 +138,6 @@ int main(int argc, char *argv[]) {
 		cprintf(BLUE,"Elapsed time:%f seconds\n",( end.tv_sec - begin.tv_sec )	+ ( end.tv_nsec - begin.tv_nsec ) / 1000000000.0);
 
 
-		delete [] cimageheader;
 		delete [] intbuffer;
 
 		cout  << "Found " << numFrames << " frames in file." << endl << endl;
