@@ -80,22 +80,24 @@ int main(int argc, char *argv[]) {
 			"\nY pixels\t:" << ypix << endl << endl;
 
 	//read values
-	int numFrames, fnum;
+	int numFrames;
+	uint64_t fnum, snum, bnum;
 
-	const static int imageHeader = 16;
 	int* value;
 
 
 	if(!file.empty()){
 		struct timespec begin,end; //requires -lrt in Makefile
-		int* intbuffer = new int[imageSize+1];
-		int* bufferheader=new int[imageHeader+1];
+		slsReceiverDefs::sls_detector_header detheader;
+		int* intbuffer = new int[imageSize];
 
 		clock_gettime(CLOCK_REALTIME, &begin);
 
 
 		numFrames = 0;
 		fnum = -1;
+		snum=-1;
+		bnum=-1;
 		//open file
 		infile.open(file.c_str(),ios::in | ios::binary);
 		if(infile.is_open()){
@@ -104,11 +106,15 @@ int main(int argc, char *argv[]) {
 			char data[fileheadersize];
 			infile.read(data,fileheadersize);
 
-			//read data
-			while(infile.read((char*)bufferheader,imageHeader)) {
-				fnum = (*((uint64_t*)(char*)bufferheader));
+			//read header
+			while(infile.read((char*)&detheader,sizeof(detheader))) {
+				fnum = detheader.frameNumber;
 				cout << "Reading values for frame #" << fnum << endl;
-				infile.read((char*)intbuffer,imageSize);
+				cout <<"bunchid#" << detheader.bunchId << "\texplength#" << detheader.expLength << endl;
+
+				//read data
+				if(!infile.read((char*)intbuffer,(imageSize)))
+					break;
 				value = decodeData(intbuffer, imageSize, xpix, ypix, dynamicrange);
 				/*if(fnum==1)
 					for(int iy = 60; iy < 61; iy++){
@@ -128,7 +134,6 @@ int main(int argc, char *argv[]) {
 
 		clock_gettime(CLOCK_REALTIME, &end);
 		cprintf(BLUE,"Elapsed time:%f seconds\n",( end.tv_sec - begin.tv_sec )	+ ( end.tv_nsec - begin.tv_nsec ) / 1000000000.0);
-
 
 
 		delete [] intbuffer;
