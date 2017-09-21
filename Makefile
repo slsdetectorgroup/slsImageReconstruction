@@ -16,7 +16,7 @@ LDFLAGRXR 		= 	-L$(LIBDIR) -lSlsReceiver -L/usr/lib64/ -pthread -lrt -L$(LIBRARY
 LDFLAGDET 		= 	-L$(LIBDIR) -lSlsDetector -L/usr/lib64/ -pthread -lrt -L$(LIBRARYRXRDIR)/include -lzmq
 INCLUDESRXR		=	-I $(LIBRARYRXRDIR)/include
 INCLUDESDET		=	-I $(LIBRARYDETDIR)/slsDetector -I $(LIBRARYDETDIR)/slsDetectorAnalysis  -I $(LIBRARYDETDIR)/commonFiles 
-INCLUDES		= 	-I. -Iincludes -I $(LIBRARYRXRDIR)/include -I $(LIBRARYCALDIR) -I $(CALDIR)
+INCLUDES		= 	-I. -Iincludes -I $(LIBRARYRXRDIR)/include -I $(LIBRARYCALDIR) -I $(CALDIR) 
 
 CCX			=	g++
 CFLAGS		+=  -Wall 
@@ -32,7 +32,7 @@ DESTDIR				= 	bin
 INSTMODE			= 	0777
 
 
-SRC_CLNT		=	src/dummymain.cpp 
+SRC_CLNT		=	src/main.cpp 
 SRC_CSAXS_CLNT	=	src/main_csaxs.cpp 
 SRC_SUM_CLNT	=	src/main_pxSum.cpp
 SRC_HALF_CLNT	=	src/main_half.cpp 
@@ -53,36 +53,42 @@ $(PROGS):
 	mkdir -p $(DESTDIR) 
 	$(CCX)  -o $@  $(SRC_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(LDFLAGDET)  $(CFLAGS) $(LDLIBS) `$(ROOTSYS)/bin/root-config --cflags --libs` 
 	cp $(PROGS) ../build/bin
+	rm -f $(PROGS) 
 
 $(PROGS_CSAXS): 
 	@echo $(WD)
 	echo $(OBJS_CSAXS)
 	$(CCX)  -o $@  $(SRC_CSAXS_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5) $(LDFLAGDET) $(CFLAGS) $(LDLIBS) 
 	cp $(PROGS_CSAXS) ../build/bin
+	rm -f $(PROGS_CSAXS) 
 
 $(PROGS_HALF): 
 	@echo $(WD)
 	echo $(OBJS_HALF)
 	$(CCX)  -o $@  $(SRC_HALF_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5) $(LDFLAGDET) $(CFLAGS) $(LDLIBS) 
 	cp $(PROGS_HALF) ../build/bin
+	rm -f $(PROGS_HALF) 
 
 $(PROGS_CSAXS_1.5M): 
 	@echo $(WD)
 	echo $(OBJSCSAXSMULTI)
 	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5) $(LDFLAGDET) $(CFLAGS) $(LDLIBS) 
 	cp $(PROGS_CSAXS_1.5M) ../build/bin
+	rm -f $(PROGS_CSAXS_1.5M) 
 
 $(PROGS_CSAXS_9M): 
 	@echo $(WD)
 	echo $(OBJSCSAXSMULTI)
 	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5) $(LDFLAGDET) $(CFLAGS) $(LDLIBS) 
 	cp $(PROGS_CSAXS_9M) ../build/bin
+	rm -f $(PROGS_CSAXS_9M) 
 
 $(PROGS_SUM): 
 	@echo $(WD)
 	echo $(OBJS_SUM)
 	$(CCX)  -o $@  $(SRC_SUM_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5) $(LDFLAGDET) $(CFLAGS) $(LDLIBS) 
 	cp $(PROGS_SUM) ../build/bin
+	rm -f $(PROGS_SUM) 
 
 clean:
 	rm -rf ../build/bin/$(PROGS)  *.o $(DESTDIR)/$(PROGS)
