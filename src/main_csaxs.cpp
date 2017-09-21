@@ -46,112 +46,81 @@ int local_exit(int status) {
   return status;    /* to avoid warning messages */
 }
 
-int getFileParameters(string file,  int &hs, int &tp, int &lt, int &act, int &dr, int &tg, int &is, int &x, int &y,
-		      string& timestamp, int& expTime, int& period){
+int getFileParameters(string file,  int &dr, int &tg, int &is, int &x, int &y,
+		      string& timestamp, double& expTime, double& period){
+
   cout << "Getting File Parameters from " << file << endl;
   string str;
   string strdayw, strmonth, strday, strtime,  stryear;
   ifstream infile;
   int dummyint;
+  string timestamp_s;
+  string period_s;
   /*
-    Header		: 500 bytes
-    Top		: 1
-    Left		: 1
-    Active		: 1
-    Frames Caught	: 1
-    Frames Lost	: 0
-    Dynamic Range	: 16
-    Ten Giga	: 0
-    Image Size	: 262144 bytes
-    x		: 512 pixels
-    y		: 256 pixels
-    Total Frames	: 1
-    Exptime (ns)	: 1000000000
-    Period (ns)	: 1000000000
-    Timestamp	: Fri Dec  2 12:40:33 2016
+    Version            		: 1.0
+    Dynamic Range      		: 32
+    Ten Giga           		: 0
+    Image Size         		: 524288 bytes
+    x                  		: 512 pixels
+    y                  		: 256 pixels
+    Total Frames       		: 1
+    Exptime (ns)       		: 100000000000
+    SubExptime (ns)    		: 2621440
+    Period (ns)        		: 1000000000
+    Timestamp          		: Wed Sep 13 11:58:11 2017   
   */
-
   infile.open(file.c_str(),ios::in | ios::binary);
   if (infile.is_open()) {
 
     //empty line
-    getline(infile,str);
+    // getline(infile,str);
 
-    //header size
+    //version
     if(getline(infile,str)){
-      istringstream sstr(str);
-      //cout<<"Str header size:"<<str<<endl;
-      sstr >> str >> str >> hs;
-    }
-
-    //top
-    if(getline(infile,str)){
-      istringstream sstr(str);
-      //cout<<"Str top:"<<str<<endl;
-      sstr >> str >> str >> tp;
-    }
-
-    //left
-    if(getline(infile,str)){
-      istringstream sstr(str);
-      //cout<<"Str left:"<<str<<endl;
-      sstr >> str >> str >> lt;
-    }
-
-    //active
-    if(getline(infile,str)){
-      istringstream sstr(str);
-      //cout<<"Str active:"<<str<<endl;
-      sstr >> str >> str >> act;
-    }
-		
-    //frames caught
-    getline(infile,str);
-    //cout<<"Str frames caught:"<<str<<endl;
-    //frames lost
-    getline(infile,str);
-    //cout<<"Str frames lost:"<<str<<endl;
-
+    istringstream sstr(str);
+    sstr >> str >> str >> str;
+    cout<<"Version:"<<str<<endl;  
+  }
     //dynamic range
     if(getline(infile,str)){
       istringstream sstr(str);
-      //cout<<"Str dynamic range:"<<str<<endl;
+      cout<<"Str dynamic range:"<<str<<endl;
       sstr >> str >> str >>  str >> dr;
     }
 
     //ten giga
     if(getline(infile,str)){
       istringstream sstr(str);
-      //cout<<"Str ten giga:"<<str<<endl;
+      cout<<"Str ten giga:"<<str<<endl;
       sstr >> str >> str >> str >> tg;
     }
 
     //image size
     if(getline(infile,str)){
       istringstream sstr(str);
-      //cout<<"Str image size:"<<str<<endl;
+      cout<<"Str image size:"<<str<<endl;
       sstr >> str >> str >> str >> is;
     }
     //x
     if(getline(infile,str)){
       istringstream sstr(str);
-      //cout<<"Str x:"<<str<<endl;
+      cout<<"Str x:"<<str<<endl;
       sstr >> str >> str >> x;
     }
 
     //y
     if(getline(infile,str)){
       istringstream sstr(str);
-      //cout<<"Str y:"<<str<<endl;
       sstr >> str >> str >> y;
-    }
+      cout<<"Str y:"<<y<<endl; 
+   }
 
     //Total Frames 
     if(getline(infile,str)){
       istringstream sstr(str);
-      sstr >> str >> str >> str >> dummyint;
+       sstr >> str >> str >> str >> dummyint;
+       cout<<"dummyint:"<<dummyint<<endl;
     }
-
 
     // Exptime (ns)	: 1000000000
     if(getline(infile,str)){
@@ -163,6 +132,8 @@ int getFileParameters(string file,  int &hs, int &tp, int &lt, int &act, int &dr
       istringstream sstr(str);
       sstr >> str >> str >> str >> period;
     }
+    expTime*=1e-9;
+    period*= 1e-9;
 
     //Timestamp
     if(getline(infile,str)){
@@ -171,19 +142,44 @@ int getFileParameters(string file,  int &hs, int &tp, int &lt, int &act, int &dr
       sstr >> str >> str>> strdayw >> strmonth >> strday>> strtime >> stryear;
       timestamp = stryear+"/"+strmonth+"/"+strday+" "+strtime+".000 CEST";
     }
-		
+   		
     infile.close();
   }else{
     cprintf(RED, "Error: Could not read file: %s\n", file.c_str());
     return slsReceiverDefs::FAIL;
   }
 
-  return slsReceiverDefs::OK;
+  //validations
+  switch(dr){
+  case 4: case 8: case 16: case 32: break;
+  default:
+    cout << "Error: Invalid dynamic range " << dr << " read from file " << file << endl;
+    return -1;
+  }
+  int packetsPerFrame;
+  if(!tg)
+    packetsPerFrame = 16 * dr;
+  else
+    packetsPerFrame = 4 * dr;
+  if(!tg){
+    if(is!=(packetsPerFrame*1024)){
+      cout << "Error: Invalid packet size " << is << " for 1g read from file " << file << endl;
+      return -1;
+    }
+  }
+  else{
+    if(is!=(packetsPerFrame*4096)){
+      cout << "Error: Invalid packet size " << is << " for 10g read from file " << file << endl;
+      return -1;
+    }
+  }
+  
+      return slsReceiverDefs::OK;
 }
 
 int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int& longedge_x, int &startdet){
   if(argc < 2){
-    cprintf(RED, "Error: Not enough arguments: cnbfMaker [file_name_with_dir] \nExiting.\n");
+    cprintf(RED, "Error: Not enough arguments: cbfMaker [file_name_with_dir] \nExiting.\n");
     exit(-1);
   }
   file=argv[1];
@@ -257,7 +253,9 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
 	      "Frame Index Enable          : %d\n"
 	      "File Frame Index            : %d\n",
 	      file.c_str(),fileIndex,isFileFrameIndex,fileFrameIndex);
+     return 1;
     }
+    return 0;
 }
 
 int* decodeData(int *datain, const int size, const int nx, const int ny, const int dynamicRange) 
@@ -401,59 +399,15 @@ int main(int argc, char *argv[]) {
   if(isFileFrameIndex)
     sprintf(frames,"_f%012d",fileFrameIndex);//"f000000000000";
   ifstream infile[numModules];
-  int nfile=startdet;
+  // int nfile=startdet;
   //put master on top always
-  int fileheadersize, top, left, active, dynamicrange, tenGiga, packetSize, xpix, ypix, imageSize;
+  int dynamicrange, tenGiga, xpix, ypix, imageSize;
   string timestamp;
   double expTime, period;
-  int iexpTime, iperiod;
   
-  for(int imod_h=0; imod_h<n_h; imod_h++){
-    for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
-      for( int it=0;it<2;it++){
-	for( int ileft=0;ileft<2;ileft++){
-	  if( npix_y_user==256 && it==1 ) continue;  
-	  
-	  sprintf(fname,"%s_d%d%s_%d.raw",file.c_str(),nfile,frames,fileIndex);
-	  //get file parameters
-	  if(getFileParameters(fname, fileheadersize, top, left, active, dynamicrange, tenGiga, imageSize, xpix, 
-			       ypix, timestamp, iexpTime, iperiod ) != slsReceiverDefs::OK)return -1;
-	  
-	  expTime=iexpTime*1e-9;
-	  period=iperiod* 1e-9;
-	  
-	  
-	  //validations
-	  switch(dynamicrange){
-	  case 4: case 8: case 16: case 32: break;
-	  default:
-	    cout << "Error: Invalid dynamic range " << dynamicrange << " read from file " << file << endl;
-	    return -1;
-	  }
-	  int packetsPerFrame;
-	  if(!tenGiga)
-	    packetsPerFrame = 16 * dynamicrange;
-	  else
-	    packetsPerFrame = 4 * dynamicrange;
-	  if(!tenGiga){
-	    if(imageSize!=(packetsPerFrame*1024)){
-	      cout << "Error: Invalid packet size " << imageSize << " for 1g read from file " << file << endl;
-	      return -1;
-	    }
-	  }
-	  else{
-	    if(imageSize!=(packetsPerFrame*4096)){
-	      cout << "Error: Invalid packet size " << imageSize << " for 10g read from file " << file << endl;
-	      return -1;
-	    }
-	  }
-	  
-	  nfile++; 	  
-	}
-      }
-    }
-  }
-  
+  sprintf(fname,"%s_master_%d.raw",file.c_str(),fileIndex);
+  if(getFileParameters(fname, dynamicrange, tenGiga, imageSize, xpix, 
+		       ypix, timestamp, expTime, period ) != slsReceiverDefs::OK)return -1;
   
   vector <int*> buffer;
   buffer.reserve(n_v *n_h*2);
@@ -461,15 +415,16 @@ int main(int argc, char *argv[]) {
   //nr high again
   int numFrames = fileFrameIndex+1 ;
   
-  const static int imageHeader = 16;
+  const static int imageHeader = 8+4+4+8+8+2+2+2+2+4+2+1+1; //bytes
   
   //for each frame
   while(fnum>-1){
+
+  cout<<"fnum "<<fnum<<endl;
     
     //Create cbf files with data
     cbf_handle cbf;
-    int* value;
-  
+   
     //here nr is not volatile anymore
     //loop on each receiver to get frame buffer
     for(int inr=0; inr<nr; inr++){
@@ -479,13 +434,13 @@ int main(int argc, char *argv[]) {
       if(!infile[inr].is_open())
 	infile[inr].open(fname,ios::in | ios::binary);
       if(infile[inr].is_open()){
+	
+	cout<<"fnum "<<fnum<<endl;
+	
+	cout<< imageSize<<endl;
 
-	//read file header
-	if( numFrames == fileFrameIndex+1){
-	  //read file header
-	  char data[fileheadersize];
-	  infile[inr].read(data,fileheadersize);
-	}
+
+	
 	int* intbuffer = new int[imageSize+1];
       	int* bufferheader=new int[imageHeader+1];
 	//read data
