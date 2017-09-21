@@ -159,9 +159,7 @@ int main(int argc, char *argv[]) {
   FILE *out;
   //nr high again
   int numFrames = fileFrameIndex+1 ;
-  
-  const static int imageHeader = 8+4+4+8+8+2+2+2+2+4+2+1+1; //bytes
-  
+    
   //for each frame
   while(fnum>-1){
 

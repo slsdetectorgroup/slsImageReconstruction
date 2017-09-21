@@ -17,6 +17,8 @@ const int GapPixelsBetweenChips_x =2;
 const int GapPixelsBetweenChips_y =2;
 const int GapPixelsBetweenModules_x =8;
 const int GapPixelsBetweenModules_y = 36;
+  
+const static int imageHeader = 8+4+4+8+8+2+2+2+2+4+2+1+1; //bytes
 
 int getFileParameters(string file,  int &dr, int &tg, int &is, int &x, int &y,
 		      string& timestamp, double& expTime, double& period){

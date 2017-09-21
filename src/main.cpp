@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
   bool isFileFrameIndex = false;
   getParameters(argc, argv, file, fileIndex, isFileFrameIndex, fileFrameIndex, npix_x_user, npix_y_user, startdet);
 
-  TH2F* hmap;
+   TH2F* hmap;
 
   //number of modules in vertical and horizontal
   int n_v = npix_y_user/npix_y_sm;
@@ -87,6 +87,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
+
   //get dynamic range and configure receiverdata depending on top and bottom
   char fname[1000];
   char frames[20]="";
@@ -106,14 +107,15 @@ int main(int argc, char *argv[]) {
   
  
   int numFrames = fileFrameIndex+1 ;
-  const static int imageHeader = 8+4+4+8+8+2+2+2+2+4+2+1+1; //bytes
 
   //for each frame
   while(fnum>-1){
     
     //here nr is not volatile anymore
     //loop on each receiver to get frame buffer
+  
     for(int inr=0; inr<nr; inr++){
+
       sprintf(fname, "%s_d%d%s_%d.raw",file.c_str(),inr,frames,fileIndex);
       
       //open file
@@ -130,7 +132,7 @@ int main(int argc, char *argv[]) {
 	if(fnum==-1) {
 	  exit(1);
 	}
-		
+	
 	infile[inr].read((char*)intbuffer,imageSize);
 	if(!CheckFrames(fnum,numFrames)) continue; 	
 	
@@ -244,7 +246,7 @@ int main(int argc, char *argv[]) {
  
   if(npix_y_user!=256)
     cprintf(GREEN,"Root File Created: %s_det%d-%d_%d.root\n\n",file.c_str(),startdet,(n_v*n_h)*4-1,fileIndex);
-  else     cprintf(GREEN,"Root File Created: %s_%d.root\n\n",file.c_str(),fileIndex);
+  else cprintf(GREEN,"Root File Created: %s_%d.root\n\n",file.c_str(),fileIndex);
   
 
  //close file when not frame yet
