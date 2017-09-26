@@ -1,3 +1,6 @@
+#ifndef IMAGE_H
+#define IMAGE_H
+
 #include <iostream>
 #include <string.h>
 #include <fstream>
@@ -285,3 +288,4 @@ int* decodeData(int *datain, const int size, const int nx, const int ny, const i
   return dataout;
   
 }
+#endif
