@@ -138,6 +138,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
+
   //get dynamic range and configure receiverdata depending on top and bottom
   char fname[1000]; 
   char frames[20]="";
@@ -155,46 +156,55 @@ int main(int argc, char *argv[]) {
 		       ypix, timestamp, expTime, period ) != slsReceiverDefs::OK)return -1;
   
   vector <int*> buffer;
-  buffer.reserve(n_v *n_h*2);
+  buffer.reserve(n_v *n_h*2*2);
   FILE *out;
   //nr high again
   int numFrames = fileFrameIndex+1 ;
     
   //for each frame
-  while(fnum>-1){
+  while(numFrames<2/*fnum>-1*/){
 
     //Create cbf files with data
     cbf_handle cbf;
    
     //here nr is not volatile anymore
     //loop on each receiver to get frame buffer
+
+	cout<<fnum<<endl;
     for(int inr=0; inr<nr; inr++){
       sprintf(fname, "%s_d%d%s_%d.raw",file.c_str(),inr,frames,fileIndex);
     
+
       //open file
       if(!infile[inr].is_open())
+     
 	infile[inr].open(fname,ios::in | ios::binary);
       if(infile[inr].is_open()){
 	
-	int* intbuffer = new int[imageSize+1];
-      	int* bufferheader=new int[imageHeader+1];
+	int* intbuffer = new int[imageSize];
+      	int* bufferheader=new int[imageHeader];
 	//read data
 	if(infile[inr].read((char*)bufferheader,imageHeader))
 	  fnum = (*((uint64_t*)(char*)bufferheader));
-	else fnum=-1;
-	if(fnum==-1) {
+	else 
+	  //fnum=-1;
+	  //cout<<fnum<<endl;
+	  //if(fnum==-1) {
 	  exit(1);
-	}
+	//}
 		
 	infile[inr].read((char*)intbuffer,imageSize);
 	if(!CheckFrames(fnum,numFrames)) continue; 	
      
 	buffer.push_back(decodeData(intbuffer, imageSize, xpix, ypix, dynamicrange));
 	
+     
       } //while read images
       //close files
       infile[inr].close();
-    }//loop on receivers
+
+ 
+   }//loop on receivers
 
     if(buffer.size()!=nr) continue;
     
@@ -207,15 +217,24 @@ int main(int argc, char *argv[]) {
     int startchipy=0;
     int endchipx=4;
     int endchipy=1;
-
-
+    
+    int nnr=0;
     for(int imod_h=0; imod_h<n_h;imod_h++){
       for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
+
+	//for(int imod_h=(n_h-1); imod_h>-1;imod_h--){
+	//for(int imod_v=0; imod_v<n_v; imod_v++){
+
 	for( int it=0;it<2;it++){	
 	  for( int ileft=0;ileft<2;ileft++){
-		
+	    
 	    if( npix_y_user==256 && it==1) continue; 
 		
+	    //int nnr=(imod_h*n_v*2*2)+(imod_v*2*2)+2*it+ileft;
+	    //cout<<"nnr "<<nnr<<"   "<<imod_h<<"   "<<imod_v<<"  "
+	    //	<<it<<"   "<<ileft<< endl;
+
+	     
 	    /* Make a cbf version of the image */
 	    //getting values //top
 	    if(it==0){
@@ -248,7 +267,7 @@ int main(int argc, char *argv[]) {
 			//x'=(ngap_pix_y-iy)
 			k=(npix_y_g-y_t)+ npix_y_g*x_t;
 		      }
-		      map[k]=buffer[2*it+ileft][ix+(ichipx%2)*256+ 256*2*iy];
+		      map[k]=buffer[nnr][ix+(ichipx%2)*256+ 256*2*iy];
 		    }
 		  }
 		}
@@ -281,15 +300,15 @@ int main(int argc, char *argv[]) {
 			//x'=(ngap_pix_y-iy)
 			k=(npix_y_g-y_t)+ npix_y_g*x_t;
 		      }
-		      map[k]=buffer[2*it+ileft][ix+(ichipx%2)*256+ 256*2*(255-iy)];
+		      map[k]=buffer[nnr][ix+(ichipx%2)*256+ 256*2*(255-iy)];
 		    }
 		  }
 		}
 	      }
 	    } //it==1
+	    nnr++;
 	  }//ileft
 	} //it
-	    
       }//v mods
     } //h mods close all loops
 		
@@ -314,6 +333,13 @@ int main(int argc, char *argv[]) {
     fprintf(out,"_array_data.header_contents\r\n"
 	    ";\r\n");
     sprintf(printDate,"# %s\r\n",timestamp.c_str());
+    //timestamp
+    time_t rawtime = time(NULL);
+    struct tm *timeinfo = localtime(&rawtime);
+    char date[100];
+    strftime(date, sizeof(date), "%Y/%b/%d %H:%M:%S.%j %Z", timeinfo);
+    sprintf(printDate,"# %s\r\n",date);
+    
     fprintf(out,printDate);
     fprintf(out,
 	    "# Exposure_time 1.0000000 s\r\n"
@@ -375,7 +401,7 @@ int main(int argc, char *argv[]) {
     
     buffer.clear();
 
-  } //loop on frames
+     } //loop on frames
   
   //buffer.clear();
 
