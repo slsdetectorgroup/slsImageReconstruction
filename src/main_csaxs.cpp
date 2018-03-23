@@ -147,65 +147,67 @@ int main(int argc, char *argv[]) {
   ifstream infile[numModules];
   // int nfile=startdet;
   //put master on top always
-  int dynamicrange, tenGiga, xpix, ypix, imageSize;
+  int dynamicrange, tenGiga, xpix, ypix, imageSize,imgs;
   string timestamp;
   double expTime, period;
   
   sprintf(fname,"%s_master_%d.raw",file.c_str(),fileIndex);
   if(getFileParameters(fname, dynamicrange, tenGiga, imageSize, xpix, 
-		       ypix, timestamp, expTime, period ) != slsReceiverDefs::OK)return -1;
+		       ypix, timestamp, expTime, period,imgs ) != slsReceiverDefs::OK)return -1;
   
   vector <int*> buffer;
   buffer.reserve(n_v *n_h*2*2);
   FILE *out;
   //nr high again
   int numFrames = fileFrameIndex+1 ;
-    
-  //for each frame
-  while(numFrames<2/*fnum>-1*/){
 
+  // open all files at once
+  //here nr is not volatile anymore
+  //loop on each receiver to get frame buffer
+  for(int inr=0; inr<nr; inr++){
+    sprintf(fname, "%s_d%d%s_%d.raw",file.c_str(),inr,frames,fileIndex);
+    
+    //open file
+    if(!infile[inr].is_open())
+      infile[inr].open(fname,ios::in | ios::binary);
+  }//loop on receivers
+  
+  //now loop over all frames
+  //for each frame
+  while(numFrames<(imgs+1)){
+        
     //Create cbf files with data
     cbf_handle cbf;
-   
+    
     //here nr is not volatile anymore
     //loop on each receiver to get frame buffer
-
-	cout<<fnum<<endl;
     for(int inr=0; inr<nr; inr++){
-      sprintf(fname, "%s_d%d%s_%d.raw",file.c_str(),inr,frames,fileIndex);
-    
-
-      //open file
-      if(!infile[inr].is_open())
-     
-	infile[inr].open(fname,ios::in | ios::binary);
-      if(infile[inr].is_open()){
-	
-	int* intbuffer = new int[imageSize];
-      	int* bufferheader=new int[imageHeader];
-	//read data
-	if(infile[inr].read((char*)bufferheader,imageHeader))
-	  fnum = (*((uint64_t*)(char*)bufferheader));
-	else 
-	  //fnum=-1;
-	  //cout<<fnum<<endl;
-	  //if(fnum==-1) {
-	  exit(1);
+      
+      int* intbuffer = new int[imageSize];
+      int* bufferheader=new int[imageHeader];
+      //read data
+      if(infile[inr].read((char*)bufferheader,imageHeader)){
+	fnum = (*((uint64_t*)(char*)bufferheader));
+      }
+      //else {
+      //fnum=-1;
+      //cout<<fnum<<endl;
+      //if(fnum==-1) {
+      //exit(1);
 	//}
-		
-	infile[inr].read((char*)intbuffer,imageSize);
-	if(!CheckFrames(fnum,numFrames)) continue; 	
-     
-	buffer.push_back(decodeData(intbuffer, imageSize, xpix, ypix, dynamicrange));
-	
-     
-      } //while read images
-      //close files
-      infile[inr].close();
+      
+      infile[inr].read((char*)intbuffer,imageSize);
+      if(!CheckFrames(fnum,numFrames)) continue; 	
+      
+      buffer.push_back(decodeData(intbuffer, imageSize, xpix, ypix, dynamicrange));
+      
+      
+ 
+  
 
  
-   }//loop on receivers
-
+    }//loop on receivers
+  
     if(buffer.size()!=nr) continue;
     
     //get a 2d map of the image
@@ -401,8 +403,12 @@ int main(int argc, char *argv[]) {
     
     buffer.clear();
 
-     } //loop on frames
+  } //loop on frames
   
+
+ for(int inr=0; inr<nr; inr++)    
+   infile[inr].close();
+
   //buffer.clear();
 
 

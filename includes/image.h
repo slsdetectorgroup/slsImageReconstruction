@@ -24,7 +24,7 @@ const int GapPixelsBetweenModules_y = 36;
 const static int imageHeader = 8+4+4+8+8+2+2+2+2+4+2+1+1; //bytes
 
 int getFileParameters(string file,  int &dr, int &tg, int &is, int &x, int &y,
-		      string& timestamp, double& expTime, double& period){
+		      string& timestamp, double& expTime, double& period, int& imgs ){
 
   cout << "Getting File Parameters from " << file << endl;
   string str;
@@ -95,8 +95,9 @@ int getFileParameters(string file,  int &dr, int &tg, int &is, int &x, int &y,
     //Total Frames 
     if(getline(infile,str)){
       istringstream sstr(str);
-       sstr >> str >> str >> str >> dummyint;
-       cout<<"total frames:"<<dummyint<<endl;
+       sstr >> str >> str >> str >> imgs;
+       cout<<"total frames:"<<imgs<<endl;
+
     }
 
     // Exptime (ns)	: 1000000000
