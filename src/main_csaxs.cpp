@@ -189,24 +189,26 @@ int main(int argc, char *argv[]) {
       if(infile[inr].read((char*)bufferheader,imageHeader)){
 	fnum = (*((uint64_t*)(char*)bufferheader));
       }
-      //else {
-      //fnum=-1;
+      else {
+      fnum=-1;
       //cout<<fnum<<endl;
       //if(fnum==-1) {
-      //exit(1);
-	//}
+      exit(1);
+	}
       
+     
+      if(!CheckFrames(fnum,numFrames)) continue; 	 
       infile[inr].read((char*)intbuffer,imageSize);
-      if(!CheckFrames(fnum,numFrames)) continue; 	
+     
       
       buffer.push_back(decodeData(intbuffer, imageSize, xpix, ypix, dynamicrange));
       
-      
+      delete[] bufferheader;
+      delete[] intbuffer;
+      bufferheader=NULL;
+      intbuffer=NULL;
  
-  
-
- 
-    }//loop on receivers
+     }//loop on receivers
   
     if(buffer.size()!=nr) continue;
     
