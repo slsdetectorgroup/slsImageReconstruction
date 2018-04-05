@@ -32,7 +32,7 @@ DESTDIR				= 	bin
 INSTMODE			= 	0777
 
 
-SRC_CLNT		=	src/main.cpp 
+SRC_CLNT		=	src/main_root.cpp 
 SRC_CSAXS_CLNT	=	src/main_csaxs.cpp 
 SRC_SUM_CLNT	=	src/main_pxSum.cpp
 SRC_HALF_CLNT	=	src/main_half.cpp 
