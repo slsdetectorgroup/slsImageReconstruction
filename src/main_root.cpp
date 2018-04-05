@@ -268,6 +268,8 @@ int main(int argc, char *argv[]) {
 		      }
 		      map[k]=buffer[nnr][ix+(ichipx%2)*256+ 256*2*iy];
 		      if(longedge_x) hmap->SetBinContent(x_t+1,y_t+1,map[k]);
+		      if(!longedge_x) hmap->SetBinContent(y_t+1,x_t+1,map[k]);
+
 		    }
 		  }
 		}
@@ -302,6 +304,7 @@ int main(int argc, char *argv[]) {
 		      }
 		      map[k]=buffer[nnr][ix+(ichipx%2)*256+ 256*2*(255-iy)];
 		      if(longedge_x) hmap->SetBinContent(x_t+1,y_t+1,map[k]);
+		      if(!longedge_x) hmap->SetBinContent(y_t+1,x_t+1,map[k]);
 		    }
 		  }
 		}
