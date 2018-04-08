@@ -5,7 +5,7 @@ LIBRARYRXRDIR 	=	$(WD)/../slsReceiverSoftware
 LIBRARYDETDIR 	=	$(WD)/../slsDetectorSoftware
 LIBRARYCALDIR	=	$(WD)/../slsDetectorCalibration
 
-#CBFLIBDIR		=	/sls/X12SA/data/x12saop/EigerPackage/CBFlib-0.9.5
+#CBFLIBDIR		=	../../CBFlib-0.9.5
 CBFLIBDIR		=	/scratch/CBFlib-0.9.5
 #CBFLIBDIR		=	~/local/Software/CBFlib/CBFlib-0.9.5
 LIBRARYCBF		=	$(CBFLIBDIR)/lib/*.o
@@ -24,23 +24,28 @@ LDLIBS		+= 	-lm  -lstdc++
 
 PROGS				= 	image
 PROGS_CSAXS			= 	cbfMaker
+PROGS_CSAXSGAPS			= 	cbfMakerGaps
 PROGS_SUM			= 	cbfMakerSum
 PROGS_HALF			= 	cbfMakerHalf
 PROGS_CSAXS_1.5M        	= 	cbfMaker1.5M
 PROGS_CSAXS_9M	                = 	cbfMaker9M
+PROGS_CSAXSGAPS_9M		= 	cbfMakerGaps9M
 DESTDIR				= 	bin
 INSTMODE			= 	0777
 
 
 SRC_CLNT		=	src/main_root.cpp 
-SRC_CSAXS_CLNT	=	src/main_csaxs.cpp 
+SRC_CSAXS_CLNT	=	src/main_csaxs.cpp
+SRC_CSAXSGAPS_CLNT =	src/main_gaps.cpp
 SRC_SUM_CLNT	=	src/main_pxSum.cpp
 SRC_HALF_CLNT	=	src/main_half.cpp 
-SRC_CSAXS_MULTI	=	src/main_csaxs_multi.cpp 
+SRC_CSAXS_MULTI	=	src/main_csaxs_multi.cpp
+SRC_CSAXSGAPS_MULTI =	src/main_csaxs_multi.cpp
 OBJS 			= 	$(SRC_CLNT:.cpp=.o)
 OBJSCSAXS 		= 	$(SRC_CSAXS_CLNT:.cpp=.o)
+OBJSCSAXSGAPS 		= 	$(SRC_CSAXSGAPS_CLNT:.cpp=.o)
 OBJSSUM 		= 	$(SRC_SUM_CLNT:.cpp=.o)	
-OBJSCSAXSMULTI	= 	$(SRC_CSAXS_MULTI:.cpp=.o)
+OBJSCSAXSGAPSMULTI	= 	$(SRC_CSAXSGAPS_MULTI:.cpp=.o)
 
 
 all: clean $(PROGS_CSAXS) $(PROGS) $(PROGS_CSAXS_1.5M)  $(PROGS_CSAXS_9M) $(PROGS_SUM) #$(PROGS_HALF) 
@@ -62,6 +67,14 @@ $(PROGS_CSAXS):
 	cp $(PROGS_CSAXS) ../build/bin
 	rm -f $(PROGS_CSAXS) 
 
+$(PROGS_CSAXSGAPS): 
+	@echo $(WD)
+	echo $(OBJS_CSAXSGAPS)
+	$(CCX)  -o $@  $(SRC_CSAXSGAPS_CLNT) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5) $(LDFLAGDET) $(CFLAGS) $(LDLIBS) 
+	cp $(PROGS_CSAXSGAPS) ../build/bin
+	rm -f $(PROGS_CSAXSGAPS) 
+
+
 $(PROGS_HALF): 
 	@echo $(WD)
 	echo $(OBJS_HALF)
@@ -82,6 +95,13 @@ $(PROGS_CSAXS_9M):
 	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5) $(LDFLAGDET) $(CFLAGS) $(LDLIBS) 
 	cp $(PROGS_CSAXS_9M) ../build/bin
 	rm -f $(PROGS_CSAXS_9M) 
+
+$(PROGS_CSAXSGAPS_9M): 
+	@echo $(WD)
+	echo $(OBJSCSAXSGAPSMULTI)
+	$(CCX)  -o $@  $(SRC_CSAXSGAPS_MULTI) $(INCLUDES)  $(INCLUDESRXR) $(LDFLAGRXR)  $(INCLUDESDET) $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5) $(LDFLAGDET) $(CFLAGS) $(LDLIBS) 
+	cp $(PROGS_CSAXSGAPS_9M) ../build/bin
+	rm -f $(PROGS_CSAXSGAPS_9M) 
 
 $(PROGS_SUM): 
 	@echo $(WD)
