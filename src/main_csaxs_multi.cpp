@@ -5,11 +5,8 @@
  *      Author: tinti_g
  */
 
-#include "sls_receiver_defs.h"
-#include "slsReceiverData.h"
-#include "eigerHalfModuleData.h"
 #include "ansi.h"
-
+#include <fstream>
 #include <iostream>
 #include <string.h>
 #include <stdlib.h>
@@ -44,6 +41,6 @@ int main(int argc, char *argv[]) {
 	}
 
 	
-	return slsReceiverDefs::OK;
+	return 1;
 }
 

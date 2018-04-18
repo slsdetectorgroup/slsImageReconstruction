@@ -5,7 +5,6 @@
  *      Author: tinti_g
  */
 
-#include "sls_receiver_defs.h"
 #include "ansi.h"
 
 #include <iostream>
@@ -206,7 +205,7 @@ int main(int argc, char *argv[]) {
   
   sprintf(fname,"%s_master_%d.raw",file.c_str(),fileIndex);
   if(getFileParameters(fname, dynamicrange, tenGiga, imageSize, xpix, 
-		       ypix, timestamp, expTime, period,imgs ) != slsReceiverDefs::OK)return -1;
+		       ypix, timestamp, expTime, period,imgs ) != 1)return -1;
   
   vector <int*> buffer;
   buffer.reserve(n_v *n_h*2*2);

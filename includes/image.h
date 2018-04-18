@@ -7,6 +7,13 @@
 
 using namespace std;
 
+typedef unsigned int uint64_t;
+typedef unsigned short uint16_t;
+
+typedef  double double32_t;
+typedef  float float32_t;
+typedef  int int32_t;
+
 const int NumHalfModules = 2;
 const int NumChanPerChip_x = 256;
 const int NumChanPerChip_y = 256;
@@ -20,8 +27,8 @@ const int GapPixelsBetweenChips_x =2;
 const int GapPixelsBetweenChips_y =2;
 const int GapPixelsBetweenModules_x =8;
 const int GapPixelsBetweenModules_y = 36;
-  
-const static int imageHeader = 8+4+4+8+8+2+2+2+2+4+2+1+1; //bytes
+int frameheadersize=0;
+//const static int imageHeader;// = 8+4+4+8+8+2+2+2+2+4+2+1+1; //bytes
 
 int getFileParameters(string file,  int &dr, int &tg, int &is, int &x, int &y,
 		      string& timestamp, double& expTime, double& period, int& imgs ){
@@ -33,6 +40,7 @@ int getFileParameters(string file,  int &dr, int &tg, int &is, int &x, int &y,
   int dummyint;
   string timestamp_s;
   string period_s;
+  
   /*
     Version            		: 1.0
     Dynamic Range      		: 32
@@ -97,7 +105,6 @@ int getFileParameters(string file,  int &dr, int &tg, int &is, int &x, int &y,
       istringstream sstr(str);
        sstr >> str >> str >> str >> imgs;
        cout<<"total frames:"<<imgs<<endl;
-
     }
 
     // Exptime (ns)	: 1000000000
@@ -120,11 +127,129 @@ int getFileParameters(string file,  int &dr, int &tg, int &is, int &x, int &y,
       sstr >> str >> str>> strdayw >> strmonth >> strday>> strtime >> stryear;
       timestamp = stryear+"/"+strmonth+"/"+strday+" "+strtime+".000 CEST";
     }
-   		
+    //two empty lines
+    getline(infile,str);
+    getline(infile,str);
+    getline(infile,str);
+    /*
+      #Frame Header
+      Frame Number                    : 8 bytes
+      SubFrame Number/ExpLength       : 4 bytes
+      Packet Number                   : 4 bytes
+      Bunch ID                        : 8 bytes
+      Timestamp                       : 8 bytes
+      Module Id                               : 2 bytes
+      X Coordinate                    : 2 bytes
+      Y Coordinate                    : 2 bytes
+      Z Coordinate                    : 2 bytes
+      Debug                           : 4 bytes
+      Round Robin Number              : 2 bytes
+      Detector Type                   : 1 byte
+      Header Version                  : 1 byte
+    */
+
+    getline(infile,str);
+    //Frame Number
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str>> str >> dummyint;
+      frameheadersize+=dummyint;
+    }
+    cout<< frameheadersize<<endl;
+
+    //SubFrame Number/ExpLength
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str>> str >> dummyint;
+      frameheadersize+=dummyint;
+    }	
+    cout<< frameheadersize<<endl;
+    //Packet Number
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str>> str >> dummyint;
+      frameheadersize+=dummyint;
+    }	
+    cout<< frameheadersize<<endl;
+    //Bunch ID
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str>> str >> dummyint;
+      frameheadersize+=dummyint;
+    }	
+    cout<< frameheadersize<<endl;
+    //Timestamp
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> dummyint;
+      frameheadersize+=dummyint;
+    }	
+      cout<< frameheadersize<<endl;
+
+    //Module Id
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >>str >> str >> dummyint;
+      frameheadersize+=dummyint;
+    }	
+      cout<< frameheadersize<<endl;
+    //X Coordinate
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >>str >> str >> dummyint;
+      frameheadersize+=dummyint;
+    }	
+      cout<< frameheadersize<<endl;
+    //Y Coordinate 
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >>str >> str >> dummyint;
+      frameheadersize+=dummyint;
+    }	
+      cout<< frameheadersize<<endl;
+    //Z Coordinate
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >>str >> str >> dummyint;
+      frameheadersize+=dummyint;
+    }	
+      cout<< frameheadersize<<endl;
+    //Debug
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> dummyint;
+      frameheadersize+=dummyint;
+    }	
+      cout<< frameheadersize<<endl;
+    //Round Robin Number
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >>str >> str >>str >> dummyint;
+      frameheadersize+=dummyint;
+    }	
+      cout<< frameheadersize<<endl;
+    //Detector Type
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >>str >> str >> dummyint;
+      frameheadersize+=dummyint;
+    }	
+      cout<< frameheadersize<<endl;
+    //Header Version
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >>str >> str >> dummyint;
+      frameheadersize+=dummyint;
+    }
+      cout<< frameheadersize<<endl;
+    if(frameheadersize!= 8+4+4+8+8+2+2+2+2+4+2+1+1) {
+      cout<< frameheadersize<<endl;
+	assert(0);
+    }    
     infile.close();
   }else{
     cprintf(RED, "Error: Could not read file: %s\n", file.c_str());
-    return slsReceiverDefs::FAIL;
+    return 0;
   }
 
   //validations
@@ -152,8 +277,9 @@ int getFileParameters(string file,  int &dr, int &tg, int &is, int &x, int &y,
     }
   }
   
-      return slsReceiverDefs::OK;
+  return 1;
 }
+const static int imageHeader=frameheadersize;
 
 int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user)
 {
