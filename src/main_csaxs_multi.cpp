@@ -12,7 +12,6 @@
 #include <stdlib.h>
 using namespace std;
 
-
 int main(int argc, char *argv[]) {
 
 	if(argc < 2){
@@ -26,7 +25,17 @@ int main(int argc, char *argv[]) {
 	  exe.erase(exePos,4);
 	  
 	  //1.5M
-	  string command = exe + " " + string(argv[1]) + " 512 3072 0";
+	  string command = exe + " " + string(argv[1]) + " 512 3072 0 1";
+	  cout<<"command:"<<command<<endl;
+	  system(command.c_str());
+	}
+
+	exePos = exe.rfind("OMNY");
+	if( exePos!= string::npos){
+	  exe.erase(exePos,4);
+	  
+	  //1.5M OMNY 
+	  string command = exe + " " + string(argv[1]) + " 1024 1536 1 1";
 	  cout<<"command:"<<command<<endl;
 	  system(command.c_str());
 	}
@@ -35,7 +44,7 @@ int main(int argc, char *argv[]) {
 	if( exePos!= string::npos){
 	  exe.erase(exePos,2);
 	  //9M
-	  string command = exe + " " + string(argv[1]) + " 3072 3072 0";
+	  string command = exe + " " + string(argv[1]) + " 3072 3072 0 1";
 	  cout<<"command:"<<command<<endl;
 	  system(command.c_str());
 	}

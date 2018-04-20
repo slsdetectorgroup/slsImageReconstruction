@@ -20,11 +20,24 @@
 #include <cassert>	
 #include <algorithm> 
 
-#include "cbf.h"
 #include "image.h"
+
+#define MYCBF //choose 
+//#define MYROOT //choose 
+
+#ifdef MYCBF
+#include "cbf.h"
+#endif
+
+#ifdef MYROOT
+#include "TH2F.h"
+#include "TCanvas.h"
+#include "TFile.h"
+#endif
 
 using namespace std;
 
+#ifdef MYCBF
 #undef cbf_failnez
 #define cbf_failnez(x)					\
   {							\
@@ -35,42 +48,38 @@ using namespace std;
       local_exit(-1);					\
     }							\
   }
+#endif
+#ifdef MYROOT
 
-int local_exit(int status) {
-  exit(status);
-  return status;    /* to avoid warning messages */
+void FillROOT(TH2F* hmap,  int longedge_x, int x_t, int y_t, int k_t)		 
+{
+  if(longedge_x) 
+    hmap->SetBinContent(x_t+1, y_t+1, k_t);
+  else
+   hmap->SetBinContent(y_t+1, x_t+1, k_t);
 }
 
-int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int& longedge_x, int &startdet){
-  if(argc < 2){
-    cprintf(RED, "Error: Not enough arguments: cbfMaker [file_name_with_dir] \nExiting.\n");
-    exit(-1);
-  }
-  file=argv[1];
-  getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, fileFrameIndex, npix_x_user, npix_y_user);
-
-  if(argc>2){
-        
-      if(argc>4)longedge_x=atoi(argv[4]);
-      else longedge_x=1;
-      if(argc>5) startdet=atoi(argv[5]);
-      else startdet=0;
-
-      cprintf(BLUE,
-              "Module long edge is on x  : %d\n"
-	      "Start detector index      : %d\n",
-	      longedge_x,startdet);
-      return 1;
-    }else{
-    longedge_x=1;
-    startdet=0;
-    return 1;
-  }
-  return 0;
+void FillROOTEdge(TH2F* hmap,  int longedge_x, int x_t, int y_t, int k_t,
+		  int  xvirtual1, int yvirtual1, int kvirtual1)
+{
+  FillROOT(hmap,longedge_x, x_t, y_t,k_t);
+  FillROOT(hmap,longedge_x, xvirtual1, yvirtual1, kvirtual1);
 }
+
+void FillROOTCorner(TH2F* hmap,  int longedge_x, int x_t, int y_t, int k_t,
+		    int  xvirtual1, int yvirtual1, int kvirtual1,
+		    int  xvirtual2, int yvirtual2, int kvirtual2,
+		    int  xvirtual3, int yvirtual3, int kvirtual3)
+{
+  FillROOT(hmap,longedge_x, x_t, y_t,k_t);
+  FillROOT(hmap,longedge_x, xvirtual1, yvirtual1, kvirtual1);
+  FillROOT(hmap,longedge_x, xvirtual2, yvirtual2, kvirtual2);
+  FillROOT(hmap,longedge_x, xvirtual3, yvirtual3, kvirtual3);
+}
+
+#endif
 
 int main(int argc, char *argv[]) {
-
   
   //user set geometry
   int npix_x_user= npix_x_sm;
@@ -80,8 +89,11 @@ int main(int argc, char *argv[]) {
   string file;
   int fileIndex, fileFrameIndex=0,startdet=0;
   int longedge_x;
+  int fillgaps;
   bool isFileFrameIndex = false;
-  getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, fileFrameIndex, npix_x_user, npix_y_user, longedge_x,startdet);
+  getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, 
+		       fileFrameIndex, npix_x_user, npix_y_user, 
+		       longedge_x,fillgaps,startdet);
 
   //cheat and reverse if it is in vertical orientation 
   if (!longedge_x){
@@ -137,7 +149,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-
   //get dynamic range and configure receiverdata depending on top and bottom
   char fname[1000]; 
   char frames[20]="";
@@ -146,14 +157,15 @@ int main(int argc, char *argv[]) {
   ifstream infile[numModules];
   // int nfile=startdet;
   //put master on top always
-  int dynamicrange, tenGiga, xpix, ypix, imageSize,imgs;
+  int dynamicrange, tenGiga, xpix, ypix, imageHeader, imageSize,imgs;
   string timestamp;
   double expTime, period;
   
   sprintf(fname,"%s_master_%d.raw",file.c_str(),fileIndex);
-  if(getFileParameters(fname, dynamicrange, tenGiga, imageSize, xpix, 
+  if(getFileParameters(fname, dynamicrange, tenGiga, imageHeader, imageSize, xpix, 
 		       ypix, timestamp, expTime, period,imgs ) != 1) return -1;
-  
+ 
+
   vector <int*> buffer;
   buffer.reserve(n_v *n_h*2*2);
   FILE *out;
@@ -171,13 +183,32 @@ int main(int argc, char *argv[]) {
       infile[inr].open(fname,ios::in | ios::binary);
   }//loop on receivers
   
+#ifdef MYROOT
+//now open a single root file
+  TFile* ofile = new TFile(TString::Format("%s-det%d%s_%d.root",file.c_str(),
+					   nr,frames,fileIndex).Data(),
+			   "RECREATE");
+#endif  //If ROOT
+
   //now loop over all frames
   //for each frame
   while(numFrames<(imgs+1)){
-        
+   
     //Create cbf files with data
+#ifdef MYCBF
     cbf_handle cbf;
-    
+#endif
+#ifdef MYROOT
+   //check horizontal or vertical
+    TH2F* hmap= new TH2F(TString::Format("hmap%d",numFrames).Data(),
+			 TString::Format("hmap%d",numFrames).Data(),
+			 ( longedge_x ? npix_x_g : npix_y_g), 0, 
+			 ( longedge_x ? npix_x_g : npix_y_g), 
+			 ( longedge_x ? npix_y_g : npix_x_g), 0,
+			 ( longedge_x ? npix_y_g : npix_x_g));
+
+#endif  //If ROOT
+ 
     //here nr is not volatile anymore
     //loop on each receiver to get frame buffer
     for(int inr=0; inr<nr; inr++){
@@ -188,26 +219,22 @@ int main(int argc, char *argv[]) {
       if(infile[inr].read((char*)bufferheader,imageHeader)){
 	fnum = (*((uint64_t*)(char*)bufferheader));
       }
-      else {
-      fnum=-1;
-      //cout<<fnum<<endl;
-      //if(fnum==-1) {
-      exit(1);
-	}
-      
-     
+      // else {
+      // fnum=-1;
+      //exit(1);
+      // }
       if(!CheckFrames(fnum,numFrames)) continue; 	 
       infile[inr].read((char*)intbuffer,imageSize);
      
-      
-      buffer.push_back(decodeData(intbuffer, imageSize, xpix, ypix, dynamicrange));
+      buffer.push_back(decodeData(intbuffer, imageSize, xpix, ypix, 
+				  dynamicrange));
       
       delete[] bufferheader;
       delete[] intbuffer;
       bufferheader=NULL;
       intbuffer=NULL;
  
-     }//loop on receivers
+    }//loop on receivers
   
     if(buffer.size()!=nr) continue;
     
@@ -233,12 +260,6 @@ int main(int argc, char *argv[]) {
 	    
 	    if( npix_y_user==256 && it==1) continue; 
 		
-	    //int nnr=(imod_h*n_v*2*2)+(imod_v*2*2)+2*it+ileft;
-	    //cout<<"nnr "<<nnr<<"   "<<imod_h<<"   "<<imod_v<<"  "
-	    //	<<it<<"   "<<ileft<< endl;
-
-	     
-	    /* Make a cbf version of the image */
 	    //getting values //top
 	    if(it==0){
 	      startchipy=1;    
@@ -263,22 +284,105 @@ int main(int argc, char *argv[]) {
 		      int x_t= ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+(NumChip_x-1)*GapPixelsBetweenChips_x+GapPixelsBetweenModules_x)*imod_h ;
 		      int y_t= iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+(NumChip_y-1)*GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
 
-		      int k= x_t+ npix_x_g*y_t;
-		      if(!longedge_x) {
-			//now apply rotation 
-			//y'=x
-			//x'=(ngap_pix_y-iy)
-			k=(npix_y_g-y_t)+ npix_y_g*x_t;
-		      }
-		      map[k]=buffer[nnr][ix+(ichipx%2)*256+ 256*2*iy];
-		    }
-		  }
-		}
-	      }
-		  
+		      int k=GetK(x_t,y_t, longedge_x, npix_x_g, npix_y_g);
+		      map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
+#ifdef MYROOT
+		      FillROOT(hmap,longedge_x, x_t, y_t, map[k]);
+#endif
+		      if(fillgaps){
+			//corner gap pixels gap pixels
+			if((ix==NumChanPerChip_x-1) &&  
+			 ( (ileft==0) ||  ((ichipx!=(endchipx-1)) && 
+					   (ileft==1)) )  && (iy==0) ){
+			  int xvirtual1= x_t+1;
+			  int yvirtual1= y_t;
+			  int kvirtual1=GetK(xvirtual1,yvirtual1, longedge_x, 
+					     npix_x_g, npix_y_g);
+			  int xvirtual2= x_t;
+			  int yvirtual2= y_t-1;
+			  int kvirtual2=GetK(xvirtual2,yvirtual2, longedge_x, 
+					     npix_x_g, npix_y_g);
+			  int xvirtual3= x_t+1;
+			  int yvirtual3= y_t-1;
+			  int kvirtual3=GetK(xvirtual3,yvirtual3, longedge_x, 
+					     npix_x_g, npix_y_g);
+			  FillCornerGapsBetweenChip(map, k, kvirtual1,kvirtual2, kvirtual3 , npix_y_g*npix_x_g);	
+			  
+#ifdef MYROOT
+			  FillROOTCorner(hmap, longedge_x, x_t, y_t, map[k],
+					 xvirtual1, yvirtual1, map[kvirtual1],
+					 xvirtual2, yvirtual2, map[kvirtual2],
+					 xvirtual3, yvirtual3, map[kvirtual3]);
+#endif
+			} else {
+			  if(ix==0 && ( (ileft==1) ||  ((ichipx!=startchipx) && (ileft==0))) && (iy==0)  ) {
+			    int xvirtual1= x_t-1;
+			    int yvirtual1= y_t;
+			    int kvirtual1=GetK(xvirtual1,yvirtual1, longedge_x, 
+					       npix_x_g, npix_y_g);
+			    int xvirtual2= x_t;
+			    int yvirtual2= y_t-1;
+			    int kvirtual2=GetK(xvirtual2,yvirtual2, longedge_x, 
+					       npix_x_g, npix_y_g);
+			    int xvirtual3= x_t-1;
+			    int yvirtual3= y_t-1;
+			    int kvirtual3=GetK(xvirtual3,yvirtual3, longedge_x, 
+					       npix_x_g, npix_y_g);
+			    FillCornerGapsBetweenChip(map, k, kvirtual1,kvirtual2, kvirtual3 , npix_y_g*npix_x_g);	
+#ifdef MYROOT
+			    FillROOTCorner(hmap, longedge_x, x_t, y_t, map[k],
+					   xvirtual1, yvirtual1, map[kvirtual1],
+					   xvirtual2, yvirtual2, map[kvirtual2],
+					   xvirtual3, yvirtual3, map[kvirtual3]);	    
+#endif			 
+			  }
+			  else{ //no corner pixels
+			    if((ix==NumChanPerChip_x-1) &&   ( (ileft==0) ||  ((ichipx!=(endchipx-1)) && (ileft==1)))){
+			      int xvirtual= x_t+1;
+			      int yvirtual= y_t;
+			      int kvirtual=GetK(xvirtual,yvirtual, longedge_x,npix_x_g, npix_y_g);
+			      
+			      FillGapsBetweenChip(map,k,kvirtual, npix_y_g*npix_x_g);		
+#ifdef MYROOT
+			      FillROOTEdge(hmap, longedge_x, x_t, y_t, map[k],
+					   xvirtual, yvirtual, map[kvirtual]);
+#endif				  
+
+
+  }//gap pixel condition, pixel on right			 
+			    if(ix==0 && ( (ileft==1) ||  ((ichipx!=startchipx) && (ileft==0)))) {
+			      int xvirtual= x_t-1;
+			      int yvirtual= y_t;
+			      int kvirtual=GetK(xvirtual,yvirtual, longedge_x, 
+						npix_x_g, npix_y_g);
+			      FillGapsBetweenChip(map,k,kvirtual, npix_y_g*npix_x_g);		
+#ifdef MYROOT
+			      FillROOTEdge(hmap, longedge_x, x_t, y_t, map[k],
+					   xvirtual, yvirtual, map[kvirtual]);
+#endif				  
+			    }//gap pixel condition	
+			    if((iy==0)) {
+			      int xvirtual= x_t;
+			      int yvirtual= y_t-1;
+			      int kvirtual=GetK(xvirtual,yvirtual, longedge_x, 
+						npix_x_g, npix_y_g);
+			      FillGapsBetweenChip(map,k,kvirtual, npix_y_g*npix_x_g);		
+#ifdef MYROOT
+			      FillROOTEdge(hmap, longedge_x, x_t, y_t, map[k],
+					   xvirtual, yvirtual, map[kvirtual]);
+#endif				  
+			    }//gap pixel condition
+			  }//ELSE
+			}//not corer
+		      } //if fillgaps
+		    }//num ch chipx 
+		  }//ichipx
+		} //num ch chip y
+	      }//ichipy
 	    } //it ==0 		
+	    
 	    //getting values for bottom
-	    if(it==1 ) {
+	    if(it==1) {
 	      startchipy=0;    
 	      endchipy=1;
 	      if(ileft==0){		  
@@ -297,13 +401,91 @@ int main(int argc, char *argv[]) {
 		      int x_t=ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+(NumChip_x-1)*GapPixelsBetweenChips_x+GapPixelsBetweenModules_x)*imod_h;
 		      int y_t= iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+(NumChip_y-1)*GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
 			    
-		      int k=  x_t+npix_x_g*y_t;
-		      if(!longedge_x){//now apply rotation 
-			//y'=x
-			//x'=(ngap_pix_y-iy)
-			k=(npix_y_g-y_t)+ npix_y_g*x_t;
+		      int k=GetK(x_t,y_t, longedge_x, npix_x_g, npix_y_g);
+		      map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
+#ifdef MYROOT
+		      FillROOT(hmap,longedge_x, x_t, y_t, map[k]);
+#endif	      
+		      if(fillgaps){
+			//corner gap pixels
+		      if((ix==NumChanPerChip_x-1) &&   ( (ileft==0) ||  ((ichipx!=(endchipx-1)) && (ileft==1))) 
+			 && (iy==(NumChanPerChip_y-1))){
+			int xvirtual1= x_t+1;
+			int yvirtual1= y_t;
+			int kvirtual1=GetK(xvirtual1,yvirtual1, longedge_x,npix_x_g, npix_y_g);
+			int xvirtual2= x_t;
+			int yvirtual2= y_t+1;
+			int kvirtual2=GetK(xvirtual2,yvirtual2, longedge_x, npix_x_g, npix_y_g);
+			int xvirtual3= x_t+1;
+			int yvirtual3= y_t+1;
+			int kvirtual3=GetK(xvirtual3,yvirtual3, longedge_x, npix_x_g, npix_y_g);
+			FillCornerGapsBetweenChip(map, k, kvirtual1,kvirtual2, kvirtual3 , npix_y_g*npix_x_g);	
+#ifdef MYROOT
+			FillROOTCorner(hmap, longedge_x, x_t, y_t, map[k],
+				       xvirtual1, yvirtual1, map[kvirtual1],
+				       xvirtual2, yvirtual2, map[kvirtual2],
+				       xvirtual3, yvirtual3, map[kvirtual3]);			
+#endif
 		      }
-		      map[k]=buffer[nnr][ix+(ichipx%2)*256+ 256*2*(255-iy)];
+		      else{ 
+			if(ix==0 && ( (ileft==1) ||  ((ichipx!=startchipx) && (ileft==0))) &&
+			   (iy==(NumChanPerChip_y-1))){
+			  int xvirtual1= x_t-1;
+			  int yvirtual1= y_t;
+			  int kvirtual1=GetK(xvirtual1,yvirtual1, longedge_x, 
+					     npix_x_g, npix_y_g);
+			  int xvirtual2= x_t;
+			  int yvirtual2= y_t+1;
+			  int kvirtual2=GetK(xvirtual2,yvirtual2, longedge_x, npix_x_g, npix_y_g);
+			  int xvirtual3= x_t-1;
+			  int yvirtual3= y_t+1;
+			  int kvirtual3=GetK(xvirtual3,yvirtual3, longedge_x, npix_x_g, npix_y_g);
+			  FillCornerGapsBetweenChip(map, k, kvirtual1,kvirtual2, kvirtual3 , npix_y_g*npix_x_g);	
+#ifdef MYROOT
+			  FillROOTCorner(hmap, longedge_x, x_t, y_t, map[k],
+					 xvirtual1, yvirtual1, map[kvirtual1],
+					 xvirtual2, yvirtual2, map[kvirtual2],
+					 xvirtual3, yvirtual3, map[kvirtual3]);			
+#endif
+			} 
+			else{ 
+			  if((ix==NumChanPerChip_x-1) &&   ( (ileft==0) ||  ((ichipx!=(endchipx-1)) && (ileft==1)))){
+			    int  xvirtual= x_t+1;
+			    int yvirtual= y_t;
+			    int kvirtual=GetK(xvirtual,yvirtual, longedge_x, 
+					      npix_x_g, npix_y_g);
+			    FillGapsBetweenChip(map,k,kvirtual, npix_y_g*npix_x_g);		
+#ifdef MYROOT
+			    FillROOTEdge(hmap, longedge_x, x_t, y_t, map[k],
+					 xvirtual, yvirtual, map[kvirtual]);
+#endif				  
+			  }//gap pixel condition, pixel on right			 
+			  if(ix==0 && ( (ileft==1) ||  ((ichipx!=startchipx) && (ileft==0)))) {
+			    int xvirtual= x_t-1;
+			    int yvirtual= y_t;
+			    int kvirtual=GetK(xvirtual,yvirtual, longedge_x, 
+					      npix_x_g, npix_y_g);
+			    
+			    FillGapsBetweenChip(map,k,kvirtual, npix_y_g*npix_x_g); 
+#ifdef MYROOT
+			    FillROOTEdge(hmap, longedge_x, x_t, y_t, map[k],
+					 xvirtual, yvirtual, map[kvirtual]);
+#endif				  
+			  }//gap pixel condition	
+			  if(iy==(NumChanPerChip_y-1)) {
+			    int  xvirtual= x_t;
+			    int  yvirtual= y_t+1;
+			    int kvirtual=GetK(xvirtual,yvirtual, longedge_x, 
+					      npix_x_g, npix_y_g);
+			    FillGapsBetweenChip(map,k,kvirtual, npix_y_g*npix_x_g);		
+#ifdef MYROOT
+			    FillROOTEdge(hmap, longedge_x, x_t, y_t, map[k],
+					 xvirtual, yvirtual, map[kvirtual]);
+#endif				  
+			  }//gap pixel condition		
+			}
+		      }
+		      }
 		    }
 		  }
 		}
@@ -315,11 +497,10 @@ int main(int argc, char *argv[]) {
       }//v mods
     } //h mods close all loops
 		
-  
-    
     buffer.clear();
     
-    //---> here I should also fill
+#ifdef MYCBF
+       //---> here I should also fill
     /* Create and initializes new internal CBF Object*/
     cbf_failnez (cbf_make_handle (&cbf));
     sprintf(fname, "%s_%05d_%05d.cbf",file.c_str(),fileIndex, numFrames);
@@ -400,6 +581,18 @@ int main(int argc, char *argv[]) {
 
     
     cbf_failnez (cbf_free_handle (cbf));
+    
+#endif  //If CBF
+
+#ifdef MYROOT
+    hmap->SetStats(kFALSE);
+    hmap->Draw("colz");
+    hmap->Write();
+    delete hmap;
+#endif  //If ROOT
+    
+
+
     numFrames++;
     
     buffer.clear();
@@ -407,10 +600,8 @@ int main(int argc, char *argv[]) {
   } //loop on frames
   
 
- for(int inr=0; inr<nr; inr++)    
-   infile[inr].close();
-
-  //buffer.clear();
+  for(int inr=0; inr<nr; inr++)    
+    infile[inr].close();
 
 
   return 1;

@@ -18,6 +18,7 @@ const int NumHalfModules = 2;
 const int NumChanPerChip_x = 256;
 const int NumChanPerChip_y = 256;
 const int NumChip_x = 4;
+const int NumChip_x_port = 2;
 const int NumChip_y = 2;
 //single module geometry
 const int npix_x_sm=(NumChanPerChip_x*NumChip_x);
@@ -28,9 +29,8 @@ const int GapPixelsBetweenChips_y =2;
 const int GapPixelsBetweenModules_x =8;
 const int GapPixelsBetweenModules_y = 36;
 int frameheadersize=0;
-//const static int imageHeader;// = 8+4+4+8+8+2+2+2+2+4+2+1+1; //bytes
 
-int getFileParameters(string file,  int &dr, int &tg, int &is, int &x, int &y,
+int getFileParameters(string file,  int &dr, int &tg,  int &ih, int &is, int &x, int &y,
 		      string& timestamp, double& expTime, double& period, int& imgs ){
 
   cout << "Getting File Parameters from " << file << endl;
@@ -155,97 +155,86 @@ int getFileParameters(string file,  int &dr, int &tg, int &is, int &x, int &y,
       sstr >> str >> str>> str >> dummyint;
       frameheadersize+=dummyint;
     }
-    cout<< frameheadersize<<endl;
-
+  
     //SubFrame Number/ExpLength
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str>> str >> dummyint;
       frameheadersize+=dummyint;
     }	
-    cout<< frameheadersize<<endl;
+
     //Packet Number
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str>> str >> dummyint;
       frameheadersize+=dummyint;
     }	
-    cout<< frameheadersize<<endl;
+    
     //Bunch ID
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str>> str >> dummyint;
       frameheadersize+=dummyint;
     }	
-    cout<< frameheadersize<<endl;
     //Timestamp
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str >> dummyint;
       frameheadersize+=dummyint;
     }	
-      cout<< frameheadersize<<endl;
-
     //Module Id
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >>str >> str >> dummyint;
       frameheadersize+=dummyint;
     }	
-      cout<< frameheadersize<<endl;
     //X Coordinate
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >>str >> str >> dummyint;
       frameheadersize+=dummyint;
     }	
-      cout<< frameheadersize<<endl;
     //Y Coordinate 
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >>str >> str >> dummyint;
       frameheadersize+=dummyint;
     }	
-      cout<< frameheadersize<<endl;
     //Z Coordinate
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >>str >> str >> dummyint;
       frameheadersize+=dummyint;
     }	
-      cout<< frameheadersize<<endl;
     //Debug
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str >> dummyint;
       frameheadersize+=dummyint;
     }	
-      cout<< frameheadersize<<endl;
     //Round Robin Number
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >>str >> str >>str >> dummyint;
       frameheadersize+=dummyint;
     }	
-      cout<< frameheadersize<<endl;
     //Detector Type
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >>str >> str >> dummyint;
       frameheadersize+=dummyint;
     }	
-      cout<< frameheadersize<<endl;
     //Header Version
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >>str >> str >> dummyint;
       frameheadersize+=dummyint;
     }
-      cout<< frameheadersize<<endl;
     if(frameheadersize!= 8+4+4+8+8+2+2+2+2+4+2+1+1) {
       cout<< frameheadersize<<endl;
 	assert(0);
-    }    
+    } 
+    ih= frameheadersize;  
     infile.close();
   }else{
     cprintf(RED, "Error: Could not read file: %s\n", file.c_str());
@@ -279,7 +268,7 @@ int getFileParameters(string file,  int &dr, int &tg, int &is, int &x, int &y,
   
   return 1;
 }
-const static int imageHeader=frameheadersize;
+//const static int imageHeader=frameheadersize;
 
 int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user)
 {
@@ -415,4 +404,94 @@ int* decodeData(int *datain, const int size, const int nx, const int ny, const i
   return dataout;
   
 }
+
+int GetK(int xvirtual, int yvirtual, int longedge_x, 
+	 int npix_x_g, int npix_y_g)
+{
+
+  //int k= x_t+ npix_x_g*y_t;
+  //if(!longedge_x) {
+  //now apply rotation 
+  //y'=x
+  //x'=(ngap_pix_y-iy)
+  //  k=(npix_y_g-y_t)+ npix_y_g*x_t;
+  //}
+  int  kvirtual= xvirtual+ npix_x_g*yvirtual;
+  if(!longedge_x)
+    kvirtual=(npix_y_g-yvirtual)+ npix_y_g*xvirtual;
+  return kvirtual;
+}
+
+void FillCornerGapsBetweenChip(int* map, int k, int kvirtual1,int kvirtual2, int kvirtual3, int npix)	
+{
+  //divided by 4
+  if(!( map[k]%4)){ 
+    int gpixelc=(int) map[k]/4;			    
+    map[k]=gpixelc;
+    map[kvirtual1]=gpixelc;
+    map[kvirtual2]=gpixelc;
+    map[kvirtual3]=gpixelc;
+  }//even	
+  else{ //otherwise
+    int gpixelc=map[k]/4;			    
+    map[k]=gpixelc+(map[k]%4); //asign teh extra photon to real pixel
+    map[kvirtual1]=gpixelc;
+    map[kvirtual2]=gpixelc;
+    map[kvirtual3]=gpixelc;
+  }//
+}
+
+void FillGapsBetweenChip(int* map, int k, int kvirtual, int npix)	
+{
+  //even
+  if(!( map[k]%2)){ 
+    int gpixelc=(int) map[k]/2;			    
+    map[k]=gpixelc;
+    if(kvirtual>=npix)      assert(0);
+    map[kvirtual]=gpixelc;
+  }//even	
+  else{ //odd
+    int gpixelc=map[k]/2;			    
+    map[k]=gpixelc+1; //asign teh extra photon to real pixel
+    map[kvirtual]=gpixelc;
+  }//odd	
+}
+int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int& longedge_x, int& fillgaps, int &startdet){
+  if(argc < 2){
+    cprintf(RED, "Error: Not enough arguments: cbfMaker [file_name_with_dir] \nExiting.\n");
+    exit(-1);
+  }
+  file=argv[1];
+  getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, fileFrameIndex, npix_x_user, npix_y_user);
+
+  if(argc>2){
+        
+    if(argc>4) longedge_x=atoi(argv[4]);
+    else longedge_x=1;
+    if(argc>5) fillgaps=atoi(argv[5]);
+    else fillgaps=1;
+    if(argc>6) startdet=atoi(argv[6]);
+    else startdet=0;
+    
+
+    cprintf(BLUE,
+	    "Module long edge is on x  : %d\n"
+	    "Fill gaps between chips   : %d\n"
+	    "Start detector index      : %d\n",
+	    longedge_x, fillgaps, startdet);
+    return 1;
+  }else{
+    longedge_x=1;
+    fillgaps=1;
+    startdet=0;
+    return 1;
+  }
+  return 0;
+}
+
+int local_exit(int status) {
+  exit(status);
+  return status;    /* to avoid warning messages */
+}
+
 #endif

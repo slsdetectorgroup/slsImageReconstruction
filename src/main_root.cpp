@@ -28,6 +28,7 @@
 
 using namespace std;
 
+/*
 int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int& longedge_x, int &startdet){
   if(argc < 2){
     cprintf(RED, "Error: Not enough arguments: image [file_name_with_dir] \nExiting.\n");
@@ -55,7 +56,7 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
   }
   return 0;
 }
-
+*/
 int main(int argc, char *argv[]) {
     
   //user set geometry
@@ -68,7 +69,7 @@ int main(int argc, char *argv[]) {
   int fileIndex, fileFrameIndex=0,startdet=0;
   int longedge_x;
   bool isFileFrameIndex = false;
-  getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, fileFrameIndex, npix_x_user, npix_y_user, longedge_x,startdet);
+  getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, fileFrameIndex, npix_x_user, npix_y_user, longedge_x,fillgaps,startdet);
 
   //cheat and reverse if it is in vertical orientation 
   if (!longedge_x){
@@ -133,12 +134,12 @@ int main(int argc, char *argv[]) {
   ifstream infile[numModules];
   // int nfile=startdet;
   //put master on top always
-  int dynamicrange, tenGiga, xpix, ypix, imageSize,imgs;
+  int dynamicrange, tenGiga, xpix, ypix, imageHeader, imageSize,imgs;
   string timestamp;
   double expTime, period;
   
   sprintf(fname,"%s_master_%d.raw",file.c_str(),fileIndex);
-  if(getFileParameters(fname, dynamicrange, tenGiga, imageSize, xpix, 
+  if(getFileParameters(fname, dynamicrange, tenGiga, imageHeader, imageSize, xpix, 
 		       ypix, timestamp, expTime, period,imgs ) != 1)return -1;
   
   vector <int*> buffer;
