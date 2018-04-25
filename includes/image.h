@@ -31,7 +31,7 @@ const int GapPixelsBetweenModules_y = 36;
 int frameheadersize=0;
 
 //gap pixel threatement 
-enum { kZero, kDivide, kInterpolate };
+enum { kZero, kDivide, kInterpolate, kMask };
 
 
 int getFileParameters(string file,  int &dr, int &tg,  int &ih, int &is, int &x, int &y,
@@ -403,10 +403,17 @@ int* decodeData(int *datain, const int size, const int nx, const int ny, const i
     }
   }
   
-  
-  
   return dataout;
   
+}
+
+int GetX(int ix, int ichipx, int imod_h)
+{
+  return ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+(NumChip_x-1)*GapPixelsBetweenChips_x+GapPixelsBetweenModules_x)*imod_h;
+}
+int GetY(int iy, int ichipy,int imod_v)
+{
+return iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+(NumChip_y-1)*GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
 }
 
 int GetK(int xvirtual, int yvirtual, int longedge_x, 
@@ -461,6 +468,37 @@ void FillGapsBetweenChipDivide(int* map, int k, int kvirtual)
   }//odd	
 }
 
+void FillGapsBetweenChipDivide(int* map, int k, int kvirtual, 
+			       int kvirtual2, int k2)	
+{
+  FillGapsBetweenChipDivide(map, k,kvirtual);
+  FillGapsBetweenChipDivide(map, k2,kvirtual2);
+}
+
+
+void FillGapsBetweenChipInterpolate(int* map, int k, int kvirtual, 
+				    int kvirtual2, int k2)	
+{
+  if(map[k]==map[k2]) FillGapsBetweenChipDivide( map, k, kvirtual, 
+						 kvirtual2, k2);
+  int c1=map[k];
+  int c4=map[k2];
+
+  map[k2]= (int)((15.*c4-3.*c1)/24.);
+  map[kvirtual2]=(int)(c4-map[k2]);
+  map[k]= (int)(3.*c4-5.*map[k2]);
+  map[kvirtual]=(int)(c1-map[k]);
+}
+
+void FillGapsBetweenChipMask(int* map, int k, int kvirtual, 
+			     int kvirtual2, int k2)	
+{
+  map[k]=0;
+  map[kvirtual]=0;
+  map[kvirtual2]=0;
+  map[k2]=0;
+}
+
 int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int& longedge_x, int& fillgaps, int &startdet){
   if(argc < 2){
     cprintf(RED, "Error: Not enough arguments: cbfMaker [file_name_with_dir] \nExiting.\n");
@@ -498,5 +536,7 @@ int local_exit(int status) {
   exit(status);
   return status;    /* to avoid warning messages */
 }
+
+
 
 #endif
