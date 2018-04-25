@@ -30,6 +30,10 @@ const int GapPixelsBetweenModules_x =8;
 const int GapPixelsBetweenModules_y = 36;
 int frameheadersize=0;
 
+//gap pixel threatement 
+enum { kZero, kDivide, kInterpolate };
+
+
 int getFileParameters(string file,  int &dr, int &tg,  int &ih, int &is, int &x, int &y,
 		      string& timestamp, double& expTime, double& period, int& imgs ){
 
@@ -422,8 +426,9 @@ int GetK(int xvirtual, int yvirtual, int longedge_x,
   return kvirtual;
 }
 
-void FillCornerGapsBetweenChip(int* map, int k, int kvirtual1,int kvirtual2, int kvirtual3, int npix)	
+void FillCornerGapsBetweenChipDivide(int* map, int k, int kvirtual1,int kvirtual2, int kvirtual3)	
 {
+
   //divided by 4
   if(!( map[k]%4)){ 
     int gpixelc=(int) map[k]/4;			    
@@ -441,13 +446,12 @@ void FillCornerGapsBetweenChip(int* map, int k, int kvirtual1,int kvirtual2, int
   }//
 }
 
-void FillGapsBetweenChip(int* map, int k, int kvirtual, int npix)	
+void FillGapsBetweenChipDivide(int* map, int k, int kvirtual)	
 {
   //even
   if(!( map[k]%2)){ 
     int gpixelc=(int) map[k]/2;			    
     map[k]=gpixelc;
-    if(kvirtual>=npix)      assert(0);
     map[kvirtual]=gpixelc;
   }//even	
   else{ //odd
@@ -456,6 +460,7 @@ void FillGapsBetweenChip(int* map, int k, int kvirtual, int npix)
     map[kvirtual]=gpixelc;
   }//odd	
 }
+
 int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int& longedge_x, int& fillgaps, int &startdet){
   if(argc < 2){
     cprintf(RED, "Error: Not enough arguments: cbfMaker [file_name_with_dir] \nExiting.\n");
@@ -469,7 +474,7 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
     if(argc>4) longedge_x=atoi(argv[4]);
     else longedge_x=1;
     if(argc>5) fillgaps=atoi(argv[5]);
-    else fillgaps=1;
+    else fillgaps=kInterpolate; //0 no filling, 1 division, 2 interpolation
     if(argc>6) startdet=atoi(argv[6]);
     else startdet=0;
     
@@ -482,7 +487,7 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
     return 1;
   }else{
     longedge_x=1;
-    fillgaps=1;
+    fillgaps=kInterpolate;
     startdet=0;
     return 1;
   }

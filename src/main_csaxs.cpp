@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
 #ifdef MYROOT
 		      FillROOT(hmap,longedge_x, x_t, y_t, map[k]);
 #endif
-		      if(fillgaps){
+		      if(fillgaps==kDivide){
 			//corner gap pixels gap pixels
 			if((ix==NumChanPerChip_x-1) &&  
 			 ( (ileft==0) ||  ((ichipx!=(endchipx-1)) && 
@@ -306,7 +306,7 @@ int main(int argc, char *argv[]) {
 			  int yvirtual3= y_t-1;
 			  int kvirtual3=GetK(xvirtual3,yvirtual3, longedge_x, 
 					     npix_x_g, npix_y_g);
-			  FillCornerGapsBetweenChip(map, k, kvirtual1,kvirtual2, kvirtual3 , npix_y_g*npix_x_g);	
+			  FillCornerGapsBetweenChipDivide(map, k, kvirtual1,kvirtual2, kvirtual3 );	
 			  
 #ifdef MYROOT
 			  FillROOTCorner(hmap, longedge_x, x_t, y_t, map[k],
@@ -328,7 +328,7 @@ int main(int argc, char *argv[]) {
 			    int yvirtual3= y_t-1;
 			    int kvirtual3=GetK(xvirtual3,yvirtual3, longedge_x, 
 					       npix_x_g, npix_y_g);
-			    FillCornerGapsBetweenChip(map, k, kvirtual1,kvirtual2, kvirtual3 , npix_y_g*npix_x_g);	
+			    FillCornerGapsBetweenChipDivide(map, k, kvirtual1,kvirtual2, kvirtual3);	
 #ifdef MYROOT
 			    FillROOTCorner(hmap, longedge_x, x_t, y_t, map[k],
 					   xvirtual1, yvirtual1, map[kvirtual1],
@@ -342,7 +342,7 @@ int main(int argc, char *argv[]) {
 			      int yvirtual= y_t;
 			      int kvirtual=GetK(xvirtual,yvirtual, longedge_x,npix_x_g, npix_y_g);
 			      
-			      FillGapsBetweenChip(map,k,kvirtual, npix_y_g*npix_x_g);		
+			      FillGapsBetweenChipDivide(map,k,kvirtual);		
 #ifdef MYROOT
 			      FillROOTEdge(hmap, longedge_x, x_t, y_t, map[k],
 					   xvirtual, yvirtual, map[kvirtual]);
@@ -355,7 +355,7 @@ int main(int argc, char *argv[]) {
 			      int yvirtual= y_t;
 			      int kvirtual=GetK(xvirtual,yvirtual, longedge_x, 
 						npix_x_g, npix_y_g);
-			      FillGapsBetweenChip(map,k,kvirtual, npix_y_g*npix_x_g);		
+			      FillGapsBetweenChipDivide(map,k,kvirtual);		
 #ifdef MYROOT
 			      FillROOTEdge(hmap, longedge_x, x_t, y_t, map[k],
 					   xvirtual, yvirtual, map[kvirtual]);
@@ -366,7 +366,7 @@ int main(int argc, char *argv[]) {
 			      int yvirtual= y_t-1;
 			      int kvirtual=GetK(xvirtual,yvirtual, longedge_x, 
 						npix_x_g, npix_y_g);
-			      FillGapsBetweenChip(map,k,kvirtual, npix_y_g*npix_x_g);		
+			      FillGapsBetweenChipDivide(map,k,kvirtual);		
 #ifdef MYROOT
 			      FillROOTEdge(hmap, longedge_x, x_t, y_t, map[k],
 					   xvirtual, yvirtual, map[kvirtual]);
@@ -406,9 +406,8 @@ int main(int argc, char *argv[]) {
 #ifdef MYROOT
 		      FillROOT(hmap,longedge_x, x_t, y_t, map[k]);
 #endif	      
-		      if(fillgaps){
-			//corner gap pixels
-		      if((ix==NumChanPerChip_x-1) &&   ( (ileft==0) ||  ((ichipx!=(endchipx-1)) && (ileft==1))) 
+		      if(fillgaps==kDivide){
+			if((ix==NumChanPerChip_x-1) &&   ( (ileft==0) ||  ((ichipx!=(endchipx-1)) && (ileft==1))) 
 			 && (iy==(NumChanPerChip_y-1))){
 			int xvirtual1= x_t+1;
 			int yvirtual1= y_t;
@@ -419,7 +418,7 @@ int main(int argc, char *argv[]) {
 			int xvirtual3= x_t+1;
 			int yvirtual3= y_t+1;
 			int kvirtual3=GetK(xvirtual3,yvirtual3, longedge_x, npix_x_g, npix_y_g);
-			FillCornerGapsBetweenChip(map, k, kvirtual1,kvirtual2, kvirtual3 , npix_y_g*npix_x_g);	
+			FillCornerGapsBetweenChipDivide(map, k, kvirtual1,kvirtual2, kvirtual3 );	
 #ifdef MYROOT
 			FillROOTCorner(hmap, longedge_x, x_t, y_t, map[k],
 				       xvirtual1, yvirtual1, map[kvirtual1],
@@ -440,7 +439,7 @@ int main(int argc, char *argv[]) {
 			  int xvirtual3= x_t-1;
 			  int yvirtual3= y_t+1;
 			  int kvirtual3=GetK(xvirtual3,yvirtual3, longedge_x, npix_x_g, npix_y_g);
-			  FillCornerGapsBetweenChip(map, k, kvirtual1,kvirtual2, kvirtual3 , npix_y_g*npix_x_g);	
+			  FillCornerGapsBetweenChipDivide(map, k, kvirtual1,kvirtual2, kvirtual3 );	
 #ifdef MYROOT
 			  FillROOTCorner(hmap, longedge_x, x_t, y_t, map[k],
 					 xvirtual1, yvirtual1, map[kvirtual1],
@@ -454,7 +453,7 @@ int main(int argc, char *argv[]) {
 			    int yvirtual= y_t;
 			    int kvirtual=GetK(xvirtual,yvirtual, longedge_x, 
 					      npix_x_g, npix_y_g);
-			    FillGapsBetweenChip(map,k,kvirtual, npix_y_g*npix_x_g);		
+			    FillGapsBetweenChipDivide(map,k,kvirtual);		
 #ifdef MYROOT
 			    FillROOTEdge(hmap, longedge_x, x_t, y_t, map[k],
 					 xvirtual, yvirtual, map[kvirtual]);
@@ -466,7 +465,7 @@ int main(int argc, char *argv[]) {
 			    int kvirtual=GetK(xvirtual,yvirtual, longedge_x, 
 					      npix_x_g, npix_y_g);
 			    
-			    FillGapsBetweenChip(map,k,kvirtual, npix_y_g*npix_x_g); 
+			    FillGapsBetweenChipDivide(map,k,kvirtual); 
 #ifdef MYROOT
 			    FillROOTEdge(hmap, longedge_x, x_t, y_t, map[k],
 					 xvirtual, yvirtual, map[kvirtual]);
@@ -477,7 +476,7 @@ int main(int argc, char *argv[]) {
 			    int  yvirtual= y_t+1;
 			    int kvirtual=GetK(xvirtual,yvirtual, longedge_x, 
 					      npix_x_g, npix_y_g);
-			    FillGapsBetweenChip(map,k,kvirtual, npix_y_g*npix_x_g);		
+			    FillGapsBetweenChipDivide(map,k,kvirtual);		
 #ifdef MYROOT
 			    FillROOTEdge(hmap, longedge_x, x_t, y_t, map[k],
 					 xvirtual, yvirtual, map[kvirtual]);
