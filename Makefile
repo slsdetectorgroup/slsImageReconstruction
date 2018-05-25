@@ -26,7 +26,7 @@ INSTMODE			= 	0777
 
 SRC_CLNT		=	src/main_csaxs.cpp 
 SRC_CSAXS_CLNT	=	src/main_csaxs.cpp
-SRC_SUM_CLNT	=	src/main_pxSum.cpp
+SRC_SUM_CLNT	=	src/main_csaxs_sum.cpp #src/main_pxSum.cpp
 SRC_HALF_CLNT	=	src/main_half.cpp 
 SRC_CSAXS_MULTI	=	src/main_csaxs_multi.cpp
 OBJS 			= 	$(SRC_CLNT:.cpp=.o)

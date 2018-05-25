@@ -455,6 +455,8 @@ void FillCornerGapsBetweenChipDivide(int* map, int k, int kvirtual1,int kvirtual
 
 void FillGapsBetweenChipDivide(int* map, int k, int kvirtual)	
 {
+
+  if(k==60) cout<<"here "<<endl;
   //even
   if(!( map[k]%2)){ 
     int gpixelc=(int) map[k]/2;			    
@@ -512,7 +514,7 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
     if(argc>4) longedge_x=atoi(argv[4]);
     else longedge_x=1;
     if(argc>5) fillgaps=atoi(argv[5]);
-    else fillgaps=kInterpolate; //0 no filling, 1 division, 2 interpolation
+    else fillgaps=kDivide; //0 no filling, 1 division, 2 interpolation
     if(argc>6) startdet=atoi(argv[6]);
     else startdet=0;
     
@@ -525,7 +527,7 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
     return 1;
   }else{
     longedge_x=1;
-    fillgaps=kInterpolate;
+    fillgaps=kDivide;
     startdet=0;
     return 1;
   }

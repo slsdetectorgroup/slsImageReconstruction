@@ -123,7 +123,8 @@ int main(int argc, char *argv[]) {
  
   //map including gap pixels
   int* map=new int[npix_x_g*npix_y_g];
-  
+  int* map2=new int[npix_x_g*npix_y_g]; 
+ 
   cprintf(BLUE,
 	  "Number of Pixels (incl gap pixels) in x dir : %d\n"
 	  "Number of Pixels (incl gap pixels) in y dir : %d\n"
@@ -193,8 +194,11 @@ int main(int argc, char *argv[]) {
 #endif  //If ROOT
 
   //now loop over all frames
-  //for each frame
-  while(numFrames<(imgs+1)){
+  
+  //reset running frame index
+  int runningFrameIndex=0;
+  //for each frame  
+  while(numFrames<(imgs+1)){  //original
    
     //Create cbf files with data
 #ifdef MYCBF
@@ -239,12 +243,19 @@ int main(int argc, char *argv[]) {
     }//loop on receivers
   
     if(buffer.size()!=nr) continue;
-    
+ 
+     
     //get a 2d map of the image
     //initialize
     for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
-      map[ik]=4095;//-1; 
-	
+      map[ik]=0;// initialize to zero now 
+    if(runningFrameIndex==0){ //initialize only once
+      for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
+	map2[ik]=0;
+    }
+    
+    int Nimgs=10; //sum 10 images 
+
     int startchipx=0;
     int startchipy=0;
     int endchipx=4;
@@ -538,56 +549,59 @@ int main(int argc, char *argv[]) {
     } //h mods close all loops
 		
     buffer.clear();
-
-
-    for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
-      if(map[ik]<0) assert(0);
+  
+    //now sum images - map2 is rthe final one
+    for(int ik=0; ik< npix_x_g*npix_y_g; ik++) 
+      if(map[ik]>-1) map2[ik]+=map[ik];
+    
+    
+    if(runningFrameIndex==(Nimgs-1)) {
     
 #ifdef MYCBF
-       //---> here I should also fill
-    /* Create and initializes new internal CBF Object*/
-    cbf_failnez (cbf_make_handle (&cbf));
-    sprintf(fname, "%s_%05d_%05d.cbf",file.c_str(),fileIndex, numFrames);
-    out = fopen (fname, "w");
-		
-    //fake headers
-    fprintf(out,
-	    "###CBF: VERSION 1.0, CBFlib v0.9.5 - SLS EIGER detector\r\n"
-	    "# Detector: Eiger\r\n"
-	    );
-    //timestamp
-    char printDate[100];
-    char limits[100];
-    fprintf(out,"_array_data.header_contents\r\n"
-	    ";\r\n");
-    sprintf(printDate,"# %s\r\n",timestamp.c_str());
-    //timestamp
-    time_t rawtime = time(NULL);
-    struct tm *timeinfo = localtime(&rawtime);
-    char date[100];
-    strftime(date, sizeof(date), "%Y/%b/%d %H:%M:%S.%j %Z", timeinfo);
-    sprintf(printDate,"# %s\r\n",date);
-    
-    fprintf(out,printDate);
-    fprintf(out,
-	    "# Exposure_time 1.0000000 s\r\n"
-	    "# Exposure_period 1.0000000 s\r\n"
-	    "# Tau = 0 s\r\n");
-    long int max=pow(2,dynamicrange)-1;
-    if(dynamicrange==16) max=pow(2,12)-1;
-    sprintf(limits, "# Count_cutoff %ld counts\r\n",max );
-    fprintf(out,limits);
-    fprintf(out,
+      //---> here I should also fill
+      /* Create and initializes new internal CBF Object*/
+      cbf_failnez (cbf_make_handle (&cbf));
+      sprintf(fname, "%s_SUM%d_%05d_%05d.cbf",file.c_str(),Nimgs,fileIndex, 
+	      (int) (numFrames/Nimgs));
+      out = fopen (fname, "w");
+      
+      //fake headers
+      fprintf(out,
+	      "###CBF: VERSION 1.0, CBFlib v0.9.5 - SLS EIGER detector\r\n"
+	      "# Detector: Eiger\r\n"
+	      );
+      //timestamp
+      char printDate[100];
+      char limits[100];
+      fprintf(out,"_array_data.header_contents\r\n"
+	      ";\r\n");
+      sprintf(printDate,"# %s\r\n",timestamp.c_str());
+      //timestamp
+      time_t rawtime = time(NULL);
+      struct tm *timeinfo = localtime(&rawtime);
+      char date[100];
+      strftime(date, sizeof(date), "%Y/%b/%d %H:%M:%S.%j %Z", timeinfo);
+      sprintf(printDate,"# %s\r\n",date);
+      
+      fprintf(out,printDate);
+      fprintf(out,
+	      "# Exposure_time 1.0000000 s\r\n"
+	      "# Exposure_period 1.0000000 s\r\n"
+	      "# Tau = 0 s\r\n");
+      long int max=pow(2,dynamicrange)-1;
+      if(dynamicrange==16) max=pow(2,12)-1;
+      sprintf(limits, "# Count_cutoff %ld counts\r\n",max );
+      fprintf(out,limits);
+   fprintf(out,
 	    "# Threshold_setting 8000 eV\r\n"
 	    //   ";\r\n"
 	    );
-    
-#ifdef MSHeader
+#ifdef MSHeader 
     fprintf(out,
 	    "# Gain_setting: low gain (vrf = -0.300)"
 	    "\r\n");
     fprintf(out,
-	    "# N_excluded_pixels = 1132"
+	"# N_excluded_pixels = 1132"
 	    "\r\n");
     fprintf(out,
 	    "# Excluded_pixels: badpix_mask.tif"
@@ -644,38 +658,41 @@ int main(int argc, char *argv[]) {
     fprintf(out,
 	    ";\r\n"
 	    );
-    
-    /* Make a new data block */
-    cbf_failnez (cbf_new_datablock (cbf, "image_1"))  //why not: cbf_new_saveframe(cbf,"image 1")
-      /* Make the _diffrn category */
-      cbf_failnez (cbf_new_category (cbf, "array_data"))
-      /* Make new column at current data category */
-      cbf_failnez (cbf_new_column   (cbf, "header_convention"))
-      /* Set value to current column and row */
-      cbf_failnez (cbf_set_value    (cbf, "SLS_1.0"))
-      /* Make new column at current data category */
-      cbf_failnez (cbf_new_column   (cbf, "header_contents"))
-      /* Make new column at current data category */
-      cbf_failnez (cbf_new_column   (cbf, "data"))
-      	
-      /* Create the binary data */
-      cbf_failnez (cbf_set_integerarray_wdims_fs (
-						  cbf, 								//cbf_handle handle
-						  CBF_BYTE_OFFSET| CBF_FLAT_IMAGE, 	// unsigned int compression
-						  1,									//int binary_id
-						  &(map[0]), 						//void *array
-						  sizeof (int),						 //size_t elsize
-						  1,									//int elsigned
-						  longedge_x ?  npix_y_g * npix_x_g: npix_x_g * npix_y_g,	    //size_t elements
-						  "little_endian",					 // const char *byteorder
-						  longedge_x? npix_x_g : npix_y_g,		       		 //size_t dimfast
-						  longedge_x? npix_y_g : npix_x_g,				  //size_t dimmid
-						  0,							       	//size_t dimslow
-						  4095 								//size_t padding
-						  ));
 
-  
-    /** write everything to file */
+
+      
+      
+      /* Make a new data block */
+      cbf_failnez (cbf_new_datablock (cbf, "image_1"))  //why not: cbf_new_saveframe(cbf,"image 1")
+      /* Make the _diffrn category */
+	cbf_failnez (cbf_new_category (cbf, "array_data"))
+	/* Make new column at current data category */
+	cbf_failnez (cbf_new_column   (cbf, "header_convention"))
+	/* Set value to current column and row */
+	cbf_failnez (cbf_set_value    (cbf, "SLS_1.0"))
+	/* Make new column at current data category */
+      cbf_failnez (cbf_new_column   (cbf, "header_contents"))
+	/* Make new column at current data category */
+	cbf_failnez (cbf_new_column   (cbf, "data"))
+      	
+	/* Create the binary data */
+	cbf_failnez (cbf_set_integerarray_wdims_fs (
+						    cbf, 								//cbf_handle handle
+						    CBF_BYTE_OFFSET| CBF_FLAT_IMAGE, 	// unsigned int compression
+						    1,									//int binary_id
+						    &(map2[0]), 						//void *array
+						    sizeof (int),						 //size_t elsize
+						    1,									//int elsigned
+						    longedge_x ?  npix_y_g * npix_x_g: npix_x_g * npix_y_g,	    //size_t elements
+						    "little_endian",					 // const char *byteorder
+						    longedge_x? npix_x_g : npix_y_g,		       		 //size_t dimfast
+						    longedge_x? npix_y_g : npix_x_g,				  //size_t dimmid
+						    0,							       	//size_t dimslow
+						    4095 								//size_t padding
+						    ));
+      
+      
+      /** write everything to file */
     cbf_failnez (cbf_write_file (
 				 cbf, 		//cbf_handle handle
 				 out, 		//FILE *file
@@ -684,27 +701,27 @@ int main(int argc, char *argv[]) {
 				 MSG_DIGEST | MIME_HEADERS  , //int headers
 				 0));		//int encoding
     
-
+    
     
     cbf_failnez (cbf_free_handle (cbf));
     
 #endif  //If CBF
-
+    
 #ifdef MYROOT
     hmap->SetStats(kFALSE);
     hmap->Draw("colz");
     hmap->Write();
     delete hmap;
 #endif  //If ROOT
+    } // //write the cbf file
+    runningFrameIndex++;
+    if(  runningFrameIndex== Nimgs) runningFrameIndex=0;
     
-
-
     numFrames++;
     
     buffer.clear();
 
   } //loop on frames
-  
 
   for(int inr=0; inr<nr; inr++)    
     infile[inr].close();
