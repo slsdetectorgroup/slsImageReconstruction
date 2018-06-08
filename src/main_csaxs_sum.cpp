@@ -197,9 +197,13 @@ int main(int argc, char *argv[]) {
   
   //reset running frame index
   int runningFrameIndex=0;
-  //for each frame  
-  while(numFrames<(imgs+1)){  //original
-   
+  int Nimgsperfile=2000; //to be fixed in next realease when configurable
+  int Nimagesexpected=Nimgsperfile+numFrames; //assumes 2000 more tahn number   
+  if(imgs<Nimagesexpected)  Nimagesexpected=imgs+1;
+  cout<< "last image expected for this file is "<<Nimagesexpected-1<<endl;
+  
+  while(numFrames< Nimagesexpected){
+
     //Create cbf files with data
 #ifdef MYCBF
     cbf_handle cbf;
