@@ -438,49 +438,47 @@ void FillCornerGapsBetweenChipZero(int* map, int k,
   map[kvirtual3]=0;
 }
 
+
+int Divide(int k, int i)
+{
+  if(!(k%i))
+    return k/=i;
+  return k/i+(k%i);
+}
+
 void FillCornerGapsBetweenChipDivide(int* map, int k, 
 				     int kvirtual1,int kvirtual2, int kvirtual3)	
 {
   //divided by 4
-  if(!( map[k]%4)){ 
-    int gpixelc=(int) map[k]/4;			    
-    map[k]=gpixelc;
-    map[kvirtual1]=gpixelc;
-    map[kvirtual2]=gpixelc;
-    map[kvirtual3]=gpixelc;
-  }//even	
-  else{ //otherwise
-    int gpixelc=map[k]/4;			    
-    map[k]=gpixelc+(map[k]%4); //asign teh extra photon to real pixel
-    map[kvirtual1]=gpixelc;
-    map[kvirtual2]=gpixelc;
-    map[kvirtual3]=gpixelc;
+  int gpixelc=(int) map[k]/4;			    
+  map[k]=gpixelc;
+  map[kvirtual1]=gpixelc;
+  map[kvirtual2]=gpixelc;
+  map[kvirtual3]=gpixelc;
+  
+  //asign randomly other hits
+  for(int i=0; i<(map[k]%4);i++){
+    double random_variable = std::rand()/(double)RAND_MAX;
+    if(random_variable>=0 && random_variable<0.25) map[k]++;
+    if(random_variable>=0.25 && random_variable<0.5) map[kvirtual1]++;
+    if(random_variable>=0.5 && random_variable<0.75) map[kvirtual2]++;
+    if(random_variable>=0.75 && random_variable<1) map[kvirtual3]++;
   }//
+  
+  
 }
-void FillCornerGapsBetweenChipInterpolate(int* map, int k, 
-					  int kvirtual1,int kvirtual2, 
-					  int kvirtual3)	
-{
-
-}
-// FillGapsBetweenChipInterpolate(int* map, int k, int kvirtual, 
-//				    int kvirtual2, int k2)
-//
-
-
 void FillGapsBetweenChipDivide(int* map, int k, int kvirtual)	
 {
-  //even
-  if(!( map[k]%2)){ 
-    int gpixelc=(int) map[k]/2;			    
-    map[k]=gpixelc;
-    map[kvirtual]=gpixelc;
-  }//even	
-  else{ //odd
-    int gpixelc=map[k]/2;			    
-    map[k]=gpixelc+1; //asign teh extra photon to real pixel
-    map[kvirtual]=gpixelc;
-  }//odd	
+  int gpixelc=(int) map[k]/2;			    
+  map[k]=gpixelc;
+  map[kvirtual]=gpixelc;
+
+  //asign randomly other hits
+  for(int i=0; i<(map[k]%2);i++){
+    double random_variable = std::rand()/(double)RAND_MAX;
+    if(random_variable>=0 && random_variable<0.5) map[k]++;
+    if(random_variable>=0.5 && random_variable<1) map[kvirtual]++;
+  }//
 }
 
 void FillGapsBetweenChipZero(int* map, int k, int kvirtual, 
