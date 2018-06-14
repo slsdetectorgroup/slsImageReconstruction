@@ -33,7 +33,6 @@ int frameheadersize=0;
 //gap pixel threatement 
 enum { kZero, kDivide, kInterpolate, kMask };
 
-
 int getFileParameters(string file,  int &dr, int &tg,  int &ih, int &is, int &x, int &y,
 		      string& timestamp, double& expTime, double& period, int& imgs ){
 
@@ -235,8 +234,7 @@ int getFileParameters(string file,  int &dr, int &tg,  int &ih, int &is, int &x,
       frameheadersize+=dummyint;
     }
     if(frameheadersize!= 8+4+4+8+8+2+2+2+2+4+2+1+1) {
-      cout<< frameheadersize<<endl;
-	assert(0);
+      ;
     } 
     ih= frameheadersize;  
     infile.close();
@@ -432,10 +430,17 @@ int GetK(int xvirtual, int yvirtual, int longedge_x,
     kvirtual=(npix_y_g-yvirtual)+ npix_y_g*xvirtual;
   return kvirtual;
 }
-
-void FillCornerGapsBetweenChipDivide(int* map, int k, int kvirtual1,int kvirtual2, int kvirtual3)	
+void FillCornerGapsBetweenChipZero(int* map, int k, 
+				   int kvirtual1,int kvirtual2, int kvirtual3)	
 {
+  map[kvirtual1]=0;
+  map[kvirtual2]=0;
+  map[kvirtual3]=0;
+}
 
+void FillCornerGapsBetweenChipDivide(int* map, int k, 
+				     int kvirtual1,int kvirtual2, int kvirtual3)	
+{
   //divided by 4
   if(!( map[k]%4)){ 
     int gpixelc=(int) map[k]/4;			    
@@ -452,11 +457,19 @@ void FillCornerGapsBetweenChipDivide(int* map, int k, int kvirtual1,int kvirtual
     map[kvirtual3]=gpixelc;
   }//
 }
+void FillCornerGapsBetweenChipInterpolate(int* map, int k, 
+					  int kvirtual1,int kvirtual2, 
+					  int kvirtual3)	
+{
+
+}
+// FillGapsBetweenChipInterpolate(int* map, int k, int kvirtual, 
+//				    int kvirtual2, int k2)
+//
+
 
 void FillGapsBetweenChipDivide(int* map, int k, int kvirtual)	
 {
-
-  if(k==60) cout<<"here "<<endl;
   //even
   if(!( map[k]%2)){ 
     int gpixelc=(int) map[k]/2;			    
@@ -470,6 +483,13 @@ void FillGapsBetweenChipDivide(int* map, int k, int kvirtual)
   }//odd	
 }
 
+void FillGapsBetweenChipZero(int* map, int k, int kvirtual, 
+			       int kvirtual2, int k2)	
+{
+  map[kvirtual]=0;
+  map[kvirtual2]=0;
+}
+
 void FillGapsBetweenChipDivide(int* map, int k, int kvirtual, 
 			       int kvirtual2, int k2)	
 {
@@ -477,19 +497,52 @@ void FillGapsBetweenChipDivide(int* map, int k, int kvirtual,
   FillGapsBetweenChipDivide(map, k2,kvirtual2);
 }
 
-
 void FillGapsBetweenChipInterpolate(int* map, int k, int kvirtual, 
 				    int kvirtual2, int k2)	
 {
-  if(map[k]==map[k2]) FillGapsBetweenChipDivide( map, k, kvirtual, 
-						 kvirtual2, k2);
-  int c1=map[k];
-  int c4=map[k2];
-
-  map[k2]= (int)((15.*c4-3.*c1)/24.);
-  map[kvirtual2]=(int)(c4-map[k2]);
-  map[k]= (int)(3.*c4-5.*map[k2]);
-  map[kvirtual]=(int)(c1-map[k]);
+  if(map[k]!=0 && map[k]==map[k2]) {
+    FillGapsBetweenChipDivide( map, k, kvirtual, kvirtual2, k2);
+  }
+  else{ 
+    if(map[k]==0){
+      map[k]=0;
+      map[kvirtual]=0;
+      FillGapsBetweenChipDivide(map,k2,kvirtual2);
+    }else {
+      if(map[k2]==0){
+	map[k2]=0;
+	map[kvirtual2]=0;
+	FillGapsBetweenChipDivide(map,k,kvirtual);
+      } else{
+	int c1=map[k];
+	int c4=map[k2];
+	
+	map[k2]= (int)((15.*c4-3.*c1)/24.);
+	map[kvirtual2]=(int)(c4-map[k2]);
+	if(map[k2]<0){
+	  map[k2]=0;
+	  map[kvirtual2]=c4;
+	}
+	if(map[kvirtual2]<0){
+	  map[k2]+=map[kvirtual2];
+	  map[kvirtual2]=0;
+	}
+	map[k]= (int)(3.*c4-5.*map[k2]);
+	map[kvirtual]=(int)(c1-map[k]);
+	if(map[k]<0){
+	  map[k]=0;
+	  map[kvirtual]=c1;
+	}
+	if(map[kvirtual]<0) {
+	  map[k]+=map[kvirtual];
+	  map[kvirtual]=0;
+	}
+	if(map[k2]<0 || map[k]<0 ||  map[kvirtual2]<0 ||
+				       map[kvirtual]<0) assert(0);
+	
+      }//else
+    }
+  }
 }
 
 void FillGapsBetweenChipMask(int* map, int k, int kvirtual, 
@@ -514,7 +567,7 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
     if(argc>4) longedge_x=atoi(argv[4]);
     else longedge_x=1;
     if(argc>5) fillgaps=atoi(argv[5]);
-    else fillgaps=kDivide; //0 no filling, 1 division, 2 interpolation
+    else fillgaps=kInterpolate; //0 no filling, 1 division, 2 interpolation 3 mask
     if(argc>6) startdet=atoi(argv[6]);
     else startdet=0;
     

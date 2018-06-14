@@ -216,12 +216,17 @@ int main(int argc, char *argv[]) {
 
 #endif  //If ROOT
  
+   //now reause the same all the times
+    int* intbuffer = new int[imageSize/sizeof(int)];
+    int* bufferheader=new int[imageHeader/sizeof(int)];
+
     //here nr is not volatile anymore
     //loop on each receiver to get frame buffer
     for(int inr=0; inr<nr; inr++){
       
-      int* intbuffer = new int[imageSize];
-      int* bufferheader=new int[imageHeader];
+      //      int* intbuffer = new int[imageSize];
+      //int* bufferheader=new int[imageHeader];
+
       //read data
       if(infile[inr].read((char*)bufferheader,imageHeader)){
 	fnum = (*((uint64_t*)(char*)bufferheader));
@@ -236,13 +241,18 @@ int main(int argc, char *argv[]) {
       buffer.push_back(decodeData(intbuffer, imageSize, xpix, ypix, 
 				  dynamicrange));
       
-      delete[] bufferheader;
-      delete[] intbuffer;
-      bufferheader=NULL;
-      intbuffer=NULL;
+      // delete[] bufferheader;
+      // delete[] intbuffer;
+      // bufferheader=NULL;
+      //intbuffer=NULL;
  
     }//loop on receivers
   
+    delete[] bufferheader;
+    delete[] intbuffer;
+    bufferheader=NULL;
+    intbuffer=NULL;
+
     if(buffer.size()!=nr) continue;
     
     //get a 2d map of the image
@@ -337,7 +347,7 @@ int main(int argc, char *argv[]) {
 	//interpolation easier at the end of the module map(thanks chage later even divide here )
 	//corner gap pixels gap pixels
 	
-      	if(fillgaps){
+	//     	if(fillgaps){
 	  //edge
 	  int ix=NumChanPerChip_x-1;
 	  int kdebug;
@@ -352,10 +362,6 @@ int main(int argc, char *argv[]) {
 		  int y_t= GetY(iy, ichipy,imod_v);
 		  int k=GetK(x_t,y_t, longedge_x, npix_x_g, npix_y_g);
 
-		  //if(x_t==255 && y_t==100){
-		  //kdebug=k;
-		  //cout<<"value "<<map[k]<< "k "<<kdebug<< endl;
-		  //}
 		  //right
 		  int xvirtual1=x_t+1;
 		  int yvirtual1=y_t;
@@ -368,13 +374,9 @@ int main(int argc, char *argv[]) {
 		  int xvirtual3=x_t+1;
 		  int yvirtual3=y_t-1;
 		  int kvirtual3=GetK(xvirtual3,yvirtual3, longedge_x, npix_x_g, npix_y_g);
-		  if(fillgaps==kDivide ||fillgaps==kInterpolate) FillCornerGapsBetweenChipDivide(map, k, kvirtual1,kvirtual2, kvirtual3 );	
+		  if(fillgaps==kZero) FillCornerGapsBetweenChipZero(map, k, kvirtual1,kvirtual2, kvirtual3 );
+		  if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k, kvirtual1,kvirtual2, kvirtual3 );	
 		  if(fillgaps==kMask) FillGapsBetweenChipMask(map, k, kvirtual1,kvirtual2, kvirtual3 );	
-
-
-		
-		  //cout<<"value after "<<map[kdebug]<< "k "<<kdebug<<endl;
-
 
 #ifdef MYROOT
 		  FillROOT(hmap, longedge_x, x_t, y_t, map[k]);
@@ -399,10 +401,9 @@ int main(int argc, char *argv[]) {
 		  int x2virtual3= x2_t-1;
 		  int y2virtual3= y2_t-1;
 		  int k2virtual3=GetK(x2virtual3,y2virtual3, longedge_x, npix_x_g, npix_y_g);
-		  if(fillgaps==kDivide ||fillgaps==kInterpolate) FillCornerGapsBetweenChipDivide(map, k2, k2virtual1,k2virtual2, k2virtual3 );	
+		  if(fillgaps==kZero) FillCornerGapsBetweenChipZero(map, k2, k2virtual1,k2virtual2, k2virtual3 );	
+		  if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k2, k2virtual1,k2virtual2, k2virtual3 );	
 		  if(fillgaps==kMask) FillGapsBetweenChipMask(map,k2, k2virtual1,k2virtual2, k2virtual3 );	
-
-		  //cout<<"*** value after "<<map[kdebug]<< "k "<<kdebug<<endl;
 
 #ifdef MYROOT
 		  FillROOT(hmap, longedge_x, x2_t, y2_t, map[k2]);
@@ -427,7 +428,8 @@ int main(int argc, char *argv[]) {
 		  int x3virtual3=x3_t+1;
 		  int y3virtual3=y3_t+1;
 		  int k3virtual3=GetK(x3virtual3,y3virtual3, longedge_x, npix_x_g, npix_y_g);
-		  if(fillgaps==kDivide ||fillgaps==kInterpolate) FillCornerGapsBetweenChipDivide(map, k3, k3virtual1,k3virtual2, k3virtual3 );	
+		  if(fillgaps==kZero) FillCornerGapsBetweenChipZero(map, k3, k3virtual1,k3virtual2, k3virtual3 );	
+		  if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k3, k3virtual1,k3virtual2, k3virtual3 );	
 		  if(fillgaps==kMask) FillGapsBetweenChipMask(map,k3, k3virtual1,k3virtual2, k3virtual3 );
 #ifdef MYROOT
 		  FillROOT(hmap, longedge_x, x3_t, y3_t, map[k3]);
@@ -451,7 +453,8 @@ int main(int argc, char *argv[]) {
 		  int x4virtual3=x4_t-1;
 		  int y4virtual3=y4_t+1;
 		  int k4virtual3=GetK(x4virtual3,y4virtual3, longedge_x, npix_x_g, npix_y_g);
-		  if(fillgaps==kDivide ||fillgaps==kInterpolate) FillCornerGapsBetweenChipDivide(map, k4, k4virtual1,k4virtual2, k4virtual3 );	
+		  if(fillgaps==kZero) FillCornerGapsBetweenChipZero(map, k4, k4virtual1,k4virtual2, k4virtual3 );	
+		  if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k4, k4virtual1,k4virtual2, k4virtual3 );	
 		  if(fillgaps==kMask) FillGapsBetweenChipMask(map,k4, k4virtual1,k4virtual2, k4virtual3 );
 
 #ifdef MYROOT
@@ -460,7 +463,6 @@ int main(int argc, char *argv[]) {
 		  FillROOT(hmap, longedge_x, x4virtual2, y4virtual2, map[k4virtual2]);
 		  FillROOT(hmap, longedge_x, x4virtual3,y4virtual3,map[k4virtual3]);
 #endif
-		  //cout<<"value "<<map[kdebug]<< "k "<<kdebug<< endl;
 		
 	      }else{
 		if(ichipy==0 && iy==NumChanPerChip_y) continue; //already taken care
@@ -483,6 +485,7 @@ int main(int argc, char *argv[]) {
 		    int y_t2= y_t;
 		    int k2=GetK(x_t2,y_t2, longedge_x,npix_x_g, npix_y_g);
 		    
+		    if(fillgaps==kZero) FillGapsBetweenChipZero(map,k,kvirtual,kvirtual2,k2);
 		    if(fillgaps==kDivide) FillGapsBetweenChipDivide(map,k,kvirtual,kvirtual2,k2);			    
 		    //cout<<"value "<<map[kdebug]<< "k "<<kdebug<< endl;
 		    if(fillgaps==kInterpolate) FillGapsBetweenChipInterpolate(map,k,kvirtual,kvirtual2,k2);			    
@@ -523,6 +526,7 @@ int main(int argc, char *argv[]) {
 	      int y_t2= y_t+3;
 	      int k2=GetK(x_t2,y_t2, longedge_x,npix_x_g, npix_y_g);
 	      
+	      if(fillgaps==kZero) FillGapsBetweenChipZero(map,k,kvirtual,kvirtual2,k2);
 	      if(fillgaps==kDivide) FillGapsBetweenChipDivide(map,k,kvirtual,kvirtual2,k2);			    
 	      if(fillgaps==kInterpolate) FillGapsBetweenChipInterpolate(map,k,kvirtual,kvirtual2,k2);	
 	      if(fillgaps==kMask) FillGapsBetweenChipMask(map,k,kvirtual,kvirtual2,k2);	
@@ -534,8 +538,7 @@ int main(int argc, char *argv[]) {
 #endif
 	    }//xchannels
 	  } //chips	
-	  //cout<<"value "<<map[kdebug]<< "k "<<kdebug<< endl;	
-	} //fillgaps
+	  //	} //fillgaps
 	
 	
 		    
@@ -544,10 +547,6 @@ int main(int argc, char *argv[]) {
 		
     buffer.clear();
 
-
-    for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
-      if(map[ik]<0) assert(0);
-    
 #ifdef MYCBF
        //---> here I should also fill
     /* Create and initializes new internal CBF Object*/
@@ -710,7 +709,6 @@ int main(int argc, char *argv[]) {
 
   } //loop on frames
   
-
   for(int inr=0; inr<nr; inr++)    
     infile[inr].close();
 
