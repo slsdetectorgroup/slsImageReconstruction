@@ -543,12 +543,20 @@ void FillGapsBetweenChipInterpolate(int* map, int k, int kvirtual,
       } else{
 	int c1=map[k];
 	int c4=map[k2];
-	
-	map[k2]= (int)((15.*c4-3.*c1)/24.);
-	map[kvirtual2]=(int)(c4-map[k2]);
-	map[k]= (int)(3.*c4-5.*map[k2]);
-	map[kvirtual]=(int)(c1-map[k]);
 
+	if(c4>c1){
+	  map[k2]= (int)((15.*c4-3.*c1)/24.);
+	  map[kvirtual2]=(int)(c4-map[k2]);
+	  map[k]= (int)(3.*c4-5.*map[k2]);
+	  map[kvirtual]=(int)(c1-map[k]);
+	}
+	else{
+	  map[k]= (int)((15.*c1-3.*c4)/24.);
+	  map[kvirtual]=(int)(c1-map[k]);
+	  map[k2]= (int)(3.*c1-5.*map[k]);
+	  map[kvirtual2]=(int)(c4-map[k2]);
+	}
+	
 	if(map[k2]<0 || map[kvirtual2]<0 ||
 	   map[k]<0 || map[kvirtual]<0){
 	  //divide then
