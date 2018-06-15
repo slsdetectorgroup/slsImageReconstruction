@@ -446,39 +446,65 @@ int Divide(int k, int i)
   return k/i+(k%i);
 }
 
-void FillCornerGapsBetweenChipDivide(int* map, int k, 
-				     int kvirtual1,int kvirtual2, int kvirtual3)	
+bool Saturated(int k, int dynamicrange)
 {
-  //divided by 4
-  int gpixelc=(int) map[k]/4;			    
-  map[k]=gpixelc;
-  map[kvirtual1]=gpixelc;
-  map[kvirtual2]=gpixelc;
-  map[kvirtual3]=gpixelc;
-  
-  //asign randomly other hits
-  for(int i=0; i<(map[k]%4);i++){
-    double random_variable = std::rand()/(double)RAND_MAX;
-    if(random_variable>=0 && random_variable<0.25) map[k]++;
-    if(random_variable>=0.25 && random_variable<0.5) map[kvirtual1]++;
-    if(random_variable>=0.5 && random_variable<0.75) map[kvirtual2]++;
-    if(random_variable>=0.75 && random_variable<1) map[kvirtual3]++;
-  }//
-  
-  
+  if(dynamicrange==4 && k==15) return true;
+  if(dynamicrange==8 && k==255) return true;
+  if(dynamicrange==16 && k==4095) return true;
+  return false;
 }
-void FillGapsBetweenChipDivide(int* map, int k, int kvirtual)	
-{
-  int gpixelc=(int) map[k]/2;			    
-  map[k]=gpixelc;
-  map[kvirtual]=gpixelc;
 
-  //asign randomly other hits
-  for(int i=0; i<(map[k]%2);i++){
-    double random_variable = std::rand()/(double)RAND_MAX;
-    if(random_variable>=0 && random_variable<0.5) map[k]++;
-    if(random_variable>=0.5 && random_variable<1) map[kvirtual]++;
-  }//
+void FillCornerGapsBetweenChipDivide(int* map, int k, 
+				     int kvirtual1,int kvirtual2, int kvirtual3,
+				     int dynamicrange)	
+{
+  bool saturated=Saturated(map[k],dynamicrange);
+  
+  //divided by 4
+  int koriginal=map[k];
+  if(saturated==false){
+    int gpixelc=(int) map[k]/4;			    
+    map[k]=gpixelc;
+    map[kvirtual1]=gpixelc;
+    map[kvirtual2]=gpixelc;
+    map[kvirtual3]=gpixelc;
+    
+    //asign randomly other hits
+    for(int i=0; i<(koriginal%4);i++){
+      double random_variable = std::rand()/(double)RAND_MAX;
+      if(random_variable>=0 && random_variable<0.25) map[k]++;
+      if(random_variable>=0.25 && random_variable<0.5) map[kvirtual1]++;
+      if(random_variable>=0.5 && random_variable<0.75) map[kvirtual2]++;
+      if(random_variable>=0.75 && random_variable<=1) map[kvirtual3]++;
+    }//
+  }else{
+    map[k]=koriginal;
+    map[kvirtual1]=koriginal;
+    map[kvirtual2]=koriginal;
+    map[kvirtual3]=koriginal;
+  }
+}
+
+void FillGapsBetweenChipDivide(int* map, int k, int kvirtual, int dynamicrange)	
+{
+  bool saturated=Saturated(map[k],dynamicrange);
+  int koriginal=map[k];
+
+  if(saturated==false){
+    int gpixelc=(int)map[k]/2;			    
+    map[k]=gpixelc;
+    map[kvirtual]=gpixelc;
+    
+    //asign randomly other hits
+    for(int i=0; i<(koriginal%2);i++){
+      double random_variable = std::rand()/(double)RAND_MAX;
+      if(random_variable>=0 && random_variable<0.5) map[k]++;
+      if(random_variable>=0.5 && random_variable<=1) map[kvirtual]++;
+    }//
+  }else{
+    map[k]=koriginal;
+    map[kvirtual]=koriginal;
+  }
 }
 
 void FillGapsBetweenChipZero(int* map, int k, int kvirtual, 
@@ -489,55 +515,48 @@ void FillGapsBetweenChipZero(int* map, int k, int kvirtual,
 }
 
 void FillGapsBetweenChipDivide(int* map, int k, int kvirtual, 
-			       int kvirtual2, int k2)	
+			       int kvirtual2, int k2,int dynamicrange)	
 {
-  FillGapsBetweenChipDivide(map, k,kvirtual);
-  FillGapsBetweenChipDivide(map, k2,kvirtual2);
+  FillGapsBetweenChipDivide(map, k,kvirtual , dynamicrange);
+  FillGapsBetweenChipDivide(map, k2,kvirtual2, dynamicrange);
 }
 
 void FillGapsBetweenChipInterpolate(int* map, int k, int kvirtual, 
-				    int kvirtual2, int k2)	
+				    int kvirtual2, int k2,int dynamicrange)	
 {
-  if(map[k]!=0 && map[k]==map[k2]) {
-    FillGapsBetweenChipDivide( map, k, kvirtual, kvirtual2, k2);
+  bool saturated=Saturated(map[k],dynamicrange);
+  bool saturated2=Saturated(map[k2],dynamicrange);
+
+  if(map[k]==map[k2] || saturated || saturated2) {
+    FillGapsBetweenChipDivide( map, k, kvirtual, kvirtual2, k2,dynamicrange);
   }
   else{ 
     if(map[k]==0){
       map[k]=0;
       map[kvirtual]=0;
-      FillGapsBetweenChipDivide(map,k2,kvirtual2);
+      FillGapsBetweenChipDivide(map,k2,kvirtual2,dynamicrange);
     }else {
       if(map[k2]==0){
 	map[k2]=0;
 	map[kvirtual2]=0;
-	FillGapsBetweenChipDivide(map,k,kvirtual);
+	FillGapsBetweenChipDivide(map,k,kvirtual,dynamicrange);
       } else{
 	int c1=map[k];
 	int c4=map[k2];
 	
 	map[k2]= (int)((15.*c4-3.*c1)/24.);
 	map[kvirtual2]=(int)(c4-map[k2]);
-	if(map[k2]<0){
-	  map[k2]=0;
-	  map[kvirtual2]=c4;
-	}
-	if(map[kvirtual2]<0){
-	  map[k2]+=map[kvirtual2];
-	  map[kvirtual2]=0;
-	}
 	map[k]= (int)(3.*c4-5.*map[k2]);
 	map[kvirtual]=(int)(c1-map[k]);
-	if(map[k]<0){
-	  map[k]=0;
-	  map[kvirtual]=c1;
+
+	if(map[k2]<0 || map[kvirtual2]<0 ||
+	   map[k]<0 || map[kvirtual]<0){
+	  //divide then
+	  map[k]=c1;//reset value
+	  map[k2]=c4;//reset value
+	  FillGapsBetweenChipDivide(map,k2,kvirtual2,dynamicrange);
+	  FillGapsBetweenChipDivide(map,k,kvirtual,dynamicrange);
 	}
-	if(map[kvirtual]<0) {
-	  map[k]+=map[kvirtual];
-	  map[kvirtual]=0;
-	}
-	if(map[k2]<0 || map[k]<0 ||  map[kvirtual2]<0 ||
-				       map[kvirtual]<0) assert(0);
-	
       }//else
     }
   }
@@ -578,7 +597,7 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
     return 1;
   }else{
     longedge_x=1;
-    fillgaps=kDivide;
+    fillgaps=kInterpolate;
     startdet=0;
     return 1;
   }
