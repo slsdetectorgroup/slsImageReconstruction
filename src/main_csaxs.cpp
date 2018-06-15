@@ -205,12 +205,13 @@ int main(int argc, char *argv[]) {
   if(imgs<Nimagesexpected)  Nimagesexpected=imgs+1;
   cout<< "last image expected for this file is "<<Nimagesexpected-1<<endl;
 
-  
-  while(numFrames< Nimagesexpected){
   //now reause the same all the times
   int* intbuffer = new int[imageSize/sizeof(int)];
   int* bufferheader=new int[imageHeader/sizeof(int)];
+
+  while(numFrames< Nimagesexpected){
     
+
     //Create cbf files with data
 #ifdef MYCBF
     cbf_handle cbf;
@@ -228,23 +229,23 @@ int main(int argc, char *argv[]) {
     
     //here nr is not volatile anymore
     //loop on each receiver to get frame buffer
+    
+    
     for(int inr=0; inr<nr; inr++){
+      int* dataout = new int [ xpix* ypix]; //will delete it in buffer
       //read data
       if(infile[inr].read((char*)bufferheader,imageHeader)){
 	fnum = (*((uint64_t*)(char*)bufferheader));
       }
       if(!CheckFrames(fnum,numFrames)) continue; 	 
       infile[inr].read((char*)intbuffer,imageSize);
+      decodeData(intbuffer, dataout, imageSize, xpix, ypix, 
+		 dynamicrange);  
       
-      buffer.push_back(decodeData(intbuffer, imageSize, xpix, ypix, 
-				  dynamicrange));  
+      buffer.push_back(dataout);
     }//loop on receivers
   
-    delete[] bufferheader;
-    delete[] intbuffer;
-    bufferheader=NULL;
-    intbuffer=NULL;
-
+    
     if(buffer.size()!=nr) continue;
     
     //get a 2d map of the image
@@ -542,9 +543,9 @@ int main(int argc, char *argv[]) {
       }//v mods
     } //h mods close all loops
 
-	
-    buffer.clear();
-
+   //delete dataout;
+   buffer.clear();
+   
 #ifdef MYCBF
        //---> here I should also fill
     /* Create and initializes new internal CBF Object*/
@@ -723,15 +724,23 @@ int main(int argc, char *argv[]) {
     
     numFrames++;
     
+
     buffer.clear();
+    for(int inr=0; inr<nr; inr++) {   
+      delete buffer[inr]; //remove memory 
+    }
 
   } //loop on frames
 
+  delete[] bufferheader;
+  delete[] intbuffer;
+  
   delete[]  map;
   delete[]  mapr;
   
- for(int inr=0; inr<nr; inr++)    
+  for(int inr=0; inr<nr; inr++)
     infile[inr].close();
+  
 
   //cout<<"only to read took "<<tdif/1e6<<endl;
   return 1;

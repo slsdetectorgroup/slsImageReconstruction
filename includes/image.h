@@ -401,7 +401,60 @@ int* decodeData(int *datain, const int size, const int nx, const int ny, const i
     }
   }
   
-  return dataout;
+ return dataout;
+  
+}
+
+void decodeData(int *datain, int* dataout, const int size, const int nx, const int ny, const int dynamicRange) 
+{
+  
+  int dataBytes = size;
+  int nch = nx*ny;
+  //  int* dataout = new int [nch+1];
+  char *ptr=(char*)datain;
+  char iptr;
+
+  const int bytesize=8;
+  int ival=0;
+  int  ipos=0, ichan=0, ibyte;
+  
+  switch (dynamicRange) {
+  case 4:
+    for (ibyte=0; ibyte<dataBytes; ++ibyte) {//for every byte (1 pixel = 1/2 byte)
+      iptr=ptr[ibyte]&0xff;				//???? a byte mask
+      for (ipos=0; ipos<2; ++ipos) {		//loop over the 8bit (twice)
+	ival=(iptr>>(ipos*4))&0xf;		//pick the right 4bit
+	dataout[ichan]=ival;
+	ichan++;
+      }
+    }
+    break;
+  case 8:
+    for (ichan=0; ichan<dataBytes; ++ichan) {//for every pixel (1 pixel = 1 byte)
+      ival=ptr[ichan]&0xff;				//????? a byte mask
+      dataout[ichan]=ival;
+    }
+    break;
+  case 16:
+    for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
+      ival=0;
+      for (ibyte=0; ibyte<2; ++ibyte) { 	//for each byte (concatenate 2 bytes to get 16 bit value)
+	iptr=ptr[ichan*2+ibyte];
+	ival|=((iptr<<(ibyte*bytesize))&(0xff<<(ibyte*bytesize)));
+      }
+      dataout[ichan]=ival;
+    }
+    break;
+  default:
+    //for every 32 bit (every element in datain array)
+    for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
+      //		ival=datain[ichan]&0xffffff;
+      //  dataout[ichan]=ival;
+      dataout[ichan]=datain[ichan];
+    }
+  }
+  
+  //return dataout;
   
 }
 
