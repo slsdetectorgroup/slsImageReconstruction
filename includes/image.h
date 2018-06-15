@@ -430,6 +430,22 @@ int GetK(int xvirtual, int yvirtual, int longedge_x,
     kvirtual=(npix_y_g-yvirtual)+ npix_y_g*xvirtual;
   return kvirtual;
 }
+
+
+int GetK(int xvirtual, int yvirtual, int npix_x_g)
+{
+
+  //int k= x_t+ npix_x_g*y_t;
+  //if(!longedge_x) {
+  //now apply rotation 
+  //y'=x
+  //x'=(ngap_pix_y-iy)
+  //  k=(npix_y_g-y_t)+ npix_y_g*x_t;
+  //}
+  int  kvirtual= xvirtual+ npix_x_g*yvirtual;
+   return kvirtual;
+}
+
 void FillCornerGapsBetweenChipZero(int* map, int k, 
 				   int kvirtual1,int kvirtual2, int kvirtual3)	
 {
@@ -451,6 +467,7 @@ bool Saturated(int k, int dynamicrange)
   if(dynamicrange==4 && k==15) return true;
   if(dynamicrange==8 && k==255) return true;
   if(dynamicrange==16 && k==4095) return true;
+  if(dynamicrange==32 && k==(pow(2,32)-1)) return true;
   return false;
 }
 
