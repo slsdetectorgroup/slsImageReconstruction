@@ -664,14 +664,27 @@ void FillGapsBetweenChipInterpolate2(int* map, int k_b, int k, int kvirtual,
 	int c4=map[k2];
 
 	//now interpolate according to Sophie's scheme
-	//
-	//if(c4/2.>map[k_b]){
-	map[k]=map[k_b]+1./3*(c4/2.-map[k_b]);
-	map[kvirtual]=map[k_b]+2./3*(c4/2.-map[k_b]);
-	//c1-map[k];
-	map[k2]=c1/2.+2./3.*(map[k2_a]-c1/2.);
-       	map[kvirtual2]=c1/2.+1./3.*(map[k2_a]-c1/2.);
-	//c4- map[k2];
+	int a=map[k_b]+1./3*(c4/2.-map[k_b]);
+	int b=map[k_b]+2./3*(c4/2.-map[k_b]);
+	int c=c1/2.+1./3.*(map[k2_a]-c1/2.);
+	int d=c1/2.+2./3.*(map[k2_a]-c1/2.);
+
+	//now rescale. always keep lower integer
+      	map[k]=(double)a*c1/(a+b);
+	map[kvirtual]=(double)b*c1/(a+b);
+       	map[k2]=(double)d*c4/(c+d);
+	map[kvirtual2]=(double)c*c4/(c+d);
+
+	for(int i=0; i<(c1%2);i++){
+	  double random_variable = std::rand()/(double)RAND_MAX;
+	  if(random_variable>=0 && random_variable<0.5) map[k]++;
+	  if(random_variable>=0.5 && random_variable<=1) map[kvirtual]++;
+	}
+	for(int i=0; i<(c4%2);i++){
+	  double random_variable = std::rand()/(double)RAND_MAX;
+	  if(random_variable>=0 && random_variable<0.5) map[kvirtual2]++;
+	  if(random_variable>=0.5 && random_variable<=1) map[k2]++;
+	}
 
 	if(map[k2]<0 || map[kvirtual2]<0 ||
 	   map[k]<0 || map[kvirtual]<0){
