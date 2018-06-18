@@ -9,7 +9,7 @@ INCLUDESCBF		=	-I $(CBFLIBDIR)/include
 
 INCLUDES		= 	-I. -Iincludes  
 
-CCX			=	gcc -O3 -fopenmp 
+CCX			=	gcc -O3 #-fopenmp 
 CFLAGS		+=  -Wall 
 LDLIBS		+= 	-lm  -lstdc++ 
 

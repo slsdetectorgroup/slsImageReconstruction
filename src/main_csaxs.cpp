@@ -16,7 +16,7 @@
 #include <map>
 #include <getopt.h>
 #include <cmath>
-#include <omp.h>
+//#include <omp.h>
 #include <cassert>	
 #include <algorithm> 
 #include <sys/time.h>
@@ -258,7 +258,7 @@ int main(int argc, char *argv[]) {
     int endchipx=4;
     int endchipy=1;
     
-    omp_set_dynamic(0);     // Explicitly disable dynamic teams
+    //omp_set_dynamic(0);     // Explicitly disable dynamic teams
     //omp_set_num_threads(nr); //set n receivers
 
    //can be changed in a loop over receivers 
@@ -434,8 +434,8 @@ int main(int argc, char *argv[]) {
 		  if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k4, k4virtual1,k4virtual2, k4virtual3,dynamicrange );	
 		  if(fillgaps==kMask) FillGapsBetweenChipMask(map,k4, k4virtual1,k4virtual2, k4virtual3 );
 
-		  //here do interpolation
-		  if(fillgaps==kInterpolate){
+		  //here do interpolation for corners
+		  if(fillgaps==kInterpolate || fillgaps==kInterpolate2 ){
 
 		    bool saturated=Saturated(map[k],dynamicrange);
 		    bool saturated2=Saturated(map[k2],dynamicrange);
@@ -501,8 +501,10 @@ int main(int argc, char *argv[]) {
 		    
 		    if(fillgaps==kZero) FillGapsBetweenChipZero(map,k,kvirtual,kvirtual2,k2);
 		    if(fillgaps==kDivide) FillGapsBetweenChipDivide(map,k,kvirtual,kvirtual2,k2,dynamicrange);			    
-		    if(fillgaps==kInterpolate) FillGapsBetweenChipInterpolate(map,k,kvirtual,kvirtual2,k2,dynamicrange);			    
+		    if(fillgaps==kInterpolate) FillGapsBetweenChipInterpolate(map,k,kvirtual,kvirtual2,k2,dynamicrange);	
 		    if(fillgaps==kMask) FillGapsBetweenChipMask(map,k,kvirtual,kvirtual2,k2);	
+		    if(fillgaps==kInterpolate2) FillGapsBetweenChipInterpolate2(map,GetK(x_t-1,y_t, npix_x_g),k,kvirtual,
+										kvirtual2,k2,GetK(x_t2+1,y_t2,npix_x_g),dynamicrange);	
 		  }//edge
 		}//other corner
 	      }//loop on y
@@ -537,6 +539,9 @@ int main(int argc, char *argv[]) {
 	      if(fillgaps==kDivide) FillGapsBetweenChipDivide(map,k,kvirtual,kvirtual2,k2,dynamicrange);			    
 	      if(fillgaps==kInterpolate) FillGapsBetweenChipInterpolate(map,k,kvirtual,kvirtual2,k2, dynamicrange);	
 	      if(fillgaps==kMask) FillGapsBetweenChipMask(map,k,kvirtual,kvirtual2,k2);	
+	      if(fillgaps==kInterpolate2) FillGapsBetweenChipInterpolate2(map,GetK(x_t,y_t-1,npix_x_g),k,kvirtual,
+									  kvirtual2,k2,GetK(x_t2,y_t2+1,npix_x_g), dynamicrange);	
+	   
 	    }//xchannels
 	  } //chips	
    		    

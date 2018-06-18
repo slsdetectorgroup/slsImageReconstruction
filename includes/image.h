@@ -31,7 +31,7 @@ const int GapPixelsBetweenModules_y = 36;
 int frameheadersize=0;
 
 //gap pixel threatement 
-enum { kZero, kDivide, kInterpolate, kMask };
+enum { kZero, kDivide, kInterpolate, kMask, kInterpolate2 };
 
 int getFileParameters(string file,  int &dr, int &tg,  int &ih, int &is, int &x, int &y,
 		      string& timestamp, double& expTime, double& period, int& imgs ){
@@ -627,6 +627,52 @@ void FillGapsBetweenChipInterpolate(int* map, int k, int kvirtual,
 	  map[kvirtual2]=(int)(c4-map[k2]);
 	}
 	
+	if(map[k2]<0 || map[kvirtual2]<0 ||
+	   map[k]<0 || map[kvirtual]<0){
+	  //divide then
+	  map[k]=c1;//reset value
+	  map[k2]=c4;//reset value
+	  FillGapsBetweenChipDivide(map,k2,kvirtual2,dynamicrange);
+	  FillGapsBetweenChipDivide(map,k,kvirtual,dynamicrange);
+	}
+      }//else
+    }
+  }
+}
+void FillGapsBetweenChipInterpolate2(int* map, int k_b, int k, int kvirtual, 
+				     int kvirtual2, int k2,int k2_a, 
+				     int dynamicrange)	
+{
+  bool saturated=Saturated(map[k],dynamicrange);
+  bool saturated2=Saturated(map[k2],dynamicrange);
+
+  if(map[k]==map[k2] || saturated || saturated2) {
+    FillGapsBetweenChipDivide( map, k, kvirtual, kvirtual2, k2,dynamicrange);
+  }
+  else{ 
+    if(map[k]==0){
+      map[k]=0;
+      map[kvirtual]=0;
+      FillGapsBetweenChipDivide(map,k2,kvirtual2,dynamicrange);
+    }else {
+      if(map[k2]==0){
+	map[k2]=0;
+	map[kvirtual2]=0;
+	FillGapsBetweenChipDivide(map,k,kvirtual,dynamicrange);
+      } else{
+	int c1=map[k];
+	int c4=map[k2];
+
+	//now interpolate according to Sophie's scheme
+	//
+	//if(c4/2.>map[k_b]){
+	map[k]=map[k_b]+1./3*(c4/2.-map[k_b]);
+	map[kvirtual]=map[k_b]+2./3*(c4/2.-map[k_b]);
+	//c1-map[k];
+	map[k2]=c1/2.+2./3.*(map[k2_a]-c1/2.);
+       	map[kvirtual2]=c1/2.+1./3.*(map[k2_a]-c1/2.);
+	//c4- map[k2];
+
 	if(map[k2]<0 || map[kvirtual2]<0 ||
 	   map[k]<0 || map[kvirtual]<0){
 	  //divide then
