@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
 	  exe.erase(exePos,4);
 	  
 	  //1.5M
-	  string command = exe + " " + string(argv[1]) + " 512 3072 0 1";
+	  string command = exe + " " + string(argv[1]) + " 512 3072 0 2";
 	  cout<<"command:"<<command<<endl;
 	  system(command.c_str());
 	}
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
 	  exe.erase(exePos,4);
 	  
 	  //1.5M OMNY 
-	  string command = exe + " " + string(argv[1]) + " 1536 1024 0 1";
+	  string command = exe + " " + string(argv[1]) + " 1536 1024 0 2";
 	  cout<<"command:"<<command<<endl;
 	  system(command.c_str());
 	}
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
 	if( exePos!= string::npos){
 	  exe.erase(exePos,2);
 	  //9M
-	  string command = exe + " " + string(argv[1]) + " 3072 3072 0 1";
+	  string command = exe + " " + string(argv[1]) + " 3072 3072 0 2";
 	  cout<<"command:"<<command<<endl;
 	  system(command.c_str());
 	}
