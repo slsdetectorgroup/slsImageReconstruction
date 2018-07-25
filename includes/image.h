@@ -7,7 +7,7 @@
 
 using namespace std;
 
-typedef unsigned int uint64_t;
+//typedef unsigned int uint64_t;
 typedef unsigned short uint16_t;
 
 typedef  double double32_t;
@@ -467,34 +467,18 @@ int GetY(int iy, int ichipy,int imod_v)
 return iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+(NumChip_y-1)*GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
 }
 
-int GetK(int xvirtual, int yvirtual, int longedge_x, 
-	 int npix_x_g, int npix_y_g)
-{
-
-  //int k= x_t+ npix_x_g*y_t;
-  //if(!longedge_x) {
-  //now apply rotation 
-  //y'=x
-  //x'=(ngap_pix_y-iy)
-  //  k=(npix_y_g-y_t)+ npix_y_g*x_t;
-  //}
-  int  kvirtual= xvirtual+ npix_x_g*yvirtual;
-  if(!longedge_x)
-    kvirtual=(npix_y_g-yvirtual)+ npix_y_g*xvirtual;
-  return kvirtual;
-}
-
+//int GetK(int xvirtual, int yvirtual, int longedge_x, 
+//	 int npix_x_g, int npix_y_g)
+//{
+//int  kvirtual= xvirtual+ npix_x_g*yvirtual;
+//if(!longedge_x)
+//  kvirtual=(npix_y_g-yvirtual)+ npix_y_g*xvirtual;
+//return kvirtual;
+//}
 
 int GetK(int xvirtual, int yvirtual, int npix_x_g)
 {
 
-  //int k= x_t+ npix_x_g*y_t;
-  //if(!longedge_x) {
-  //now apply rotation 
-  //y'=x
-  //x'=(ngap_pix_y-iy)
-  //  k=(npix_y_g-y_t)+ npix_y_g*x_t;
-  //}
   int  kvirtual= xvirtual+ npix_x_g*yvirtual;
    return kvirtual;
 }
