@@ -24,9 +24,9 @@
 
 #include "image.h"
 
-#define MYCBF //choose 
+//#define MYCBF //choose 
 //#define MYROOT //choose 
-//#define HDF5f
+#define HDF5f
 //#define MSHeader
 
 #ifdef HDF5f
@@ -208,6 +208,7 @@ int main(int argc, char *argv[]) {
   if(imgs<Nimagesexpected)  Nimagesexpected=imgs+1;
   cout<< "last image expected for this file is "<<Nimagesexpected-1<<endl;
 
+
 #ifdef HDF5f
   int  rank=3;//3dim imgs
   /* HDF-5 handles */
@@ -275,6 +276,19 @@ int main(int argc, char *argv[]) {
   if(dynamicrange==32) datatype = H5Tcopy(H5T_STD_U32LE);  
   
   dataprop = H5Pcreate(H5P_DATASET_CREATE);
+
+  /* Dataset must be chunked for compression */  
+  hsize_t cdims[3]={1,dim[1],dim[2]};
+  H5Pset_chunk (dataprop , rank, cdims);
+  
+  /* Set ZLIB / DEFLATE Compression using compression level 6.
+   * To use SZIP Compression comment out these lines. 
+   */ 
+  H5Pset_shuffle(dataprop); 
+  H5Pset_deflate (dataprop, 4);
+  //filters
+  // H5Z_filter_t filter_type;
+    
   dataset = H5Dcreate(gid,"Eiger", datatype,dataspace,
 		      H5P_DEFAULT, dataprop, H5P_DEFAULT);
   //one for all and overwritten
@@ -287,14 +301,13 @@ int main(int argc, char *argv[]) {
       if(dynamicrange==32 ) map2d[iy][ix]=(pow(2,32)-1);
     }
   }
-   #endif  //HDF5f
-
+#endif  //HDF5f
+    
   //now reause the same all the times
   int* intbuffer = new int[imageSize/sizeof(int)];
   int* bufferheader=new int[imageHeader/sizeof(int)];
-
+  
   while(numFrames< Nimagesexpected){
-    
     //Create cbf files with data
 #ifdef MYCBF
     cbf_handle cbf;
@@ -637,19 +650,6 @@ int main(int argc, char *argv[]) {
     //delete dataout;
     buffer.clear();
 
-    //now rotate everything
-    //if(!longedge_x){
-    //here test ro ratate on the output matrix
-    //for(int ix=0; ix<npix_x_g; ix++){
-    //for(int iy=0; iy<npix_y_g; iy++){
-    //int kold=ix+ npix_x_g*iy;
-    //int  knew=(npix_y_g-iy)+ npix_y_g*ix;
-    //mapr[knew]=map[kold];
-    //}
-    // }
-    //} //short edege
-
-   
 #ifdef MYCBF
     //---> here I should also fill
     /* Create and initializes new internal CBF Object*/
@@ -776,7 +776,7 @@ int main(int argc, char *argv[]) {
       cbf_failnez (cbf_new_column   (cbf, "header_contents"))
       /* Make new column at current data category */
       cbf_failnez (cbf_new_column   (cbf, "data"))
-      	
+      
       /* Create the binary data */
       cbf_failnez (cbf_set_integerarray_wdims_fs (
 						  cbf, 								//cbf_handle handle
@@ -803,12 +803,12 @@ int main(int argc, char *argv[]) {
 				 MSG_DIGEST | MIME_HEADERS  , //int headers
 				 0));		//int encoding
     
-
+    
     
     cbf_failnez (cbf_free_handle (cbf));
     
 #endif  //If CBF
-
+    
     
 #ifdef MYROOT
     for(int ix=0; ix<npix_x_g; ix++){
@@ -827,7 +827,7 @@ int main(int argc, char *argv[]) {
     /*
      * store the counts dataset
      */
-    
+
     start[0] = numFrames-1;
     start[1] = 0;
     start[2]= 0;
@@ -850,7 +850,7 @@ int main(int argc, char *argv[]) {
     }
     H5Dwrite(dataset, datatype , dataspaceimg, dataspace, H5P_DEFAULT, map2d);
     H5Sclose(dataspaceimg);
-    //check for memory leak
+   //check for memory leak
 #endif  //HDF5f
     
     numFrames++;
