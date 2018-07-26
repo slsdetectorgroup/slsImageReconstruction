@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
   int  rank=3;//3dim imgs
   /* HDF-5 handles */
   hid_t fid, fapl, gid, atts, atttype, attid;
-  hid_t datatype, dataspace, dataspaceimg, dataprop, dataset;
+  hid_t datatype, dataspace, dataspaceimg, vspace,dataprop, dataset;
   hsize_t dim[3]={Nimagesexpected-1,((longedge_x==1) ? npix_y_g : npix_x_g) ,
 		  ((longedge_x==1) ? npix_x_g : npix_y_g)};
   hsize_t dim2[2]={((longedge_x==1) ? npix_y_g : npix_x_g) ,
@@ -242,14 +242,14 @@ int main(int argc, char *argv[]) {
    * store the NX_class attribute. Notice that you
    * have to take care to close those hids after use
    */
-  atts = H5Screate(H5S_SCALAR);
-  atttype = H5Tcopy(H5T_C_S1);
-  H5Tset_size(atttype, 7);//H5T_VARIABLE);
-  attid = H5Acreate(gid,"NX_class", atttype,atts, H5P_DEFAULT,H5P_DEFAULT);
-  H5Awrite(attid, atttype, (char *)"NXentry");
-  H5Sclose(atts);
-  H5Tclose(atttype);
-  H5Aclose(attid);
+  //  atts = H5Screate(H5S_SCALAR);
+  //atttype = H5Tcopy(H5T_C_S1);
+  //H5Tset_size(atttype, 7);//H5T_VARIABLE);
+  //attid = H5Acreate(gid,"NX_class", atttype,atts, H5P_DEFAULT,H5P_DEFAULT);
+  //H5Awrite(attid, atttype, (char *)"NXentry");
+  //H5Sclose(atts);
+  //H5Tclose(atttype);
+  //H5Aclose(attid);
   /*
    * same thing for data:Nxdata in scan:NXentry.
    * A subroutine would be nice to have here.......
@@ -259,15 +259,16 @@ int main(int argc, char *argv[]) {
   gid = H5Gcreate(fid,"entry/data",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
   atts = H5Screate(H5S_SCALAR);
   atttype = H5Tcopy(H5T_C_S1);
-  //H5Tset_size(atttype, 7);//H5T_VARIABLE);
+  H5Tset_size(atttype, 7);//H5T_VARIABLE);
   attid = H5Acreate(gid,"NX_class", atttype, atts, H5P_DEFAULT,H5P_DEFAULT);
-  // H5Awrite(attid, atttype, (char *)"NXdata");
+  H5Awrite(attid, atttype, (char *)"NXdata");
   H5Sclose(atts);
   H5Tclose(atttype);
   H5Aclose(attid);
   //general (all images)
   /* Initialize hyperslab values */  
-  dataspace = H5Screate_simple(rank,dim, NULL); //here
+  dataspace = H5Screate_simple(rank,dim, maxdim); //here
+  
   //here I don't know how to change it
   //i believe datatype depends on dr
   if(dynamicrange==4) datatype = H5Tcopy(H5T_STD_U8LE);  
@@ -281,14 +282,22 @@ int main(int argc, char *argv[]) {
   hsize_t cdims[3]={1,dim[1],dim[2]};
   H5Pset_chunk (dataprop , rank, cdims);
   
-  /* Set ZLIB / DEFLATE Compression using compression level 6.
-   * To use SZIP Compression comment out these lines. 
-   */ 
+  //do not remove here
+  //SZIP Compression
+  //unsigned szip_options_mask;
+  //unsigned szip_pixels_per_block;
+  //szip_options_mask = H5_SZIP_NN_OPTION_MASK;
+  //szip_pixels_per_block = 16;
+  //H5Pset_szip (dataprop, szip_options_mask, szip_pixels_per_block);
+ 
+  int          fill_value =0;            /* Fill value for VDS */
+  H5Pset_fill_value(dataprop,datatype, &fill_value);
+
+  // Set ZLIB / DEFLATE Compression using compression level 4
   H5Pset_shuffle(dataprop); 
-  H5Pset_deflate (dataprop, 4);
-  //filters
-  // H5Z_filter_t filter_type;
-    
+  H5Pset_deflate (dataprop, 4);//4 originale
+  
+ 
   dataset = H5Dcreate(gid,"Eiger", datatype,dataspace,
 		      H5P_DEFAULT, dataprop, H5P_DEFAULT);
   //one for all and overwritten
@@ -850,6 +859,15 @@ int main(int argc, char *argv[]) {
     }
     H5Dwrite(dataset, datatype , dataspaceimg, dataspace, H5P_DEFAULT, map2d);
     H5Sclose(dataspaceimg);
+    //atts = H5Screate(H5S_SCALAR);
+    //atttype = H5Tcopy(H5T_C_S1);
+    //H5Tset_size(atttype, H5T_VARIABLE);
+    //attid = H5Acreate(gid,"NX_class", atttype, atts, H5P_DEFAULT,H5P_DEFAULT);
+    //H5Awrite(attid, atttype, (char *)"NXdata");
+    //H5Sclose(atts);
+    //H5Tclose(atttype);
+    //H5Aclose(attid);
+
    //check for memory leak
 #endif  //HDF5f
     
