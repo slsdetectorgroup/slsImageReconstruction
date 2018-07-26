@@ -310,6 +310,83 @@ int main(int argc, char *argv[]) {
       if(dynamicrange==32 ) map2d[iy][ix]=(pow(2,32)-1);
     }
   }
+
+  //now create attributes
+  //Count_cutoff 
+  atts = H5Screate(H5S_SCALAR);
+  atttype = H5Tcopy(H5T_STD_I64LE);
+  int value=199998;
+  H5Tset_size(atttype,8);
+  attid = H5Acreate(dataset,"Count_cutoff", atttype,atts, 
+		    H5P_DEFAULT,H5P_DEFAULT);
+  H5Awrite(attid, atttype,&value);
+  H5Sclose(atts);
+  H5Tclose(atttype);
+  H5Aclose(attid);
+  
+  //Detector
+
+  //Exposure_period
+  atts = H5Screate(H5S_SCALAR);
+  atttype = H5Tcopy(H5T_IEEE_F64LE);
+  H5Tset_size(atttype,8);
+  attid = H5Acreate(dataset,"Exposure_period", atttype,atts, 
+		    H5P_DEFAULT,H5P_DEFAULT);
+  H5Awrite(attid, atttype,&period);
+  H5Sclose(atts);
+  H5Tclose(atttype);
+  H5Aclose(attid);
+
+  //Exposure_time
+  atts = H5Screate(H5S_SCALAR);
+  atttype = H5Tcopy(H5T_IEEE_F64LE);
+  H5Tset_size(atttype,8);
+  attid = H5Acreate(dataset,"Exposure_time", atttype,atts, 
+		    H5P_DEFAULT,H5P_DEFAULT);
+  H5Awrite(attid, atttype,&expTime);
+  H5Sclose(atts);
+  H5Tclose(atttype);
+  H5Aclose(attid);
+
+  //Gain_setting
+  //Image_path
+  //Pixel_size
+  double valued2d[2]={75e-6,75e-6};
+  hsize_t d[2]={1,1};
+  atts = H5Screate_simple(2, d, NULL);
+  atttype = H5Tcopy(H5T_IEEE_F64LE);
+  H5Tset_size(atttype,8);
+  attid = H5Acreate(dataset,"Pixel_size", atttype,atts, 
+		    H5P_DEFAULT,H5P_DEFAULT);
+  H5Awrite(attid, atttype,&valued2d);
+  H5Sclose(atts);
+  H5Tclose(atttype);
+  H5Aclose(attid);
+  //Silicon
+  double valued=320e-6;
+  atts = H5Screate(H5S_SCALAR);
+  atttype = H5Tcopy(H5T_IEEE_F64LE);
+  H5Tset_size(atttype,8);
+  attid = H5Acreate(dataset,"Silicon", atttype,atts, 
+		    H5P_DEFAULT,H5P_DEFAULT);
+  H5Awrite(attid, atttype,&valued);
+  H5Sclose(atts);
+  H5Tclose(atttype);
+  H5Aclose(attid);
+  //Tau
+  valued=0;
+  atts = H5Screate(H5S_SCALAR);
+  atttype = H5Tcopy(H5T_IEEE_F64LE);
+  H5Tset_size(atttype,8);
+  attid = H5Acreate(dataset,"Tau", atttype,atts, 
+		    H5P_DEFAULT,H5P_DEFAULT);
+  H5Awrite(attid, atttype,&valued);
+  H5Sclose(atts);
+  H5Tclose(atttype);
+  H5Aclose(attid);
+  //Threshold_setting
+  //Trim_file
+
 #endif  //HDF5f
     
   //now reause the same all the times
@@ -694,9 +771,7 @@ int main(int argc, char *argv[]) {
     sprintf(limits, "# Count_cutoff %ld counts\r\n",max );
     fprintf(out,limits);
     fprintf(out,
-	    "# Threshold_setting 8000 eV\r\n"
-	    //   ";\r\n"
-	    );
+	    "# Threshold_setting 8000 eV\r\n"  );
     
 #ifdef MSHeader
     fprintf(out,
