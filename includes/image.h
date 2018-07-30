@@ -692,7 +692,7 @@ void FillGapsBetweenChipMask(int* map, int k, int kvirtual,
   map[k2]=0;
 }
 
-int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int& longedge_x, int& fillgaps, int &startdet){
+int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int& longedge_x, int& fillgaps, string& datasetname, int &startdet){
   if(argc < 2){
     cprintf(RED, "Error: Not enough arguments: cbfMaker [file_name_with_dir] \nExiting.\n");
     exit(-1);
@@ -705,11 +705,11 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
     if(argc>4) longedge_x=atoi(argv[4]);
     else longedge_x=1;
     if(argc>5) fillgaps=atoi(argv[5]);
-    else fillgaps=kInterpolate; //0 no filling, 1 division, 2 interpolation 3 mask
-    if(argc>6) startdet=atoi(argv[6]);
+    else fillgaps=kInterpolate; //0 no filling, 1 division, 2 interpolation 3 mask, interpolate alternative
+    if(argc>6) datasetname=(argv[6]);
+    else datasetname="Eiger";
+    if(argc>7) startdet=atoi(argv[7]);
     else startdet=0;
-    
-
     cprintf(BLUE,
 	    "Module long edge is on x  : %d\n"
 	    "Fill gaps between chips   : %d\n"
@@ -719,6 +719,7 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
   }else{
     longedge_x=1;
     fillgaps=kInterpolate;
+    datasetname="Eiger";
     startdet=0;
     return 1;
   }

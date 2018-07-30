@@ -24,9 +24,9 @@
 
 #include "image.h"
 
-//#define MYCBF //choose 
+#define MYCBF //choose 
 //#define MYROOT //choose 
-#define HDF5f
+//#define HDF5f
 //#define MSHeader
 
 #ifdef HDF5f
@@ -96,14 +96,14 @@ int main(int argc, char *argv[]) {
   int npix_y_user= npix_y_sm;
   
   //get command line arguments
-  string file;
+  string file, datasetname;
   int fileIndex, fileFrameIndex=0,startdet=0;
   int longedge_x;
   int fillgaps;
   bool isFileFrameIndex = false;
   getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, 
 		       fileFrameIndex, npix_x_user, npix_y_user, 
-		       longedge_x,fillgaps,startdet);
+		       longedge_x,fillgaps,datasetname,startdet);
 
   //cheat and reverse if it is in vertical orientation 
   if (!longedge_x){
@@ -290,16 +290,17 @@ int main(int argc, char *argv[]) {
   //szip_pixels_per_block = 16;
   //H5Pset_szip (dataprop, szip_options_mask, szip_pixels_per_block);
  
+  //fill value
   int          fill_value =0;            /* Fill value for VDS */
   H5Pset_fill_value(dataprop,datatype, &fill_value);
 
-  // Set ZLIB / DEFLATE Compression using compression level 4
+  // Set ZLIB / DEFLATE Compression using compression level 2
   H5Pset_shuffle(dataprop); 
-  H5Pset_deflate (dataprop, 4);//4 originale
-  
- 
-  dataset = H5Dcreate(gid,"Eiger", datatype,dataspace,
+  H5Pset_deflate (dataprop, 2);//4 originale
+
+  dataset = H5Dcreate(gid,datasetname.c_str(), datatype,dataspace,
 		      H5P_DEFAULT, dataprop, H5P_DEFAULT);
+
   //one for all and overwritten
   int map2d[(longedge_x ? npix_y_g : npix_x_g)][(longedge_x ? npix_x_g : npix_y_g)];
   for(int iy=0; iy<(longedge_x ? npix_y_g : npix_x_g) ; iy++){
@@ -475,7 +476,6 @@ int main(int argc, char *argv[]) {
 		startchipy=0;    
 		endchipy=1;
 	      } 
-
 
 	      for(int ichipy=startchipy; ichipy<endchipy;ichipy++){
 		for(int iy=0; iy<NumChanPerChip_y;iy++){
