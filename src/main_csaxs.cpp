@@ -24,9 +24,9 @@
 
 #include "image.h"
 
-#define MYCBF //choose 
+//#define MYCBF //choose 
 //#define MYROOT //choose 
-//#define HDF5f
+#define HDF5f
 //#define MSHeader
 
 #ifdef HDF5f
@@ -148,10 +148,10 @@ int main(int argc, char *argv[]) {
   if( npix_y_user==256)   numModules=2;
   int fnum;
   int nr=0;
-  for(int imod_h=0; imod_h<n_h; imod_h++){
-    for(int imod_v=0; imod_v<n_v; imod_v++){
-      for(int it=0;it<2;it++){
-	for(int ileft=0; ileft<2;ileft++){
+  for(int imod_h=0; imod_h<n_h; ++imod_h){
+    for(int imod_v=0; imod_v<n_v; ++imod_v){
+      for(int it=0;it<2;++it){
+	for(int ileft=0; ileft<2;++ileft){
 	  if( npix_y_user==256 && it==1 ) continue;
 	  fnum=0;
 	  nr++;
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
 
   // open all files at once
   //loop on each receiver to get frame buffer
-  for(int inr=0; inr<nr; inr++){
+  for(int inr=0; inr<nr; ++inr){
     sprintf(fname, "%s_d%d%s_%d.raw",file.c_str(),inr,frames,fileIndex);
     
     //open file
@@ -221,10 +221,10 @@ int main(int argc, char *argv[]) {
   hsize_t maxdim[3]={H5S_UNLIMITED,((longedge_x==1) ? npix_y_g : npix_x_g) ,
 		     ((longedge_x==1) ? npix_x_g : npix_y_g)};
   /* Hyperslab parameters */
-  hsize_t start[3], count[3];
-  hsize_t stride[3]={1,1,1};
-  hsize_t block[3]={1,1,1}; 
- 
+  hsize_t start[3]={0,0,0};
+  hsize_t count[3]={1, ((longedge_x==1) ? npix_y_g : npix_x_g),
+		    ((longedge_x==1) ? npix_x_g : npix_y_g)} ;
+   
   /*
    * open the file. The file attribute forces normal file 
    * closing behaviour down HDF-5's throat
@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
   /*
    * create scan:NXentry
    */
-  gid = H5Gcreate(fid,"entry",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+  gid = H5Gcreate2(fid,"entry",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
   /*
    * store the NX_class attribute. Notice that you
    * have to take care to close those hids after use
@@ -255,12 +255,12 @@ int main(int argc, char *argv[]) {
    * A subroutine would be nice to have here.......
    */
     
-  hid_t dcpl = H5Pcreate (H5P_DATASET_CREATE);
-  gid = H5Gcreate(fid,"entry/data",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+  hid_t dcpl = H5Pcreate(H5P_DATASET_CREATE);
+  gid = H5Gcreate2(fid,"entry/data",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
   atts = H5Screate(H5S_SCALAR);
   atttype = H5Tcopy(H5T_C_S1);
   H5Tset_size(atttype, 7);//H5T_VARIABLE);
-  attid = H5Acreate(gid,"NX_class", atttype, atts, H5P_DEFAULT,H5P_DEFAULT);
+  attid = H5Acreate2(gid,"NX_class", atttype, atts, H5P_DEFAULT,H5P_DEFAULT);
   H5Awrite(attid, atttype, (char *)"NXdata");
   H5Sclose(atts);
   H5Tclose(atttype);
@@ -291,62 +291,43 @@ int main(int argc, char *argv[]) {
   //H5Pset_szip (dataprop, szip_options_mask, szip_pixels_per_block);
  
   //fill value
-  int          fill_value =0;            /* Fill value for VDS */
-  H5Pset_fill_value(dataprop,datatype, &fill_value);
+  //int          fill_value =0;            /* Fill value for VDS */
+  //H5Pset_fill_value(dataprop,datatype, &fill_value);
 
   // Set ZLIB / DEFLATE Compression using compression level 2
-   H5Pset_shuffle(dataprop); 
-   H5Pset_deflate (dataprop, 1);//4 originale
+  H5Pset_shuffle(dataprop); 
+  H5Pset_deflate (dataprop, 2);
 
-  dataset = H5Dcreate(gid,datasetname.c_str(), datatype,dataspace,
+  dataset = H5Dcreate2(gid,datasetname.c_str(), datatype,dataspace,
 		      H5P_DEFAULT, dataprop, H5P_DEFAULT);
 
   //one for all and overwritten
-  int map2d[(longedge_x ? npix_y_g : npix_x_g)][(longedge_x ? npix_x_g : npix_y_g)];
-  for(int iy=0; iy<(longedge_x ? npix_y_g : npix_x_g) ; iy++){
-    for(int ix=0; ix<(longedge_x ? npix_x_g : npix_y_g) ; ix++){ 
-      if(dynamicrange==4 ) map2d[iy][ix]=15; //change saturation
-      if(dynamicrange==8 ) map2d[iy][ix]=255;
-      if(dynamicrange==16 ) map2d[iy][ix]=4095;
-      if(dynamicrange==32 ) map2d[iy][ix]=(pow(2,32)-1);
-    }
-  }
-
   //now create attributes
   //Count_cutoff 
   atts = H5Screate(H5S_SCALAR);
-  atttype = H5Tcopy(H5T_STD_I64LE);
-  int value=199998;
-  H5Tset_size(atttype,8);
-  attid = H5Acreate(dataset,"Count_cutoff", atttype,atts, 
+  long value=199998;
+  attid = H5Acreate2(dataset,"Count_cutoff", H5T_STD_I64LE,atts,
 		    H5P_DEFAULT,H5P_DEFAULT);
-  H5Awrite(attid, atttype,&value);
+  H5Awrite(attid, H5T_STD_I64LE,&value);
   H5Sclose(atts);
-  H5Tclose(atttype);
   H5Aclose(attid);
   
   //Detector
 
   //Exposure_period
   atts = H5Screate(H5S_SCALAR);
-  atttype = H5Tcopy(H5T_IEEE_F64LE);
-  H5Tset_size(atttype,8);
-  attid = H5Acreate(dataset,"Exposure_period", atttype,atts, 
-		    H5P_DEFAULT,H5P_DEFAULT);
-  H5Awrite(attid, atttype,&period);
+  attid = H5Acreate2(dataset,"Exposure_period", H5T_IEEE_F64LE, atts, 
+		     H5P_DEFAULT,H5P_DEFAULT);
+  H5Awrite(attid, H5T_IEEE_F64LE,&period);
   H5Sclose(atts);
-  H5Tclose(atttype);
   H5Aclose(attid);
 
   //Exposure_time
   atts = H5Screate(H5S_SCALAR);
-  atttype = H5Tcopy(H5T_IEEE_F64LE);
-  H5Tset_size(atttype,8);
-  attid = H5Acreate(dataset,"Exposure_time", atttype,atts, 
+  attid = H5Acreate2(dataset,"Exposure_time", H5T_IEEE_F64LE,atts, 
 		    H5P_DEFAULT,H5P_DEFAULT);
-  H5Awrite(attid, atttype,&expTime);
+  H5Awrite(attid, H5T_IEEE_F64LE,&expTime);
   H5Sclose(atts);
-  H5Tclose(atttype);
   H5Aclose(attid);
 
   //Gain_setting
@@ -355,35 +336,26 @@ int main(int argc, char *argv[]) {
   double valued2d[2]={75e-6,75e-6};
   hsize_t d[2]={1,1};
   atts = H5Screate_simple(2, d, NULL);
-  atttype = H5Tcopy(H5T_IEEE_F64LE);
-  H5Tset_size(atttype,8);
-  attid = H5Acreate(dataset,"Pixel_size", atttype,atts, 
-		    H5P_DEFAULT,H5P_DEFAULT);
-  H5Awrite(attid, atttype,&valued2d);
+  attid = H5Acreate2(dataset,"Pixel_size", H5T_IEEE_F64LE,atts, 
+		     H5P_DEFAULT,H5P_DEFAULT);
+  H5Awrite(attid, H5T_IEEE_F64LE,&valued2d);
   H5Sclose(atts);
-  H5Tclose(atttype);
   H5Aclose(attid);
   //Silicon
   double valued=320e-6;
   atts = H5Screate(H5S_SCALAR);
-  atttype = H5Tcopy(H5T_IEEE_F64LE);
-  H5Tset_size(atttype,8);
-  attid = H5Acreate(dataset,"Silicon", atttype,atts, 
-		    H5P_DEFAULT,H5P_DEFAULT);
-  H5Awrite(attid, atttype,&valued);
+  attid = H5Acreate2(dataset,"Silicon",H5T_IEEE_F64LE ,atts, 
+		     H5P_DEFAULT,H5P_DEFAULT);
+  H5Awrite(attid,H5T_IEEE_F64LE ,&valued);
   H5Sclose(atts);
-  H5Tclose(atttype);
   H5Aclose(attid);
   //Tau
   valued=0;
   atts = H5Screate(H5S_SCALAR);
-  atttype = H5Tcopy(H5T_IEEE_F64LE);
-  H5Tset_size(atttype,8);
-  attid = H5Acreate(dataset,"Tau", atttype,atts, 
+  attid = H5Acreate2(dataset,"Tau", H5T_IEEE_F64LE,atts, 
 		    H5P_DEFAULT,H5P_DEFAULT);
-  H5Awrite(attid, atttype,&valued);
+  H5Awrite(attid, H5T_IEEE_F64LE,&valued);
   H5Sclose(atts);
-  H5Tclose(atttype);
   H5Aclose(attid);
   //Threshold_setting
   //Trim_file
@@ -413,7 +385,7 @@ int main(int argc, char *argv[]) {
     //here nr is not volatile anymore
     //loop on each receiver to get frame buffer
     
-    for(int inr=0; inr<nr; inr++){
+    for(int inr=0; inr<nr; ++inr){
       int* dataout = new int [ xpix* ypix]; //will delete it in buffer
       //read data
       if(infile[inr].read((char*)bufferheader,imageHeader)){
@@ -452,10 +424,10 @@ int main(int argc, char *argv[]) {
     struct  timeval tss,tsss; //for timing
     //   gettimeofday(&tss,NULL);
 
-    for(int imod_h=0; imod_h<n_h;imod_h++){
+    for(int imod_h=0; imod_h<n_h;++imod_h){
       for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
-	for( int it=0;it<2;it++){	
-	  for( int ileft=0;ileft<2;ileft++){
+	for( int it=0;it<2;++it){	
+	  for( int ileft=0;ileft<2;++ileft){
 	   
 	    if( npix_y_user==256 && it==1) continue; 
 	   
@@ -477,10 +449,10 @@ int main(int argc, char *argv[]) {
 		endchipy=1;
 	      } 
 
-	      for(int ichipy=startchipy; ichipy<endchipy;ichipy++){
-		for(int iy=0; iy<NumChanPerChip_y;iy++){
-		  for(int ichipx=startchipx; ichipx<endchipx;ichipx++){
-		    for(int ix=0; ix<NumChanPerChip_x;ix++){
+	      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+		for(int iy=0; iy<NumChanPerChip_y;++iy){
+		  for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+		    for(int ix=0; ix<NumChanPerChip_x;++ix){
 		      int x_t= GetX(ix, ichipx, imod_h);
 		      int y_t= GetY(iy, ichipy,imod_v);
 		      int k=GetK(x_t,y_t,npix_x_g);
@@ -504,10 +476,10 @@ int main(int argc, char *argv[]) {
 		endchipx=4;
 	      }		 
 		 		    
-	      for(int ichipy=startchipy; ichipy<endchipy;ichipy++){
-		for(int iy=0; iy<NumChanPerChip_y;iy++){
-		  for(int ichipx=startchipx; ichipx<endchipx;ichipx++){
-		    for(int ix=0; ix<NumChanPerChip_x;ix++){
+	      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+		for(int iy=0; iy<NumChanPerChip_y;++iy){
+		  for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+		    for(int ix=0; ix<NumChanPerChip_x;++ix){
 		      int x_t=GetX(ix, ichipx, imod_h);
 		      int y_t= GetY(iy,ichipy,imod_v);
 		      int k=GetK(x_t,y_t,npix_x_g);
@@ -533,9 +505,9 @@ int main(int argc, char *argv[]) {
 	int ix=NumChanPerChip_x-1;
 	int kdebug;
 	//start from end pixel of the chip right 
-	for( int ichipx=0; ichipx<3; ichipx++){
-	  for( int ichipy=0; ichipy<2; ichipy++){
-	    for(int iy=0; iy<NumChanPerChip_y;iy++){ 
+	for( int ichipx=0; ichipx<3; ++ichipx){
+	  for( int ichipy=0; ichipy<2; ++ichipy){
+	    for(int iy=0; iy<NumChanPerChip_y;++iy){ 
 	      //exclude border y
 	      if(ichipy==1 && iy==0) {
 		//first corner
@@ -699,8 +671,8 @@ int main(int argc, char *argv[]) {
 	  //other edge
 	int iy=NumChanPerChip_y-1;
 	int ichipy=0;//bottom
-	for(int ichipx=0; ichipx<NumChip_x;ichipx++){
-	  for(int ix=0; ix<NumChanPerChip_x;ix++){ 
+	for(int ichipx=0; ichipx<NumChip_x;++ichipx){
+	  for(int ix=0; ix<NumChanPerChip_x;++ix){ 
 	    //exclude border x
 	    if(ichipx!=(NumChip_x-1) && ix==(NumChanPerChip_x-1)) continue;
 	    if(ichipx!=0 && ix==0) continue;
@@ -735,6 +707,18 @@ int main(int argc, char *argv[]) {
 
     //delete dataout;
     buffer.clear();
+
+  //now rotate everything 
+    if(!longedge_x){
+      //here test ro ratate on the output matrix
+      for(int ix=0; ix<npix_x_g; ++ix){
+	for(int iy=0; iy<npix_y_g; ++iy){
+	  int kold=ix+ npix_x_g*iy;
+	  int  knew=(npix_y_g-iy)+ npix_y_g*ix;
+	  mapr[knew]=map[kold];
+	}
+      }
+    } //short edege
 
 #ifdef MYCBF
     //---> here I should also fill
@@ -836,18 +820,6 @@ int main(int argc, char *argv[]) {
 	    ";\r\n"
 	    );
 
-    //now rotate everything - so far inside the cbf map
-    if(!longedge_x){
-      //here test ro ratate on the output matrix
-      for(int ix=0; ix<npix_x_g; ix++){
-	for(int iy=0; iy<npix_y_g; iy++){
-	  int kold=ix+ npix_x_g*iy;
-	  int  knew=(npix_y_g-iy)+ npix_y_g*ix;
-	  mapr[knew]=map[kold];
-	}
-      }
-    } //short edege
-   
     /* Make a new data block */
     cbf_failnez (cbf_new_datablock (cbf, "image_1"))  //why not: cbf_new_saveframe(cbf,"image 1")
       /* Make the _diffrn category */
@@ -895,8 +867,8 @@ int main(int argc, char *argv[]) {
     
     
 #ifdef MYROOT
-    for(int ix=0; ix<npix_x_g; ix++){
-      for(int iy=0; iy<npix_y_g; iy++){
+    for(int ix=0; ix<npix_x_g; ++ix){
+      for(int iy=0; iy<npix_y_g; ++iy){
 	int kold=ix+ npix_x_g*iy;
 	FillROOT(hmap,longedge_x, ix, iy, map[kold]);
       }
@@ -913,26 +885,11 @@ int main(int argc, char *argv[]) {
      */
 
     start[0] = numFrames-1;
-    start[1] = 0;
-    start[2]= 0;
-    count[0]=1;
-    count[1] =((longedge_x==1) ? npix_y_g : npix_x_g) ;
-    count[2] =((longedge_x==1) ? npix_x_g : npix_y_g) ;
     dataspaceimg = H5Screate_simple(2, dim2, NULL);
-    H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, start, stride, count, block);
+    H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, start, NULL, count, NULL);
     
-    //now fill teh map2d - map is not rotated
-    for(int ix=0; ix<npix_x_g; ix++){
-      for(int iy=0; iy<npix_y_g; iy++){
-	int k=ix+ npix_x_g*iy;
-	//map is never the rotated ones
-	if(longedge_x) 
-	  map2d[iy][ix]=map[k];
-	else
-	  map2d[ix][iy]=map[k];
-      }
-    }
-    H5Dwrite(dataset, datatype , dataspaceimg, dataspace, H5P_DEFAULT, map2d);
+    H5Dwrite(dataset, datatype , dataspaceimg, dataspace, H5P_DEFAULT, 
+	     (longedge_x ? map: mapr));
     H5Sclose(dataspaceimg);
     //atts = H5Screate(H5S_SCALAR);
     //atttype = H5Tcopy(H5T_C_S1);
@@ -949,7 +906,7 @@ int main(int argc, char *argv[]) {
     numFrames++;
     
     buffer.clear();
-    for(int inr=0; inr<nr; inr++) {   
+    for(int inr=0; inr<nr; ++inr) {   
       delete buffer[inr]; //remove memory 
     }
     
@@ -971,7 +928,7 @@ int main(int argc, char *argv[]) {
   delete[]  map;
   delete[]  mapr;
   
-  for(int inr=0; inr<nr; inr++)
+  for(int inr=0; inr<nr; ++inr)
     infile[inr].close();
   
 
