@@ -295,8 +295,8 @@ int main(int argc, char *argv[]) {
   H5Pset_fill_value(dataprop,datatype, &fill_value);
 
   // Set ZLIB / DEFLATE Compression using compression level 2
-  H5Pset_shuffle(dataprop); 
-  H5Pset_deflate (dataprop, 2);//4 originale
+   H5Pset_shuffle(dataprop); 
+   H5Pset_deflate (dataprop, 1);//4 originale
 
   dataset = H5Dcreate(gid,datasetname.c_str(), datatype,dataspace,
 		      H5P_DEFAULT, dataprop, H5P_DEFAULT);
