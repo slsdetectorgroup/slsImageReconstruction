@@ -948,7 +948,6 @@ int main(int argc, char *argv[]) {
     
     numFrames++;
     
-    buffer.clear();
     for(int inr=0; inr<nr; ++inr) {   
       delete buffer[inr]; //remove memory 
     }
