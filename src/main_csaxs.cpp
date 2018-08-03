@@ -314,8 +314,8 @@ int main(int argc, char *argv[]) {
   //H5Pset_fill_value(dataprop,datatype, &fill_value);
 
   // Set ZLIB / DEFLATE Compression using compression level 2
-  H5Pset_shuffle(dataprop); 
-  H5Pset_deflate (dataprop, 2);
+  //H5Pset_shuffle(dataprop); 
+  // H5Pset_deflate (dataprop, 2);
 
   dataset = H5Dcreate2(gid,datasetname.c_str(), datatype,dataspace,
 		      H5P_DEFAULT, dataprop, H5P_DEFAULT);
@@ -468,22 +468,21 @@ int main(int argc, char *argv[]) {
 		endchipy=1;
 	      } 
 
-	      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-		for(int iy=0; iy<NumChanPerChip_y;++iy){
-		  for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+	      for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+		for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+		  for(int iy=0; iy<NumChanPerChip_y;++iy){
 		    //for(int ix=0; ix<NumChanPerChip_x;++ix){
-		      //int x_t= GetX(ix, ichipx, imod_h);
+		    //int x_t= GetX(ix, ichipx, imod_h);
 		    int x_t= GetX(0, ichipx, imod_h);
 		    int y_t= GetY(iy, ichipy,imod_v);
-		      int k=GetK(x_t,y_t,npix_x_g);
-		      // map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
-		      memcpy(&map[k], 
-			     &buffer[nnr][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy],
-			     NumChanPerChip_x *sizeof(int));
-		      //}//num ch chipx 
-		  }//ichipx
-		} //num ch chip y
-	      }//ichipy
+		    int k=GetK(x_t,y_t,npix_x_g);
+		    // map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
+		    memcpy(&map[k], 
+			   &buffer[nnr][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy],
+			   NumChanPerChip_x *sizeof(int));
+		  } //num ch chip y
+		}//ichipy
+	      }//ichipx
 	    } //it ==0 		
 	    
 	    //getting values for bottom
@@ -498,10 +497,10 @@ int main(int argc, char *argv[]) {
 		startchipx=2;
 		endchipx=4;
 	      }		 
-		 		    
-	      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-		for(int iy=0; iy<NumChanPerChip_y;++iy){
-		  for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+		 
+	      for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
+		for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+		  for(int iy=0; iy<NumChanPerChip_y;++iy){
 		    // for(int ix=0; ix<NumChanPerChip_x;++ix){
 		    //int x_t=GetX(ix, ichipx, imod_h);
 		    int x_t=GetX(0, ichipx, imod_h);
@@ -510,7 +509,6 @@ int main(int argc, char *argv[]) {
 		    //map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
 		    memcpy(&map[k], &buffer[nnr][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)],
 			   NumChanPerChip_x *sizeof(int)); 
-		    //}
 		  }
 		}
 	      }
@@ -531,16 +529,17 @@ int main(int argc, char *argv[]) {
 	int ix=NumChanPerChip_x-1;
 	int kdebug;
 	//start from end pixel of the chip right 
-	for( int ichipx=0; ichipx<3; ++ichipx){
-	  for( int ichipy=0; ichipy<2; ++ichipy){
-	    for(int iy=0; iy<NumChanPerChip_y;++iy){ 
+	 for( int ichipx=0; ichipx<3; ++ichipx){
+	   for( int ichipy=0; ichipy<2; ++ichipy){
+	     for(int iy=0; iy<NumChanPerChip_y;++iy){ 
+	       
 	      //exclude border y
 	      if(ichipy==1 && iy==0) {
 		//first corner
 		int x_t= GetX(ix, ichipx, imod_h);
 		int y_t= GetY(iy, ichipy,imod_v);
 		int k=GetK(x_t,y_t,npix_x_g);
-
+		
 		//right
 		int xvirtual1=x_t+1;
 		int yvirtual1=y_t;
@@ -556,7 +555,7 @@ int main(int argc, char *argv[]) {
 		if(fillgaps==kZero) FillCornerGapsBetweenChipZero(map, k, kvirtual1,kvirtual2, kvirtual3 );
 		if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k, kvirtual1,kvirtual2, kvirtual3,dynamicrange);	
 		if(fillgaps==kMask) FillGapsBetweenChipMask(map, k, kvirtual1,kvirtual2, kvirtual3 );	
-
+		
 		//second corner
 		int x2_t= x_t+3;
 		int y2_t= y_t;
@@ -576,7 +575,7 @@ int main(int argc, char *argv[]) {
 		if(fillgaps==kZero) FillCornerGapsBetweenChipZero(map, k2, k2virtual1,k2virtual2, k2virtual3 );	
 		if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k2, k2virtual1,k2virtual2, k2virtual3,dynamicrange );	
 		if(fillgaps==kMask) FillGapsBetweenChipMask(map,k2, k2virtual1,k2virtual2, k2virtual3 );	
-
+		
 		//third corner
 		int x3_t= x_t;
 		int y3_t= y_t-3;
@@ -690,9 +689,9 @@ int main(int argc, char *argv[]) {
 									      kvirtual2,k2,GetK(x_t2+1,y_t2,npix_x_g),dynamicrange);	
 		}//edge
 	      }//other corner
+	    } //loop on chip x
 	    }//loop on y
 	  } //loop on chip y
-	} //loop on chip x
 
 	  //other edge
 	int iy=NumChanPerChip_y-1;

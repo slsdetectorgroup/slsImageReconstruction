@@ -477,11 +477,11 @@ int main(int argc, char *argv[]) {
 		endchipy=1;
 	      } 
 
-	      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-		for(int iy=0; iy<NumChanPerChip_y;++iy){
-		  for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+	      for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+		for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+		  for(int iy=0; iy<NumChanPerChip_y;++iy){
 		    //for(int ix=0; ix<NumChanPerChip_x;++ix){
-		      //int x_t= GetX(ix, ichipx, imod_h);
+		    //int x_t= GetX(ix, ichipx, imod_h);
 		    int x_t= GetX(0, ichipx, imod_h);
 		    int y_t= GetY(iy, ichipy,imod_v);
 		      int k=GetK(x_t,y_t,npix_x_g);
@@ -507,10 +507,10 @@ int main(int argc, char *argv[]) {
 		startchipx=2;
 		endchipx=4;
 	      }		 
-		 		    
-	      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-		for(int iy=0; iy<NumChanPerChip_y;++iy){
-		  for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+	      
+	      for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+		for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+		  for(int iy=0; iy<NumChanPerChip_y;++iy){
 		    // for(int ix=0; ix<NumChanPerChip_x;++ix){
 		    //int x_t=GetX(ix, ichipx, imod_h);
 		    int x_t=GetX(0, ichipx, imod_h);
