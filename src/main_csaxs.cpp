@@ -24,9 +24,9 @@
 
 #include "image.h"
 
-//#define MYCBF //choose 
+#define MYCBF //choose 
 //#define MYROOT //choose 
-#define HDF5f
+//#define HDF5f
 //#define MSHeader
 
 #ifdef HDF5f
@@ -202,7 +202,6 @@ int main(int argc, char *argv[]) {
 
   //now loop over all frames
   //for each frame
-  
   int Nimgsperfile=2000; //to be fixed in next realease when configurable
   int Nimagesexpected=Nimgsperfile+numFrames; //assumes 2000 more tahn number   
   if(imgs<Nimagesexpected)  Nimagesexpected=imgs+1;
