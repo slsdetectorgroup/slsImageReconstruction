@@ -256,6 +256,26 @@ int main(int argc, char *argv[]) {
    */
     
   hid_t dcpl = H5Pcreate(H5P_DATASET_CREATE);
+  gid = H5Gcreate2(fid,"entry/instrument",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+  atts = H5Screate(H5S_SCALAR);
+  atttype = H5Tcopy(H5T_C_S1);
+  H5Tset_size(atttype,12);
+  attid = H5Acreate2(gid,"NX_class", atttype, atts, H5P_DEFAULT,H5P_DEFAULT);
+  H5Awrite(attid,  atttype, (char*)"NXinstrument");
+  H5Sclose(atts);
+  H5Aclose(attid);
+
+  string instr="entry/instrument/";
+  instr=instr+datasetname;
+  gid = H5Gcreate2(fid,instr.c_str(),H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+  atts = H5Screate(H5S_SCALAR);
+  atttype = H5Tcopy(H5T_C_S1);
+  H5Tset_size(atttype,10);
+  attid = H5Acreate2(gid,"NX_class", atttype, atts, H5P_DEFAULT,H5P_DEFAULT);
+  H5Awrite(attid,  atttype, (char*)"NXdetector");
+  H5Sclose(atts);
+  H5Aclose(attid);
+
   gid = H5Gcreate2(fid,"entry/data",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
   atts = H5Screate(H5S_SCALAR);
   atttype = H5Tcopy(H5T_C_S1);
@@ -452,12 +472,16 @@ int main(int argc, char *argv[]) {
 	      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
 		for(int iy=0; iy<NumChanPerChip_y;++iy){
 		  for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
-		    for(int ix=0; ix<NumChanPerChip_x;++ix){
-		      int x_t= GetX(ix, ichipx, imod_h);
-		      int y_t= GetY(iy, ichipy,imod_v);
+		    //for(int ix=0; ix<NumChanPerChip_x;++ix){
+		      //int x_t= GetX(ix, ichipx, imod_h);
+		    int x_t= GetX(0, ichipx, imod_h);
+		    int y_t= GetY(iy, ichipy,imod_v);
 		      int k=GetK(x_t,y_t,npix_x_g);
-		      map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
-		    }//num ch chipx 
+		      // map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
+		      memcpy(&map[k], 
+			     &buffer[nnr][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy],
+			     NumChanPerChip_x *sizeof(int));
+		      //}//num ch chipx 
 		  }//ichipx
 		} //num ch chip y
 	      }//ichipy
@@ -479,12 +503,15 @@ int main(int argc, char *argv[]) {
 	      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
 		for(int iy=0; iy<NumChanPerChip_y;++iy){
 		  for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
-		    for(int ix=0; ix<NumChanPerChip_x;++ix){
-		      int x_t=GetX(ix, ichipx, imod_h);
-		      int y_t= GetY(iy,ichipy,imod_v);
-		      int k=GetK(x_t,y_t,npix_x_g);
-		      map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
-		    }
+		    // for(int ix=0; ix<NumChanPerChip_x;++ix){
+		    //int x_t=GetX(ix, ichipx, imod_h);
+		    int x_t=GetX(0, ichipx, imod_h);
+		    int y_t= GetY(iy,ichipy,imod_v);
+		    int k=GetK(x_t,y_t,npix_x_g);
+		    //map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
+		    memcpy(&map[k], &buffer[nnr][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)],
+			   NumChanPerChip_x *sizeof(int)); 
+		    //}
 		  }
 		}
 	      }
@@ -710,7 +737,7 @@ int main(int argc, char *argv[]) {
 
   //now rotate everything 
     if(!longedge_x){
-      //here test ro ratate on the output matrix
+      //rotate on the output matrix
       for(int ix=0; ix<npix_x_g; ++ix){
 	for(int iy=0; iy<npix_y_g; ++iy){
 	  int kold=ix+ npix_x_g*iy;

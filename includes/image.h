@@ -352,6 +352,7 @@ bool CheckFrames( int fnum, int numFrames)
   return true;
 }
 
+/*
 int* decodeData(int *datain, const int size, const int nx, const int ny, const int dynamicRange) 
 {
   
@@ -394,16 +395,16 @@ int* decodeData(int *datain, const int size, const int nx, const int ny, const i
     break;
   default:
     //for every 32 bit (every element in datain array)
-    for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
-      //		ival=datain[ichan]&0xffffff;
-      //  dataout[ichan]=ival;
-      dataout[ichan]=datain[ichan];
-    }
+    // for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
+    //dataout[ichan]=datain[ichan];
+    //}
+    memcpy(&dataout[0], datain,	nch*sizeof(int));
   }
   
  return dataout;
   
 }
+*/
 
 void decodeData(int *datain, int* dataout, const int size, const int nx, const int ny, const int dynamicRange) 
 {
@@ -447,14 +448,11 @@ void decodeData(int *datain, int* dataout, const int size, const int nx, const i
     break;
   default:
     //for every 32 bit (every element in datain array)
-    for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
-      //		ival=datain[ichan]&0xffffff;
-      //  dataout[ichan]=ival;
-      dataout[ichan]=datain[ichan];
-    }
+    //for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
+    //dataout[ichan]=datain[ichan];
+    //}  
+    memcpy(&dataout[0], datain,	nch*sizeof(int));
   }
-  
-  //return dataout;
   
 }
 
@@ -466,15 +464,6 @@ int GetY(int iy, int ichipy,int imod_v)
 {
 return iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+(NumChip_y-1)*GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
 }
-
-//int GetK(int xvirtual, int yvirtual, int longedge_x, 
-//	 int npix_x_g, int npix_y_g)
-//{
-//int  kvirtual= xvirtual+ npix_x_g*yvirtual;
-//if(!longedge_x)
-//  kvirtual=(npix_y_g-yvirtual)+ npix_y_g*xvirtual;
-//return kvirtual;
-//}
 
 int GetK(int xvirtual, int yvirtual, int npix_x_g)
 {
