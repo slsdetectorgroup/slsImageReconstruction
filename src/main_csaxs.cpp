@@ -335,7 +335,7 @@ int main(int argc, char *argv[]) {
   //int          fill_value =0;            /* Fill value for VDS */
   //H5Pset_fill_value(dataprop,datatype, &fill_value);
 
-#ifdef ZLIB
+#ifdef GZIP
   // Set ZLIB / DEFLATE Compression using compression level 2
   H5Pset_shuffle(dataprop); 
    H5Pset_deflate (dataprop, 2);
