@@ -24,15 +24,35 @@
 
 #include "image.h"
 
-#define MYCBF //choose 
-//#define MYROOT //choose 
-//#define HDF5f
+//#define MYCBF //choose 
 //#define MSHeader
+//#define MYROOT //choose 
+#define HDF5f
+//#define LZ4
+//#define BITSHUFFLE
+#define GZIP
+//#define SZIP
 
 #ifdef HDF5f
 //#include "hdf5.h"
 #include "H5Cpp.h"
 #endif
+
+#ifdef LZ4
+//#include <H5PLextern.h>
+//#include <lz4.h>
+#define H5Z_FILTER_LZ4 32004
+#endif
+
+#ifdef BITSHUFFLE
+//#include <H5PLextern.h>
+//#include <lz4.h>
+#define H5Z_FILTER  32008 //original32004
+#endif
+
+
+
+
 
 #ifdef MYCBF
 #include "cbf.h" 
@@ -302,23 +322,36 @@ int main(int argc, char *argv[]) {
   H5Pset_chunk (dataprop , rank, cdims);
   
   //do not remove here
+#ifdef SZIP
   //SZIP Compression
-  //unsigned szip_options_mask;
-  //unsigned szip_pixels_per_block;
-  //szip_options_mask = H5_SZIP_NN_OPTION_MASK;
-  //szip_pixels_per_block = 16;
-  //H5Pset_szip (dataprop, szip_options_mask, szip_pixels_per_block);
+  unsigned szip_options_mask;
+  unsigned szip_pixels_per_block;
+  szip_options_mask = H5_SZIP_NN_OPTION_MASK;
+  szip_pixels_per_block = 16;
+  H5Pset_szip (dataprop, szip_options_mask, szip_pixels_per_block);
  
+#endif
   //fill value
   //int          fill_value =0;            /* Fill value for VDS */
   //H5Pset_fill_value(dataprop,datatype, &fill_value);
 
+#ifdef ZLIB
   // Set ZLIB / DEFLATE Compression using compression level 2
-  //H5Pset_shuffle(dataprop); 
-  // H5Pset_deflate (dataprop, 2);
+  H5Pset_shuffle(dataprop); 
+   H5Pset_deflate (dataprop, 2);
+#endif  
+
+#ifdef LZ4
+  unsigned filter_config;  
+  const unsigned int cd_values[1] = {3};     /* lz4 default is 3 */
+  H5Pset_filter (dataprop, H5Z_FILTER_LZ4, 
+ 		 H5Z_FLAG_MANDATORY, (size_t)1, cd_values);
+  //  cout<<H5Zfilter_avail(H5Z_FILTER_LZ4)<<endl;
+#endif  
 
   dataset = H5Dcreate2(gid,datasetname.c_str(), datatype,dataspace,
-		      H5P_DEFAULT, dataprop, H5P_DEFAULT);
+		       H5P_DEFAULT, dataprop, H5P_DEFAULT);
+  
 
   //one for all and overwritten
   //now create attributes

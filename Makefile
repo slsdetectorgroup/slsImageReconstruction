@@ -2,13 +2,22 @@ WD				=	$(shell pwd)
 
 #CBFLIBDIR		=	../../CBFlib-0.9.5
 CBFLIBDIR		=	/scratch/CBFlib-0.9.5
-HDF5DIR		        =	/afs/psi.ch/project/sls_det_software/software_packages/linux6/hdf5/1.10.1
+#HDF5DIR		        =	/afs/psi.ch/project/sls_det_software/software_packages/linux6/hdf5/1.10.1
+HDF5DIR		        =	/scratch/hdf5/1.10.1
+LZ4DIR		        =	/scratch/lz4
+
 
 LIBRARYCBF		=	$(CBFLIBDIR)/lib/*.o
 LIBHDF5			=	-L$(HDF5DIR)/lib/ -lhdf5 -lhdf5_hl_cpp -lhdf5_cpp -lsz -lz 
 LIBHDF5CBF			=	-L$(CBFLIBDIR)/lib/ -lhdf5
+LIBLZ4			=	-L$(LZ4DIR)/lib/ -llz4
+EXTPLUGINDIR	= /scratch/HDF5-External-Filter-Plugins/plugins/
+EXTPLUGINLIB	= -L$(EXTPLUGINDIR) -lh5lz4
+
+
 INCLUDESCBF		=	-I $(CBFLIBDIR)/include
-INCLUDESHDF5		=	-I $(HDF5DIR)/include
+INCLUDESHDF5		=	-I $(HDF5DIR)/include 
+INCLUDELZ4              =  -I $(LZ4DIR)/lib
 INCLUDES		= 	-I. -Iincludes  
 
 CCX			=	gcc -O3 #-fopenmp 
@@ -60,7 +69,7 @@ $(PROGS_CSAXS):
 
 $(PROGS_CSAXS_HDF5): 
 	@echo $(WD)
-	$(CCX)  -o $@  $(SRC_CSAXS_CLNT) $(INCLUDES)  $(INCLUDESHDF5) $(LIBHDF5) $(CFLAGS) $(LDLIBS) 
+	$(CCX)  -o $@  $(SRC_CSAXS_CLNT) $(INCLUDES)  $(INCLUDESHDF5) $(INCLUDELZ4) $(LIBHDF5) $(EXTPLUGINLIB) $(CFLAGS) $(LDLIBS) 
 	mv $(PROGS_CSAXS_HDF5) $(DESTDIR) 
 	cd $(WD)
 
@@ -76,9 +85,9 @@ $(PROGS_CSAXS_1.5M):
 	mv $(PROGS_CSAXS_1.5M) $(DESTDIR) 
 	cd $(WD)
 
-$(PROGS_CSAXS_1.5M_HDF5)	: 
+$(PROGS_CSAXS_1.5M_HDF5): 
 	@echo $(WD)
-	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES)  $(INCLUDESHDF5) $(LIBHDF5) $(CFLAGS) $(LDLIBS) 
+	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES)  $(INCLUDESHDF5) $(INCLUDELZ4) $(LIBHDF5) $(EXTPLUGINLIB) $(CFLAGS) $(LDLIBS)
 	mv $(PROGS_CSAXS_1.5M_HDF5) $(DESTDIR) 
 	cd $(WD)
 
@@ -90,7 +99,7 @@ $(PROGS_CSAXS_OMNY):
 
 $(PROGS_CSAXS_OMNY_HDF5): 
 	@echo $(WD)
-	$(CCX)  -o $@  $(SRC_CSAXS_MULTI)  $(INCLUDES)  $(INCLUDESHDF5) $(LIBHDF5) $(CFLAGS) $(LDLIBS) 
+	$(CCX)  -o $@  $(SRC_CSAXS_MULTI)  $(INCLUDES)  $(INCLUDESHDF5)  $(INCLUDELZ4) $(LIBHDF5) $(EXTPLUGINLIB) $(CFLAGS) $(LDLIBS) 
 	mv $(PROGS_CSAXS_OMNY_HDF5) $(DESTDIR) 
 	cd $(WD)
 
@@ -102,7 +111,7 @@ $(PROGS_CSAXS_9M):
 
 $(PROGS_CSAXS_9M_HDF5): 
 	@echo $(WD)
-	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES) $(INCLUDESHDF5) $(LIBHDF5)  $(CFLAGS) $(LDLIBS) 
+	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES) $(INCLUDESHDF5) $(INCLUDELZ4) $(LIBHDF5) $(EXTPLUGINLIB) $(CFLAGS) $(LDLIBS) 
 	mv $(PROGS_CSAXS_9M_HDF5) $(DESTDIR) 
 	cd $(WD)
 
