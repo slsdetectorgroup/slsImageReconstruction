@@ -1,6 +1,5 @@
 WD				=	$(shell pwd)
 
-#CBFLIBDIR		=	../../CBFlib-0.9.5
 CBFLIBDIR		=	/scratch/CBFlib-0.9.5
 #HDF5DIR		        =	/afs/psi.ch/project/sls_det_software/software_packages/linux6/hdf5/1.10.1
 HDF5DIR		        =	/scratch/hdf5/1.10.1
@@ -20,7 +19,7 @@ INCLUDESHDF5		=	-I $(HDF5DIR)/include
 INCLUDELZ4              =  -I $(LZ4DIR)/lib
 INCLUDES		= 	-I. -Iincludes  
 
-CCX			=	gcc -O3 #-fopenmp 
+CCX			=	gcc -O3 -pthread  #-fopenmp 
 CFLAGS		+=  -Wall 
 LDLIBS		+= 	-lm  -lstdc++ 
 

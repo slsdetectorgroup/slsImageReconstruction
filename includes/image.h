@@ -4,15 +4,18 @@
 #include <iostream>
 #include <string.h>
 #include <fstream>
+#include <typeinfo>
+#include <vector>
 
 using namespace std;
 
 //typedef unsigned int uint64_t;
 typedef unsigned short uint16_t;
 
-typedef  double double32_t;
-typedef  float float32_t;
-typedef  int int32_t;
+typedef double double32_t;
+typedef float float32_t;
+typedef int int32_t;
+typedef unsigned int uint32_t;
 
 const int NumHalfModules = 2;
 const int NumChanPerChip_x = 256;
@@ -29,11 +32,26 @@ const int GapPixelsBetweenChips_y =2;
 const int GapPixelsBetweenModules_x =8;
 const int GapPixelsBetweenModules_y = 36;
 int frameheadersize=0;
+int imagesize=0;
+int dynamicrange;
 
 //gap pixel threatement 
 enum { kZero, kDivide, kInterpolate, kMask, kInterpolate2 };
 
-int getFileParameters(string file,  int &dr, int &tg,  int &ih, int &is, int &x, int &y,
+template <typename T>
+class custom_container 
+{
+  typedef T value_type;
+  typedef value_type* pointer;
+  typedef value_type& reference;
+  typedef std::size_t size_type;
+};
+
+
+template <typename T>
+class vec : public std::vector<T>  {};
+
+int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
 		      string& timestamp, double& expTime, double& period, int& imgs ){
 
   cout << "Getting File Parameters from " << file << endl;
@@ -43,6 +61,7 @@ int getFileParameters(string file,  int &dr, int &tg,  int &ih, int &is, int &x,
   int dummyint;
   string timestamp_s;
   string period_s;
+  int dr;
   
   /*
     Version            		: 1.0
@@ -65,15 +84,16 @@ int getFileParameters(string file,  int &dr, int &tg,  int &ih, int &is, int &x,
 
     //version
     if(getline(infile,str)){
-    istringstream sstr(str);
-    sstr >> str >> str >> str;
-    cout<<"Version:"<<str<<endl;  
-  }
+      istringstream sstr(str);
+      sstr >> str >> str >> str;
+      cout<<"Version:"<<str<<endl;  
+    }
     //dynamic range
     if(getline(infile,str)){
       istringstream sstr(str);
       cout<<"Str dynamic range:"<<str<<endl;
       sstr >> str >> str >>  str >> dr;
+      dynamicrange=dr;
     }
 
     //ten giga
@@ -88,11 +108,11 @@ int getFileParameters(string file,  int &dr, int &tg,  int &ih, int &is, int &x,
       istringstream sstr(str);
       cout<<"Str image size:"<<str<<endl;
       sstr >> str >> str >> str >> is;
+      imagesize=is;
     }
     //x
     if(getline(infile,str)){
       istringstream sstr(str);
-      cout<<"Str x:"<<str<<endl;
       sstr >> str >> str >> x;
     }
 
@@ -100,14 +120,13 @@ int getFileParameters(string file,  int &dr, int &tg,  int &ih, int &is, int &x,
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str >> y;
-      cout<<"Str y:"<<y<<endl; 
-   }
+    }
 
     //Total Frames 
     if(getline(infile,str)){
       istringstream sstr(str);
-       sstr >> str >> str >> str >> imgs;
-       cout<<"total frames:"<<imgs<<endl;
+      sstr >> str >> str >> str >> imgs;
+      cout<<"total frames:"<<imgs<<endl;
     }
 
     // Exptime (ns)	: 1000000000
@@ -244,17 +263,17 @@ int getFileParameters(string file,  int &dr, int &tg,  int &ih, int &is, int &x,
   }
 
   //validations
-  switch(dr){
+  switch(dynamicrange){
   case 4: case 8: case 16: case 32: break;
   default:
-    cout << "Error: Invalid dynamic range " << dr << " read from file " << file << endl;
+    cout << "Error: Invalid dynamic range " << dynamicrange << " read from file " << file << endl;
     return -1;
   }
   int packetsPerFrame;
   if(!tg)
-    packetsPerFrame = 16 * dr;
+    packetsPerFrame = 16 * dynamicrange;
   else
-    packetsPerFrame = 4 * dr;
+    packetsPerFrame = 4 * dynamicrange;
   if(!tg){
     if(is!=(packetsPerFrame*1024)){
       cout << "Error: Invalid packet size " << is << " for 1g read from file " << file << endl;
@@ -340,7 +359,7 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
 	      "Frame Index Enable          : %d\n"
 	      "File Frame Index            : %d\n",
 	      file.c_str(),fileIndex,isFileFrameIndex,fileFrameIndex);
-     return 1;
+      return 1;
     }
     return 0;
 }
@@ -352,61 +371,7 @@ bool CheckFrames( int fnum, int numFrames)
   return true;
 }
 
-/*
-int* decodeData(int *datain, const int size, const int nx, const int ny, const int dynamicRange) 
-{
-  
-  int dataBytes = size;
-  int nch = nx*ny;
-  int* dataout = new int [nch+1];
-  char *ptr=(char*)datain;
-  char iptr;
-
-  const int bytesize=8;
-  int ival=0;
-  int  ipos=0, ichan=0, ibyte;
-  
-  switch (dynamicRange) {
-  case 4:
-    for (ibyte=0; ibyte<dataBytes; ++ibyte) {//for every byte (1 pixel = 1/2 byte)
-      iptr=ptr[ibyte]&0xff;				//???? a byte mask
-      for (ipos=0; ipos<2; ++ipos) {		//loop over the 8bit (twice)
-	ival=(iptr>>(ipos*4))&0xf;		//pick the right 4bit
-	dataout[ichan]=ival;
-	ichan++;
-      }
-    }
-    break;
-  case 8:
-    for (ichan=0; ichan<dataBytes; ++ichan) {//for every pixel (1 pixel = 1 byte)
-      ival=ptr[ichan]&0xff;				//????? a byte mask
-      dataout[ichan]=ival;
-    }
-    break;
-  case 16:
-    for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
-      ival=0;
-      for (ibyte=0; ibyte<2; ++ibyte) { 	//for each byte (concatenate 2 bytes to get 16 bit value)
-	iptr=ptr[ichan*2+ibyte];
-	ival|=((iptr<<(ibyte*bytesize))&(0xff<<(ibyte*bytesize)));
-      }
-      dataout[ichan]=ival;
-    }
-    break;
-  default:
-    //for every 32 bit (every element in datain array)
-    // for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
-    //dataout[ichan]=datain[ichan];
-    //}
-    memcpy(&dataout[0], datain,	nch*sizeof(int));
-  }
-  
- return dataout;
-  
-}
-*/
-
-void decodeData(int *datain, int* dataout, const int size, const int nx, const int ny, const int dynamicRange) 
+void decodeData(unsigned int *datain, unsigned int* dataout, const int size, const int nx, const int ny) 
 {
   
   int dataBytes = size;
@@ -416,10 +381,10 @@ void decodeData(int *datain, int* dataout, const int size, const int nx, const i
   char iptr;
 
   const int bytesize=8;
-  int ival=0;
+  unsigned int ival=0;
   int  ipos=0, ichan=0, ibyte;
   
-  switch (dynamicRange) {
+  switch (dynamicrange) {
   case 4:
     for (ibyte=0; ibyte<dataBytes; ++ibyte) {//for every byte (1 pixel = 1/2 byte)
       iptr=ptr[ibyte]&0xff;				//???? a byte mask
@@ -456,23 +421,87 @@ void decodeData(int *datain, int* dataout, const int size, const int nx, const i
   
 }
 
+/*void decodeData(unsigned int *datain, std::vector <unsigned int*>& buffer,  
+		const int dataBytes, 
+		const int nx, const int ny, int Nimgs) 
+{
+
+  char *ptr=(char*)datain;
+  int nch = nx*ny;
+  char iptr;
+  const int bytesize=8;
+  
+  for(int im=0; im<Nimgs; ++im){
+    //will delete it in buffer
+    unsigned int* dataout = new unsigned int[nx* ny]; 
+
+    unsigned int ival=0;
+    int  ipos=0, ichan=0;
+    
+    //skip header
+    switch (dynamicrange) {
+    case 4:
+      //for (ibyte=0; ibyte<dataBytes; ++ibyte) {//for every byte (1 pixel = 1/2 byte)
+      //iptr=ptr[ibyte]&0xff;				//???? a byte mask
+      //for (ipos=0; ipos<2; ++ipos) {		//loop over the 8bit (twice)
+      //ival=(iptr>>(ipos*4))&0xf;		//pick the right 4bit
+      //dataout[ichan]=ival;
+      //ichan++;
+      //}
+      //}
+      for (int ibyte=frameheadersize*(im+1)+(dataBytes)*im; 
+	   ibyte<frameheadersize*(im+1)+(dataBytes)*im+dataBytes; 
+	   ++ibyte) {//for every byte (1 pixel = 1/2 byte)
+	iptr=ptr[ibyte]&0xff;				//???? a byte mask
+	for (ipos=0; ipos<2; ++ipos) {		//loop over the 8bit (twice)
+	  ival=(iptr>>(ipos*4))&0xf;		//pick the right 4bit
+	  dataout[ichan]=ival;
+	  ichan++;
+     	}
+      }
+      break;
+      case 8:
+      for (ichan=0; ichan<dataBytes; ++ichan) {//for every pixel (1 pixel = 1 byte)
+      ival=ptr[ichan+frameheadersize*(im+1)+dataBytes*im]&0xff;				//????? a byte mask
+      dataout[ichan]=ival;
+      }
+      break;
+    case 16:
+      for(ichan=0; ichan<nch; ++ichan){ 	//for every pixel
+	ival=0;
+	for (int ibyte=0; ibyte<2;++ibyte){ 	//for each byte (concatenate 2 bytes to get 16 bit value)
+	  iptr=ptr[ichan*2+ibyte+frameheadersize*(im+1)+dataBytes*im];
+	  ival|=((iptr<<(ibyte*bytesize))&(0xff<<(ibyte*bytesize)));
+      	}
+      	dataout[ichan]=ival;
+      }
+      break;
+    default:
+      memcpy(&dataout[0], (char*)datain+frameheadersize*(im+1)+dataBytes*im, nch*sizeof(unsigned int));
+    }
+    buffer.push_back(dataout); 
+  }//loop on images
+
+}
+*/
+
 int GetX(int ix, int ichipx, int imod_h)
 {
   return ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+(NumChip_x-1)*GapPixelsBetweenChips_x+GapPixelsBetweenModules_x)*imod_h;
 }
 int GetY(int iy, int ichipy,int imod_v)
 {
-return iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+(NumChip_y-1)*GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
+  return iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+(NumChip_y-1)*GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
 }
 
 int GetK(int xvirtual, int yvirtual, int npix_x_g)
 {
 
   int  kvirtual= xvirtual+ npix_x_g*yvirtual;
-   return kvirtual;
+  return kvirtual;
 }
 
-void FillCornerGapsBetweenChipZero(int* map, int k, 
+void FillCornerGapsBetweenChipZero(uint* map, int k, 
 				   int kvirtual1,int kvirtual2, int kvirtual3)	
 {
   map[kvirtual1]=0;
@@ -480,33 +509,31 @@ void FillCornerGapsBetweenChipZero(int* map, int k,
   map[kvirtual3]=0;
 }
 
-
-int Divide(int k, int i)
+unsigned int Divide(int k, unsigned int i)
 {
   if(!(k%i))
     return k/=i;
   return k/i+(k%i);
 }
 
-bool Saturated(int k, int dynamicrange)
+bool Saturated(unsigned int k)
 {
   if(dynamicrange==4 && k==15) return true;
   if(dynamicrange==8 && k==255) return true;
   if(dynamicrange==16 && k==4095) return true;
-  if(dynamicrange==32 && k==(pow(2,32)-1)) return true;
+  if(dynamicrange==32 && k==((long int)(pow(2,32))-1)) return true;
   return false;
 }
 
-void FillCornerGapsBetweenChipDivide(int* map, int k, 
-				     int kvirtual1,int kvirtual2, int kvirtual3,
-				     int dynamicrange)	
+void FillCornerGapsBetweenChipDivide(uint* map, int k, 
+				     int kvirtual1,int kvirtual2, int kvirtual3)	
 {
-  bool saturated=Saturated(map[k],dynamicrange);
+  bool saturated=Saturated(map[k]);
   
   //divided by 4
-  int koriginal=map[k];
+  unsigned int koriginal=map[k];
   if(saturated==false){
-    int gpixelc=(int) map[k]/4;			    
+    unsigned int gpixelc=(unsigned int) map[k]/4;			    
     map[k]=gpixelc;
     map[kvirtual1]=gpixelc;
     map[kvirtual2]=gpixelc;
@@ -528,13 +555,13 @@ void FillCornerGapsBetweenChipDivide(int* map, int k,
   }
 }
 
-void FillGapsBetweenChipDivide(int* map, int k, int kvirtual, int dynamicrange)	
+void FillGapsBetweenChipDivide(uint* map, int k, int kvirtual)	
 {
-  bool saturated=Saturated(map[k],dynamicrange);
-  int koriginal=map[k];
+  bool saturated=Saturated(map[k]);
+  unsigned int koriginal=map[k];
 
   if(saturated==false){
-    int gpixelc=(int)map[k]/2;			    
+    unsigned int gpixelc=(unsigned int)map[k]/2;			    
     map[k]=gpixelc;
     map[kvirtual]=gpixelc;
     
@@ -550,129 +577,127 @@ void FillGapsBetweenChipDivide(int* map, int k, int kvirtual, int dynamicrange)
   }
 }
 
-void FillGapsBetweenChipZero(int* map, int k, int kvirtual, 
-			       int kvirtual2, int k2)	
+void FillGapsBetweenChipZero(uint* map, int k, int kvirtual, 
+			     int kvirtual2, int k2)	
 {
   map[kvirtual]=0;
   map[kvirtual2]=0;
 }
 
-void FillGapsBetweenChipDivide(int* map, int k, int kvirtual, 
-			       int kvirtual2, int k2,int dynamicrange)	
+void FillGapsBetweenChipDivide(uint* map, int k, int kvirtual, 
+			       int kvirtual2, int k2)	
 {
-  FillGapsBetweenChipDivide(map, k,kvirtual , dynamicrange);
-  FillGapsBetweenChipDivide(map, k2,kvirtual2, dynamicrange);
+  FillGapsBetweenChipDivide(map, k,kvirtual );
+  FillGapsBetweenChipDivide(map, k2,kvirtual2);
 }
 
-void FillGapsBetweenChipInterpolate(int* map, int k, int kvirtual, 
-				    int kvirtual2, int k2,int dynamicrange)	
+void FillGapsBetweenChipInterpolate(unsigned int* map, int k, int kvirtual, 
+				    int kvirtual2, int k2)	
 {
-  bool saturated=Saturated(map[k],dynamicrange);
-  bool saturated2=Saturated(map[k2],dynamicrange);
+  bool saturated=Saturated(map[k]);
+  bool saturated2=Saturated(map[k2]);
 
-  if(map[k]==map[k2] || saturated || saturated2) {
-    FillGapsBetweenChipDivide( map, k, kvirtual, kvirtual2, k2,dynamicrange);
+  if(map[k]==map[k2] || saturated || saturated2  || (map[k]==0) || map[k2]==0) {
+    FillGapsBetweenChipDivide( map, k, kvirtual, kvirtual2, k2);
   }
   else{ 
-    if(map[k]==0){
-      map[k]=0;
-      map[kvirtual]=0;
-      FillGapsBetweenChipDivide(map,k2,kvirtual2,dynamicrange);
-    }else {
-      if(map[k2]==0){
-	map[k2]=0;
-	map[kvirtual2]=0;
-	FillGapsBetweenChipDivide(map,k,kvirtual,dynamicrange);
-      } else{
-	int c1=map[k];
-	int c4=map[k2];
-
-	if(c4>c1){
-	  map[k2]= (int)((15.*c4-3.*c1)/24.);
-	  map[kvirtual2]=(int)(c4-map[k2]);
-	  map[k]= (int)(3.*c4-5.*map[k2]);
-	  map[kvirtual]=(int)(c1-map[k]);
-	}
-	else{
-	  map[k]= (int)((15.*c1-3.*c4)/24.);
-	  map[kvirtual]=(int)(c1-map[k]);
-	  map[k2]= (int)(3.*c1-5.*map[k]);
-	  map[kvirtual2]=(int)(c4-map[k2]);
-	}
-	
-	if(map[k2]<0 || map[kvirtual2]<0 ||
-	   map[k]<0 || map[kvirtual]<0){
-	  //divide then
-	  map[k]=c1;//reset value
-	  map[k2]=c4;//reset value
-	  FillGapsBetweenChipDivide(map,k2,kvirtual2,dynamicrange);
-	  FillGapsBetweenChipDivide(map,k,kvirtual,dynamicrange);
-	}
-      }//else
+    unsigned int c1=map[k];
+    unsigned int c4=map[k2];
+    long int ik2,ikvirtual2,ik, ikvirtual;
+    
+    if(c4>c1){
+      //here need to temporarly use long int for interpolation 
+      ik2=((15.*c4-3.*c1)/24.);
+      ikvirtual2=(c4-map[k2]);
+      ik=(3.*c4-5.*map[k2]);
+      ikvirtual=(c1-map[k]);
     }
-  }
+    else{
+      ik= ((15.*c1-3.*c4)/24.);
+      ikvirtual=(c1-map[k]);
+      ik2=(3.*c1-5.*map[k]);
+      ikvirtual2=(c4-map[k2]);
+    }
+    
+    //check for negartives in long int
+    if(ik2<0 || ikvirtual2<0 ||
+       ik<0 || ikvirtual<0){
+      //if negative then don't use (othehrwise 
+      //it is converted as a high number)
+      FillGapsBetweenChipDivide(map,k2,kvirtual2);
+      FillGapsBetweenChipDivide(map,k,kvirtual);
+    }else{
+      //now i am sure i can convert long int to unsigned int
+      map[k]=ik;
+      map[kvirtual]=ikvirtual;
+      map[k2]=ik2;
+      map[kvirtual2]=ikvirtual2;
+      
+      if( Saturated(map[ik]) ||
+	  Saturated(map[kvirtual]) || 
+	  Saturated(map[k2])  || 
+	  Saturated(map[kvirtual2])){
+	//i after interpolation negative or saturate divide then
+	map[k]=c1;//reset value
+	map[k2]=c4;//reset value
+	FillGapsBetweenChipDivide(map,k2,kvirtual2);
+	FillGapsBetweenChipDivide(map,k,kvirtual);
+      }
+    }//else
+  }//else
 }
-void FillGapsBetweenChipInterpolate2(int* map, int k_b, int k, int kvirtual, 
-				     int kvirtual2, int k2,int k2_a, 
-				     int dynamicrange)	
+void FillGapsBetweenChipInterpolate2(unsigned int* map, int k_b, int k, int kvirtual, 
+				     int kvirtual2, int k2,int k2_a)	
 {
-  bool saturated=Saturated(map[k],dynamicrange);
-  bool saturated2=Saturated(map[k2],dynamicrange);
+ 
+  //should be properly corrected  
+  bool saturated=Saturated(map[k]);
+  bool saturated2=Saturated(map[k2]);
 
-  if(map[k]==map[k2] || saturated || saturated2) {
-    FillGapsBetweenChipDivide( map, k, kvirtual, kvirtual2, k2,dynamicrange);
+  if(map[k]==map[k2] || saturated || saturated2 || (map[k]==0) || map[k2]==0) {
+    FillGapsBetweenChipDivide( map, k, kvirtual, kvirtual2, k2);
   }
   else{ 
-    if(map[k]==0){
-      map[k]=0;
-      map[kvirtual]=0;
-      FillGapsBetweenChipDivide(map,k2,kvirtual2,dynamicrange);
-    }else {
-      if(map[k2]==0){
-	map[k2]=0;
-	map[kvirtual2]=0;
-	FillGapsBetweenChipDivide(map,k,kvirtual,dynamicrange);
-      } else{
-	int c1=map[k];
-	int c4=map[k2];
+    unsigned int c1=map[k];
+    unsigned int c4=map[k2];
+    
+    //now interpolate according to Sophie's scheme
+    unsigned int a=map[k_b]+1./3*(c4/2.-map[k_b]);
+    unsigned int b=map[k_b]+2./3*(c4/2.-map[k_b]);
+    unsigned int c=c1/2.+1./3.*(map[k2_a]-c1/2.);
+    unsigned int d=c1/2.+2./3.*(map[k2_a]-c1/2.);
+    
+    //now rescale. always keep lower integer
+    map[k]=(double)a*c1/(a+b);
+    map[kvirtual]=(double)b*c1/(a+b);
+    map[k2]=(double)d*c4/(c+d);
+    map[kvirtual2]=(double)c*c4/(c+d);
 
-	//now interpolate according to Sophie's scheme
-	int a=map[k_b]+1./3*(c4/2.-map[k_b]);
-	int b=map[k_b]+2./3*(c4/2.-map[k_b]);
-	int c=c1/2.+1./3.*(map[k2_a]-c1/2.);
-	int d=c1/2.+2./3.*(map[k2_a]-c1/2.);
-
-	//now rescale. always keep lower integer
-      	map[k]=(double)a*c1/(a+b);
-	map[kvirtual]=(double)b*c1/(a+b);
-       	map[k2]=(double)d*c4/(c+d);
-	map[kvirtual2]=(double)c*c4/(c+d);
-
-	for(int i=0; i<(c1%2);i++){
-	  double random_variable = std::rand()/(double)RAND_MAX;
-	  if(random_variable>=0 && random_variable<0.5) map[k]++;
-	  if(random_variable>=0.5 && random_variable<=1) map[kvirtual]++;
-	}
-	for(int i=0; i<(c4%2);i++){
-	  double random_variable = std::rand()/(double)RAND_MAX;
-	  if(random_variable>=0 && random_variable<0.5) map[kvirtual2]++;
-	  if(random_variable>=0.5 && random_variable<=1) map[k2]++;
-	}
-
-	if(map[k2]<0 || map[kvirtual2]<0 ||
-	   map[k]<0 || map[kvirtual]<0){
-	  //divide then
-	  map[k]=c1;//reset value
-	  map[k2]=c4;//reset value
-	  FillGapsBetweenChipDivide(map,k2,kvirtual2,dynamicrange);
-	  FillGapsBetweenChipDivide(map,k,kvirtual,dynamicrange);
-	}
-      }//else
+    for(int i=0; i<(c1%2);i++){
+      double random_variable = std::rand()/(double)RAND_MAX;
+      if(random_variable>=0 && random_variable<0.5) map[k]++;
+      if(random_variable>=0.5 && random_variable<=1) map[kvirtual]++;
     }
-  }
+    for(int i=0; i<(c4%2);i++){
+      double random_variable = std::rand()/(double)RAND_MAX;
+      if(random_variable>=0 && random_variable<0.5) map[kvirtual2]++;
+      if(random_variable>=0.5 && random_variable<=1) map[k2]++;
+    }
+
+    if(map[k2]<0 || map[kvirtual2]<0 ||
+       map[k]<0 || map[kvirtual]<0){
+      //divide then
+      map[k]=c1;//reset value
+      map[k2]=c4;//reset value
+      FillGapsBetweenChipDivide(map,k2,kvirtual2);
+      FillGapsBetweenChipDivide(map,k,kvirtual);
+    }
+  }//else
+  //}
+  //}
 }
 
-void FillGapsBetweenChipMask(int* map, int k, int kvirtual, 
+void FillGapsBetweenChipMask(uint* map, int k, int kvirtual, 
 			     int kvirtual2, int k2)	
 {
   map[k]=0;
