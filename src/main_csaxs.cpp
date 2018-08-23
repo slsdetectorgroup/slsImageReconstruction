@@ -24,13 +24,13 @@
 
 #include "image.h"
 
-#define MYCBF //choose 
-#define MSHeader
+//#define MYCBF //choose 
+//#define MSHeader
 //#define MYROOT //choose 
-//#define HDF5f
+#define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
-//#define ZLIB
+#define ZLIB
 //#define SZIP
 
 #ifdef HDF5f
@@ -245,12 +245,11 @@ int main(int argc, char *argv[]) {
     // Nimagesexpected[ifile]=Nimgsperfile;
     //Nimagesexpected[Nfiles-1]=imgs-(Nfiles-1)*Nimgsperfile;
     //cout<< "TOTAL Imags: "<< imgs<<" last image expected for last file is "<<Nimagesexpected[Nfiles-1]<<endl;
-    
+     
     int Nimagesexpected=Nimgsperfile+numFrames; //assumes 2000 more tahn number   
     if(imgs<Nimagesexpected)  Nimagesexpected=imgs+1;
     cout<< "last image expected for this file is "<<Nimagesexpected-1<<endl;
-    
-  
+
     //calculate the last nframe
     //int lastnframe=Nimagesexpected-1;
     //while(lastnframe%Nimgscashed>0){
@@ -263,7 +262,8 @@ int main(int argc, char *argv[]) {
     /* HDF-5 handles */
     hid_t fid, fapl, gid, atts, atttype, attid;
     hid_t datatype, dataspace, dataspaceimg, vspace,dataprop, dataset;
-    hsize_t dim[3]={imgs/*Nimagesexpected-1*/,((longedge_x==1) ? npix_y_g : npix_x_g) ,
+    hsize_t dim[3]={Nimagesexpected-1-fileFrameIndex,
+		    ((longedge_x==1) ? npix_y_g : npix_x_g) ,
 		    ((longedge_x==1) ? npix_x_g : npix_y_g)};
     hsize_t dim2[2]={((longedge_x==1) ? npix_y_g : npix_x_g) ,
 		     ((longedge_x==1) ? npix_x_g : npix_y_g)};
@@ -295,14 +295,14 @@ int main(int argc, char *argv[]) {
      * store the NX_class attribute. Notice that you
      * have to take care to close those hids after use
      */
-    //  atts = H5Screate(H5S_SCALAR);
-    //atttype = H5Tcopy(H5T_C_S1);
-    //H5Tset_size(atttype, 7);//H5T_VARIABLE);
-    //attid = H5Acreate(gid,"NX_class", atttype,atts, H5P_DEFAULT,H5P_DEFAULT);
-    //H5Awrite(attid, atttype, (char *)"NXentry");
-    //H5Sclose(atts);
-    //H5Tclose(atttype);
-    //H5Aclose(attid);
+     atts = H5Screate(H5S_SCALAR);
+     atttype = H5Tcopy(H5T_C_S1);
+     H5Tset_size(atttype, 8);//H5T_VARIABLE);
+     attid = H5Acreate(gid,"NX_class", atttype,atts, H5P_DEFAULT,H5P_DEFAULT);
+     H5Awrite(attid, atttype, (char *)"NXentry");
+     H5Sclose(atts);
+     H5Tclose(atttype);
+     H5Aclose(attid);
     /*
      * same thing for data:Nxdata in scan:NXentry.
      * A subroutine would be nice to have here.......
@@ -332,7 +332,7 @@ int main(int argc, char *argv[]) {
     gid = H5Gcreate2(fid,"entry/data",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
     atts = H5Screate(H5S_SCALAR);
     atttype = H5Tcopy(H5T_C_S1);
-    H5Tset_size(atttype, 7);//H5T_VARIABLE);
+    H5Tset_size(atttype, 6);//H5T_VARIABLE);
     attid = H5Acreate2(gid,"NX_class", atttype, atts, H5P_DEFAULT,H5P_DEFAULT);
     H5Awrite(attid, atttype, (char *)"NXdata");
     H5Sclose(atts);
@@ -398,6 +398,23 @@ int main(int argc, char *argv[]) {
     attid = H5Acreate2(dataset,"Count_cutoff", H5T_STD_I64LE,atts,
 		       H5P_DEFAULT,H5P_DEFAULT);
     H5Awrite(attid, H5T_STD_I64LE,&value);
+    H5Sclose(atts);
+    H5Aclose(attid);
+
+
+    int vnr=Nimagesexpected-1;
+    atts = H5Screate(H5S_SCALAR);
+    attid = H5Acreate2(dataset,"image_nr_high", H5T_STD_I32LE,atts,
+		       H5P_DEFAULT,H5P_DEFAULT);
+    H5Awrite(attid, H5T_STD_I32LE,&vnr);
+    H5Sclose(atts);
+    H5Aclose(attid);
+
+    vnr= fileFrameIndex+1;
+    atts = H5Screate(H5S_SCALAR);
+    attid = H5Acreate2(dataset,"image_nr_low", H5T_STD_I32LE,atts,
+		       H5P_DEFAULT,H5P_DEFAULT);
+    H5Awrite(attid, H5T_STD_I32LE,&vnr);
     H5Sclose(atts);
     H5Aclose(attid);
   
@@ -1010,7 +1027,7 @@ int main(int argc, char *argv[]) {
 	 */
 
 	//      start[0] = numFrames+im-1;
-	start[0] = /*nf[ifiles]*/numFrames-1;
+	start[0] = /*nf[ifiles]*/numFrames-1-fileFrameIndex;
 	dataspaceimg = H5Screate_simple(2, dim2, NULL);
 	//  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, start, stride, count, block);
 	//original
