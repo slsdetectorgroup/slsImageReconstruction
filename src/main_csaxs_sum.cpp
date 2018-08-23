@@ -130,9 +130,9 @@ int main(int argc, char *argv[]) {
   }
 
   //map including gap pixels
-  int* map=new int[npix_x_g*npix_y_g];
-  int* mapr=new int[npix_x_g*npix_y_g];
-  int* map2=new int[npix_x_g*npix_y_g]; //sum
+  uint* map=new uint[npix_x_g*npix_y_g];
+  uint* mapr=new uint[npix_x_g*npix_y_g];
+  uint* map2=new uint[npix_x_g*npix_y_g]; //sum
 
   cprintf(BLUE,
 	  "Number of Pixels (incl gap pixels) in x dir : %d\n"
@@ -175,10 +175,10 @@ int main(int argc, char *argv[]) {
   double expTime, period;
   
   sprintf(fname,"%s_master_%d.raw",file.c_str(),fileIndex);
-  if(getFileParameters(fname, dynamicrange, tenGiga, imageHeader, imageSize, xpix, 
+  if(getFileParameters(fname,tenGiga, imageHeader, imageSize, xpix, 
 		       ypix, timestamp, expTime, period,imgs ) != 1) return -1;
  
-  vector <int*> buffer;
+  vec <unsigned int*> buffer;
   buffer.reserve(n_v *n_h*2*2);
   FILE *out;
   //nr high again
@@ -385,7 +385,7 @@ int main(int argc, char *argv[]) {
 #endif  //HDF5f
     
   //now reause the same all the times
-  int* intbuffer = new int[imageSize/sizeof(int)];
+  unsigned int* intbuffer = new unsigned int[imageSize/sizeof(int)];
   int* bufferheader=new int[imageHeader/sizeof(int)];
   
   while(numFrames< Nimagesexpected){
@@ -408,15 +408,14 @@ int main(int argc, char *argv[]) {
     //loop on each receiver to get frame buffer
     
     for(int inr=0; inr<nr; ++inr){
-      int* dataout = new int [ xpix* ypix]; //will delete it in buffer
+      unsigned int* dataout = new unsigned int [ xpix* ypix]; //will delete it in buffer
       //read data
       if(infile[inr].read((char*)bufferheader,imageHeader)){
 	fnum = (*((uint64_t*)(char*)bufferheader));
       }
       if(!CheckFrames(fnum,numFrames)) continue; 	 
       infile[inr].read((char*)intbuffer,imageSize);
-      decodeData(intbuffer, dataout, imageSize, xpix, ypix, 
-		 dynamicrange);  
+      decodeData(intbuffer, dataout, imageSize, xpix, ypix);  
       
       buffer.push_back(dataout);
     }//loop on receivers
@@ -426,17 +425,23 @@ int main(int argc, char *argv[]) {
     
     //get a 2d map of the image
     //initialize
-    for(int ik=0; ik<npix_y_g*npix_x_g;++ik){
-      if(dynamicrange==4 ) map[ik]=15; //change saturation
-      if(dynamicrange==8 ) map[ik]=255;
-      if(dynamicrange==16 ) map[ik]=4095;
-      if(dynamicrange==32 ) map[ik]=(pow(2,32)-1);
-    }
-    if(runningFrameIndex==0){ //initialize only once
+    if(dynamicrange==4 ) 
+      for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
+	map[ik]=15; //change saturation
+    if(dynamicrange==8 ) 
+      for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
+	map[ik]=255;
+    if(dynamicrange==16 )
+      for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
+	map[ik]=4095;
+    if(dynamicrange==32 ) 
+      for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
+	map[ik]=(pow(2,32)-1);
+    
+    if(runningFrameIndex==0) //initialize only once
       for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
 	map2[ik]=0;
-    }
-
+    
     int Nimgs=10; //sum 10 images 
     
     int startchipx=0;
@@ -563,7 +568,7 @@ int main(int argc, char *argv[]) {
 		int yvirtual3=y_t-1;
 		int kvirtual3=GetK(xvirtual3,yvirtual3,npix_x_g);
 		if(fillgaps==kZero) FillCornerGapsBetweenChipZero(map, k, kvirtual1,kvirtual2, kvirtual3 );
-		if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k, kvirtual1,kvirtual2, kvirtual3,dynamicrange);	
+		if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k, kvirtual1,kvirtual2, kvirtual3);	
 		if(fillgaps==kMask) FillGapsBetweenChipMask(map, k, kvirtual1,kvirtual2, kvirtual3 );	
 
 		//second corner
@@ -583,7 +588,7 @@ int main(int argc, char *argv[]) {
 		int y2virtual3= y2_t-1;
 		int k2virtual3=GetK(x2virtual3,y2virtual3,npix_x_g);
 		if(fillgaps==kZero) FillCornerGapsBetweenChipZero(map, k2, k2virtual1,k2virtual2, k2virtual3 );	
-		if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k2, k2virtual1,k2virtual2, k2virtual3,dynamicrange );	
+		if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k2, k2virtual1,k2virtual2, k2virtual3);	
 		if(fillgaps==kMask) FillGapsBetweenChipMask(map,k2, k2virtual1,k2virtual2, k2virtual3 );	
 
 		//third corner
@@ -603,7 +608,7 @@ int main(int argc, char *argv[]) {
 		int y3virtual3=y3_t+1;
 		int k3virtual3=GetK(x3virtual3,y3virtual3,npix_x_g);
 		if(fillgaps==kZero) FillCornerGapsBetweenChipZero(map, k3, k3virtual1,k3virtual2, k3virtual3 );	
-		if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k3, k3virtual1,k3virtual2, k3virtual3,dynamicrange);	
+		if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k3, k3virtual1,k3virtual2, k3virtual3);	
 		if(fillgaps==kMask) FillGapsBetweenChipMask(map,k3, k3virtual1,k3virtual2, k3virtual3 );
 
 		//fourth
@@ -623,16 +628,16 @@ int main(int argc, char *argv[]) {
 		int y4virtual3=y4_t+1;
 		int k4virtual3=GetK(x4virtual3,y4virtual3, npix_x_g);
 		if(fillgaps==kZero) FillCornerGapsBetweenChipZero(map, k4, k4virtual1,k4virtual2, k4virtual3 );	
-		if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k4, k4virtual1,k4virtual2, k4virtual3,dynamicrange );	
+		if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k4, k4virtual1,k4virtual2, k4virtual3);	
 		if(fillgaps==kMask) FillGapsBetweenChipMask(map,k4, k4virtual1,k4virtual2, k4virtual3 );
 
 		//here do interpolation for corners
 		if(fillgaps==kInterpolate || fillgaps==kInterpolate2 ){
 
-		  bool saturated=Saturated(map[k],dynamicrange);
-		  bool saturated2=Saturated(map[k2],dynamicrange);
-		  bool saturated3=Saturated(map[k3],dynamicrange);
-		  bool saturated4=Saturated(map[k4],dynamicrange);
+		  bool saturated=Saturated(map[k]);
+		  bool saturated2=Saturated(map[k2]);
+		  bool saturated3=Saturated(map[k3]);
+		  bool saturated4=Saturated(map[k4]);
 
 		  if(saturated==false && saturated2==false && saturated3==false && saturated4==false){
 		    int koriginal=map[k];
@@ -644,28 +649,28 @@ int main(int argc, char *argv[]) {
 		    map[k2]=Divide(map[k2],2);		    
 		    map[k3]=Divide(map[k3],2);		    
 		    map[k4]=Divide(map[k4],2);		    
-		    FillGapsBetweenChipInterpolate(map,k,kvirtual2,k3virtual2,k3,dynamicrange);
-		    FillGapsBetweenChipInterpolate(map,k2,k2virtual2,k4virtual2,k4,dynamicrange);
+		    FillGapsBetweenChipInterpolate(map,k,kvirtual2,k3virtual2,k3);
+		    FillGapsBetweenChipInterpolate(map,k2,k2virtual2,k4virtual2,k4);
 		    map[k]= Divide(koriginal,2);
 		    map[k2]= Divide(k2original,2);
 		    map[k3]= Divide(k3original,2);
 		    map[k4]= Divide(k4original,2);
 		    //horizontal
-		    FillGapsBetweenChipInterpolate(map,k,kvirtual1,k2virtual1,k2,dynamicrange);
-		    FillGapsBetweenChipInterpolate(map,k3,k3virtual1,k4virtual1,k4,dynamicrange);
+		    FillGapsBetweenChipInterpolate(map,k,kvirtual1,k2virtual1,k2);
+		    FillGapsBetweenChipInterpolate(map,k3,k3virtual1,k4virtual1,k4);
 		    map[k]= Divide(koriginal,2);
 		    map[k2]= Divide(k2original,2);
 		    map[k3]= Divide(k3original,2);
 		    map[k4]= Divide(k4original,2);
 		    //diagonal
-		    FillGapsBetweenChipInterpolate(map,k,kvirtual3,k4virtual3,k4,dynamicrange);
-		    FillGapsBetweenChipInterpolate(map,k3,k3virtual3,k2virtual3,k2,dynamicrange);
+		    FillGapsBetweenChipInterpolate(map,k,kvirtual3,k4virtual3,k4);
+		    FillGapsBetweenChipInterpolate(map,k3,k3virtual3,k2virtual3,k2);
 		  }//saturated
 		  else{
-		    FillCornerGapsBetweenChipDivide(map, k, kvirtual1,kvirtual2, kvirtual3,dynamicrange );
-		    FillCornerGapsBetweenChipDivide(map, k2, k2virtual1,k2virtual2, k2virtual3,dynamicrange );
-		    FillCornerGapsBetweenChipDivide(map, k3, k3virtual1,k3virtual2, k3virtual3,dynamicrange );
-		    FillCornerGapsBetweenChipDivide(map, k4, k4virtual1,k4virtual2, k4virtual3,dynamicrange );
+		    FillCornerGapsBetweenChipDivide(map, k, kvirtual1,kvirtual2, kvirtual3);
+		    FillCornerGapsBetweenChipDivide(map, k2, k2virtual1,k2virtual2, k2virtual3);
+		    FillCornerGapsBetweenChipDivide(map, k3, k3virtual1,k3virtual2, k3virtual3);
+		    FillCornerGapsBetweenChipDivide(map, k4, k4virtual1,k4virtual2, k4virtual3);
 		  }		  
 		      
 		}//kinterpolate
@@ -692,11 +697,11 @@ int main(int argc, char *argv[]) {
 		  int k2=GetK(x_t2,y_t2,npix_x_g);
 		    
 		  if(fillgaps==kZero) FillGapsBetweenChipZero(map,k,kvirtual,kvirtual2,k2);
-		  if(fillgaps==kDivide) FillGapsBetweenChipDivide(map,k,kvirtual,kvirtual2,k2,dynamicrange);			    
-		  if(fillgaps==kInterpolate) FillGapsBetweenChipInterpolate(map,k,kvirtual,kvirtual2,k2,dynamicrange);	
+		  if(fillgaps==kDivide) FillGapsBetweenChipDivide(map,k,kvirtual,kvirtual2,k2);			    
+		  if(fillgaps==kInterpolate) FillGapsBetweenChipInterpolate(map,k,kvirtual,kvirtual2,k2);	
 		  if(fillgaps==kMask) FillGapsBetweenChipMask(map,k,kvirtual,kvirtual2,k2);	
 		  if(fillgaps==kInterpolate2) FillGapsBetweenChipInterpolate2(map,GetK(x_t-1,y_t, npix_x_g),k,kvirtual,
-									      kvirtual2,k2,GetK(x_t2+1,y_t2,npix_x_g),dynamicrange);	
+									      kvirtual2,k2,GetK(x_t2+1,y_t2,npix_x_g));	
 		}//edge
 	      }//other corner
 	    }//loop on y
@@ -728,11 +733,11 @@ int main(int argc, char *argv[]) {
 	    int k2=GetK(x_t2,y_t2,npix_x_g);
 	      
 	    if(fillgaps==kZero) FillGapsBetweenChipZero(map,k,kvirtual,kvirtual2,k2);
-	    if(fillgaps==kDivide) FillGapsBetweenChipDivide(map,k,kvirtual,kvirtual2,k2,dynamicrange);			    
-	    if(fillgaps==kInterpolate) FillGapsBetweenChipInterpolate(map,k,kvirtual,kvirtual2,k2, dynamicrange);	
+	    if(fillgaps==kDivide) FillGapsBetweenChipDivide(map,k,kvirtual,kvirtual2,k2);			    
+	    if(fillgaps==kInterpolate) FillGapsBetweenChipInterpolate(map,k,kvirtual,kvirtual2,k2);	
 	    if(fillgaps==kMask) FillGapsBetweenChipMask(map,k,kvirtual,kvirtual2,k2);	
 	    if(fillgaps==kInterpolate2) FillGapsBetweenChipInterpolate2(map,GetK(x_t,y_t-1,npix_x_g),k,kvirtual,
-									kvirtual2,k2,GetK(x_t2,y_t2+1,npix_x_g), dynamicrange);	
+									kvirtual2,k2,GetK(x_t2,y_t2+1,npix_x_g));	
 	   
 	  }//xchannels
 	} //chips	

@@ -24,13 +24,13 @@
 
 #include "image.h"
 
-//#define MYCBF //choose 
-//#define MSHeader
+#define MYCBF //choose 
+#define MSHeader
 //#define MYROOT //choose 
-#define HDF5f
+//#define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
-#define ZLIB
+//#define ZLIB
 //#define SZIP
 
 #ifdef HDF5f
@@ -111,9 +111,6 @@ void FillROOTCorner(TH2F* hmap,  int longedge_x, int x_t, int y_t,
   FillROOT(hmap,longedge_x, xvirtual3, yvirtual3, kvirtual3);
 }
 #endif
-
-
-
 
 int main(int argc, char *argv[]) {
 
@@ -215,22 +212,23 @@ int main(int argc, char *argv[]) {
   //now loop over all frames
   //for each frame
   int Nimgsperfile=5000; //to be fixed in next realease when configurable
-  const int Nfiles= ( imgs%Nimgsperfile) ? (int)(imgs/Nimgsperfile)+1 :
-    (int)(imgs/Nimgsperfile) ;
-  ifstream infile[numModules*Nfiles];
+  // const int Nfiles= ( imgs%Nimgsperfile) ? (int)(imgs/Nimgsperfile)+1 :
+  //(int)(imgs/Nimgsperfile) ;
+  ifstream infile[numModules];
   
+
   // open all files at once
   //loop on each receiver to get frame buffer
-  for(int ifiles=0; ifiles<Nfiles; ifiles++){
-    sprintf(frames,"_f%012d",fileFrameIndex+Nimgsperfile*ifiles);
-    for(int inr=0; inr<nr; ++inr){
-      sprintf(fname, "%s_d%d%s_%d.raw",file.c_str(),inr,frames,fileIndex);
-      
-      //open file
-      if(!infile[inr+(ifiles*nr)].is_open())
-	infile[inr+(ifiles*nr)].open(fname,ios::in | ios::binary);
-    }//loop on receivers
-  } //loop on how many files
+  //  for(int ifiles=0; ifiles<Nfiles; ifiles++){
+  //sprintf(frames,"_f%012d",fileFrameIndex+Nimgsperfile*ifiles);
+  sprintf(frames,"_f%012d",fileFrameIndex);
+  for(int inr=0; inr<nr; ++inr){
+    sprintf(fname, "%s_d%d%s_%d.raw",file.c_str(),inr,frames,fileIndex);
+    //open file
+    if(!infile[inr/*+(ifiles*nr)*/].is_open())
+      infile[inr/*+(ifiles*nr)*/].open(fname,ios::in | ios::binary);
+  }//loop on receivers
+  //} //loop on how many files
 
 #ifdef MYROOT
     //now open a single root file
@@ -240,18 +238,18 @@ int main(int argc, char *argv[]) {
 #endif  //If ROOT
 
   
-    cout<<"total files  "<<Nfiles<<endl;
+    //    cout<<"total files  "<<Nfiles<<endl;
 
-    int Nimagesexpected[Nfiles];
-    for(int ifile=0; ifile<Nfiles-1; ifile++)
-      Nimagesexpected[ifile]=Nimgsperfile;
-    Nimagesexpected[Nfiles-1]=imgs-(Nfiles-1)*Nimgsperfile;
-  
-    //  int Nimagesexpected=Nimgsperfile+numFrames; //assumes 2000 more tahn number   
-    // if(imgs<Nimagesexpected)  Nimagesexpected=imgs+1;
-    //cout<< "last image expected for this file is "<<Nimagesexpected-1<<endl;
-
-    cout<< "TOTAL Imags: "<< imgs<<" last image expected for last file is "<<Nimagesexpected[Nfiles-1]<<endl;
+    // int Nimagesexpected[Nfiles];
+    //for(int ifile=0; ifile<Nfiles-1; ifile++)
+    // Nimagesexpected[ifile]=Nimgsperfile;
+    //Nimagesexpected[Nfiles-1]=imgs-(Nfiles-1)*Nimgsperfile;
+    //cout<< "TOTAL Imags: "<< imgs<<" last image expected for last file is "<<Nimagesexpected[Nfiles-1]<<endl;
+    
+    int Nimagesexpected=Nimgsperfile+numFrames; //assumes 2000 more tahn number   
+    if(imgs<Nimagesexpected)  Nimagesexpected=imgs+1;
+    cout<< "last image expected for this file is "<<Nimagesexpected-1<<endl;
+    
   
     //calculate the last nframe
     //int lastnframe=Nimagesexpected-1;
@@ -457,13 +455,14 @@ int main(int argc, char *argv[]) {
     unsigned int* intbuffer = new unsigned int[imageSize/sizeof(int)];
     int* bufferheader=new int[imageHeader/sizeof(int)];
  
-    int nf[Nfiles];
-    for(int ifiles=0; ifiles<Nfiles;ifiles++)
-      nf[ifiles]=Nimgsperfile*ifiles+1;
+    //int nf[Nfiles];
+    //for(int ifiles=0; ifiles<Nfiles;ifiles++)
+    //nf[ifiles]=Nimgsperfile*ifiles+1;
 
-    for(int ifiles=0; ifiles<Nfiles; ifiles++){
-      while(nf[ifiles]<= Nimagesexpected[ifiles]+ifiles*Nimgsperfile){
-	// while(numFrames< Nimagesexpected){
+    //   for(int ifiles=0; ifiles<Nfiles; ifiles++){
+    //while(nf[ifiles]<= Nimagesexpected[ifiles]+ifiles*Nimgsperfile){
+    
+    while(numFrames< Nimagesexpected){
 
 	//here nr is not volatile anymore
 	//loop on each receiver to get frame buffer
@@ -477,11 +476,11 @@ int main(int argc, char *argv[]) {
 	for(int inr=0; inr<nr; ++inr){
 	  unsigned int* dataout = new unsigned int [ xpix* ypix]; //will delete it in buffer
 	  //read data
-	  if(infile[inr+(ifiles*nr)].read((char*)bufferheader,imageHeader)){
+	  if(infile[inr/*+(ifiles*nr)*/].read((char*)bufferheader,imageHeader)){
 	    fnum = (*((uint64_t*)(char*)bufferheader));
 	  }
 	  //if(!CheckFrames(fnum,numFrames)) continue; 	 
-	  infile[inr+(ifiles*nr)].read((char*)intbuffer,imageSize);
+	  infile[inr/*+(ifiles*nr)*/].read((char*)intbuffer,imageSize);
 
 	  decodeData(intbuffer, dataout, imageSize, xpix, ypix);  
 
@@ -525,13 +524,17 @@ int main(int argc, char *argv[]) {
 
 	//get a 2d map of the image
 	//initialize
-	for(int ik=0; ik<npix_y_g*npix_x_g;++ik){
-	  if(dynamicrange==4 ) map[ik]=15; //change saturation
-	  if(dynamicrange==8 ) map[ik]=255;
-	  if(dynamicrange==16 ) map[ik]=4095;
-	  if(dynamicrange==32 ) map[ik]=((long int)(pow(2,32))-1);
-	}
-      
+	if(dynamicrange==4 ) 
+	  for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
+	    map[ik]=15; //change saturation
+	if(dynamicrange==8 ) 
+	  for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
+	    map[ik]=255;
+	if(dynamicrange==16 ) 
+	  for(int ik=0; ik<npix_y_g*npix_x_g;++ik) map[ik]=4095;
+	if(dynamicrange==32 ) 
+	  for(int ik=0; ik<npix_y_g*npix_x_g;++ik) map[ik]=((long int)(pow(2,32))-1);
+            
 	int startchipx=0;
 	int startchipy=0;
 	int endchipx=4;
@@ -846,7 +849,7 @@ int main(int argc, char *argv[]) {
 	//---> here I should also fill
 	/* Create and initializes new internal CBF Object*/
 	cbf_failnez (cbf_make_handle (&cbf));
-	sprintf(fname, "%s_%05d_%05d.cbf",file.c_str(),fileIndex, numFrames+im);
+	sprintf(fname, "%s_%05d_%05d.cbf",file.c_str(),fileIndex, numFrames);
 	out = fopen (fname, "w");
 		
 	//fake headers
@@ -1007,7 +1010,7 @@ int main(int argc, char *argv[]) {
 	 */
 
 	//      start[0] = numFrames+im-1;
-	start[0] = nf[ifiles]/*numFrames*/-1;
+	start[0] = /*nf[ifiles]*/numFrames-1;
 	dataspaceimg = H5Screate_simple(2, dim2, NULL);
 	//  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, start, stride, count, block);
 	//original
@@ -1116,17 +1119,17 @@ int main(int argc, char *argv[]) {
 	//   numFrames+=readim;
     
 	numFrames++;
-	nf[ifiles]++;
-
+	//	nf[ifiles]++;
+    
     
       buffer.clear();    
       for(int inr=0; inr<nr; ++inr) 
 	delete buffer[inr]; //remove memory 
       }//for every image
     
-      for(int inr=0; inr<nr; ++inr)
-	infile[inr+(ifiles*nr)].close();
-    } //loop on files
+    for(int inr=0; inr<nr; ++inr)
+      infile[inr/*+(ifiles*nr)*/].close();
+    //}loop on files
   
 #ifdef HDF5f
     /*
