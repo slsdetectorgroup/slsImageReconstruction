@@ -38,14 +38,34 @@ int dynamicrange;
 //gap pixel threatement 
 enum { kZero, kDivide, kInterpolate, kMask, kInterpolate2 };
 
-template <typename T>
-class custom_container 
-{
-  typedef T value_type;
-  typedef value_type* pointer;
-  typedef value_type& reference;
-  typedef std::size_t size_type;
-};
+//class container
+//{
+
+//public:
+  
+//container();
+//container(int range) 
+//{
+      //    if(range==32) uint32_t m_val;
+      //if(range==8) uint8_t m_val;
+      //if(range==16) uint16_t m_val;
+     
+      //}
+      // ~container() { }
+
+//uint32_t value() {return m_val32;}
+// uint16_t value() {return m_val16;}
+//uint8_t  value() {return m_val8;}
+
+// private:
+ //template <typename T>
+  
+ // uint32_t m_val32;
+ //uint16_t m_val16;
+ //uint8_t  m_val8;
+ //T m_val;
+
+      //};
 
 
 template <typename T>
