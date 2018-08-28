@@ -24,13 +24,13 @@
 
 #include "image.h"
 
-#define MYCBF //choose 
-#define MSHeader
+//#define MYCBF //choose 
+//#define MSHeader
 //#define MYROOT //choose 
-//#define HDF5f
+#define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
-//#define ZLIB
+#define ZLIB
 //#define SZIP
 
 #ifdef HDF5f
@@ -1257,10 +1257,10 @@ int main(int argc, char *argv[]) {
       
 	string filedatasetnamereal=filedatasetname;
 	char fileIndex[100];
-	sprintf(fileIndex , "%d",ifile);
+	sprintf(fileIndex , "_%d",ifile);
 	filedatasetnamereal=filedatasetnamereal+fileIndex;
 
-	H5Pset_virtual (dataprop , vdataspace, fname, filedatasetname.c_str(), src_space); //note src_space has not all the attributes 
+	//H5Pset_virtual (dataprop , vdataspace, fname, filedatasetname.c_str(), src_space); //note src_space has not all the attributes 
 	H5Lcreate_external(fname,filedatasetname.c_str(), fid, filedatasetnamereal.c_str(), H5P_DEFAULT, H5P_DEFAULT);
       }
 
