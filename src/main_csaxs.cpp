@@ -24,13 +24,13 @@
 
 #include "image.h"
 
-#define MYCBF //choose 
-#define MSHeader
+//#define MYCBF //choose 
+//#define MSHeader
 //#define MYROOT //choose 
-//#define HDF5f
+#define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
-//#define ZLIB
+#define ZLIB
 //#define SZIP
 
 #ifdef HDF5f
@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
   int numFrames = fileFrameIndex+1 ;
   //now loop over all frames
   //for each frame
-  int Nimgsperfile=2000; //to be fixed in next realease when configurable
+  int Nimgsperfile=5000; //to be fixed in next realease when configurable
   // const int Nfiles= ( imgs%Nimgsperfile) ? (int)(imgs/Nimgsperfile)+1 :
   //(int)(imgs/Nimgsperfile) ;
   ifstream infile[numModules];
@@ -261,7 +261,7 @@ int main(int argc, char *argv[]) {
     unsigned  filter_mask = 0;
     int rank=3;//3dim imgs
     /* HDF-5 handles */
-    hid_t fid, fapl, gid, atts, atttype, attid;
+    hid_t fid, fvid,fapl, gid, atts, atttype, attid;
     hid_t datatype, dataspace, dataspaceimg, vspace,dataprop, dataset;
     hsize_t dim[3]={Nimagesexpected-1-fileFrameIndex,
 		    ((longedge_x==1) ? npix_y_g : npix_x_g) ,
@@ -404,7 +404,6 @@ int main(int argc, char *argv[]) {
     H5Awrite(attid, H5T_STD_I64LE,&value);
     H5Sclose(atts);
     H5Aclose(attid);
-
 
     int vnr=Nimagesexpected-1;
     atts = H5Screate(H5S_SCALAR);
@@ -1176,7 +1175,7 @@ int main(int argc, char *argv[]) {
       fapl = H5Pcreate(H5P_FILE_ACCESS);
       H5Pset_fclose_degree(fapl,H5F_CLOSE_STRONG);
       sprintf(fnamemaster, "%s_master_%05d.h5",file.c_str(),fileIndex);
-      fid = H5Fcreate(fnamemaster, H5F_ACC_TRUNC, H5P_DEFAULT,fapl);  
+      fvid = H5Fcreate(fnamemaster, H5F_ACC_TRUNC, H5P_DEFAULT,fapl);  
       H5Pclose(fapl);  
 
       //     hid_t  dxpl = H5Pcreate(H5P_DATASET_XFER);
@@ -1184,7 +1183,7 @@ int main(int argc, char *argv[]) {
     /*
      * create scan:NXentry
      */
-      gid = H5Gcreate2(fid,"entry",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+      gid = H5Gcreate2(fvid,"entry",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
     /*
      * store the NX_class attribute. Notice that you
      * have to take care to close those hids after use
@@ -1203,7 +1202,7 @@ int main(int argc, char *argv[]) {
      */
       
       dcpl = H5Pcreate(H5P_DATASET_CREATE);
-      gid = H5Gcreate2(fid,"entry/instrument",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+      gid = H5Gcreate2(fvid,"entry/instrument",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       atts = H5Screate(H5S_SCALAR);
       atttype = H5Tcopy(H5T_C_S1);
       H5Tset_size(atttype,12);
@@ -1214,7 +1213,7 @@ int main(int argc, char *argv[]) {
       
       string instr="entry/instrument/";
       instr=instr+datasetname;
-      gid = H5Gcreate2(fid,instr.c_str(),H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+      gid = H5Gcreate2(fvid,instr.c_str(),H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       atts = H5Screate(H5S_SCALAR);
       atttype = H5Tcopy(H5T_C_S1);
       H5Tset_size(atttype,10);
@@ -1223,7 +1222,7 @@ int main(int argc, char *argv[]) {
       H5Sclose(atts);
       H5Aclose(attid);
       
-      gid = H5Gcreate2(fid,"entry/data",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+      gid = H5Gcreate2(fvid,"entry/data",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       atts = H5Screate(H5S_SCALAR);
       atttype = H5Tcopy(H5T_C_S1);
       H5Tset_size(atttype, 6);//H5T_VARIABLE);
@@ -1240,42 +1239,60 @@ int main(int argc, char *argv[]) {
       dataprop = H5Pcreate(H5P_DATASET_CREATE);
       //fillvalue here as well no. I will make sure I write everything
       
-      int files= ((imgs%Nimgsperfile) ==0 )? imgs/Nimgsperfile  : imgs/Nimgsperfile+1;
-      
-
+      int files= ((imgs%Nimgsperfile) ==0 )? imgs/Nimgsperfile  : imgs/Nimgsperfile+1;      
       string filedatasetname="/entry/data/"+datasetname; 
       for(int ifile=0; ifile<files;++ifile){
-	start[0]=Nimgsperfile*ifile;	
-	count[0]=(Nimagesexpected<Nimgsperfile) ? Nimagesexpected: Nimgsperfile; 
-	count[0]=1;
-	count[1]=1;
-	count[2]=1;
+	start[0]=Nimgsperfile*ifile;
+	dim[0]=Nimgsperfile;
+	if(ifile==(files-1))
+	  dim[0]=(imgs-Nimgsperfile*(ifile));
+	
+	count[0]=dim[0];
+	count[1]=dim[1];
+	count[2]=dim[2];
 
-	//	H5Sselect_hyperslab(vdataspace, H5S_SELECT_SET, start, NULL, count,dim);
-	sprintf(fname, "%s_%05d_%012d.h5",file.c_str(),fileIndex,Nimgsperfile*ifile);
+ 	H5Sselect_hyperslab(vdataspace, H5S_SELECT_SET, start, NULL, count,NULL);
+       	sprintf(fname, "%s_%05d_%012d.h5",file.c_str(),fileIndex,Nimgsperfile*ifile);
+	
 	hid_t src_space = H5Screate_simple(rank,dim, maxdim); //here
       
-	string filedatasetnamereal=filedatasetname;
-	char fileIndex[100];
+	char fileIndex[200];
 	sprintf(fileIndex , "_%d",ifile);
-	filedatasetnamereal=filedatasetnamereal+fileIndex;
+	string filedatasetnamereal=filedatasetname+fileIndex;
 
-	//H5Pset_virtual (dataprop , vdataspace, fname, filedatasetname.c_str(), src_space); //note src_space has not all the attributes 
-	H5Lcreate_external(fname,filedatasetname.c_str(), fid, filedatasetnamereal.c_str(), H5P_DEFAULT, H5P_DEFAULT);
+	H5Pset_virtual (dataprop , vdataspace, fname, filedatasetname.c_str(), src_space); //note src_space has not all the attributes 
+	
+	//questo e' per farlo in un altro modo con tanti dataset linkati (ALBULA LO LEGGE)
+	//H5Lcreate_external(fname,filedatasetname.c_str(), fvid, filedatasetnamereal.c_str(), H5P_DEFAULT, H5P_DEFAULT);
       }
 
       /* Create a virtual dataset. */
-      //dataset = H5Dcreate2(fid ,filedatasetname.c_str(), datatype, vdataspace,
-      //		   H5P_DEFAULT, dataprop, H5P_DEFAULT);
-      
+      dataset = H5Dcreate2(fvid , filedatasetname.c_str(), datatype, vdataspace,
+      		   H5P_DEFAULT, dataprop, H5P_DEFAULT);
 
-      // H5Dclose(dataset); 
-      //H5Sclose(vdataspace);
+      int vnr=imgs;
+      atts = H5Screate(H5S_SCALAR);
+      attid = H5Acreate2(dataset,"image_nr_high", H5T_STD_I32LE,atts,
+			 H5P_DEFAULT,H5P_DEFAULT);
+      H5Awrite(attid, H5T_STD_I32LE,&vnr);
+      H5Sclose(atts);
+      H5Aclose(attid);
+
+      vnr= 1;
+      atts = H5Screate(H5S_SCALAR);
+      attid = H5Acreate2(dataset,"image_nr_low", H5T_STD_I32LE,atts,
+			 H5P_DEFAULT,H5P_DEFAULT);
+      H5Awrite(attid, H5T_STD_I32LE,&vnr);
+      H5Sclose(atts);
+      H5Aclose(attid);
+
+
+      H5Dclose(dataset); 
+      H5Sclose(vdataspace);
       //H5Sclose (src_space);
-      //H5Pclose(dataprop); 
+      H5Pclose(dataprop); 
       
-      //H5Pclose(dxpl);
-      //H5Fclose(fid);
+      H5Fclose(fvid);
     } //fileframeindex0    
 #endif
     
