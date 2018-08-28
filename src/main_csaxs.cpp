@@ -24,13 +24,13 @@
 
 #include "image.h"
 
-//#define MYCBF //choose 
-//#define MSHeader
+#define MYCBF //choose 
+#define MSHeader
 //#define MYROOT //choose 
-#define HDF5f
+//#define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
-#define ZLIB
+//#define ZLIB
 //#define SZIP
 
 #ifdef HDF5f
@@ -1251,7 +1251,7 @@ int main(int argc, char *argv[]) {
 	count[1]=1;
 	count[2]=1;
 
-	H5Sselect_hyperslab(vdataspace, H5S_SELECT_SET, start, NULL, count,dim);
+	//	H5Sselect_hyperslab(vdataspace, H5S_SELECT_SET, start, NULL, count,dim);
 	sprintf(fname, "%s_%05d_%012d.h5",file.c_str(),fileIndex,Nimgsperfile*ifile);
 	hid_t src_space = H5Screate_simple(rank,dim, maxdim); //here
       
