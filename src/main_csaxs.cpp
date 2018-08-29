@@ -260,7 +260,7 @@ int main(int argc, char *argv[]) {
     unsigned  filter_mask = 0;
     int rank=3;//3dim imgs
     /* HDF-5 handles */
-    hid_t fid, fvid,fapl, gid, atts, atttype, attid;
+    hid_t fid, fvid,fvid2,fapl,gid, atts, atttype, attid;
     hid_t datatype, dataspace, dataspaceimg, vspace,dataprop, dataset;
     hsize_t dim[3]={Nimagesexpected-1-fileFrameIndex,
 		    ((longedge_x==1) ? npix_y_g : npix_x_g) ,
@@ -1170,11 +1170,11 @@ int main(int argc, char *argv[]) {
     //now create master virtual dataset
     //createonly for the first datafile (note not created for single images)
     if( isFileFrameIndex==true  && fileFrameIndex==0){
-      char fnamemaster[1000]; 
+      char fnamevirtual[1000]; 
       fapl = H5Pcreate(H5P_FILE_ACCESS);
       H5Pset_fclose_degree(fapl,H5F_CLOSE_STRONG);
-      sprintf(fnamemaster, "%s_master_%05d.h5",file.c_str(),fileIndex);
-      fvid = H5Fcreate(fnamemaster, H5F_ACC_TRUNC, H5P_DEFAULT,fapl);  
+      sprintf(fnamevirtual, "%s_virtual_%05d.h5",file.c_str(),fileIndex);
+      fvid = H5Fcreate(fnamevirtual, H5F_ACC_TRUNC, H5P_DEFAULT,fapl);  
       H5Pclose(fapl);  
 
       //     hid_t  dxpl = H5Pcreate(H5P_DATASET_XFER);
@@ -1189,7 +1189,7 @@ int main(int argc, char *argv[]) {
      */
       atts = H5Screate(H5S_SCALAR);
       atttype = H5Tcopy(H5T_C_S1);
-      H5Tset_size(atttype, 8);//H5T_VARIABLE);
+      H5Tset_size(atttype, 7);
       attid = H5Acreate(gid,"NX_class", atttype,atts, H5P_DEFAULT,H5P_DEFAULT);
       H5Awrite(attid, atttype, (char *)"NXentry");
       H5Sclose(atts);
@@ -1210,8 +1210,6 @@ int main(int argc, char *argv[]) {
       H5Sclose(atts);
       H5Aclose(attid);
       
-      string instr="entry/instrument/";
-      instr=instr+datasetname;
       gid = H5Gcreate2(fvid,instr.c_str(),H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       atts = H5Screate(H5S_SCALAR);
       atttype = H5Tcopy(H5T_C_S1);
@@ -1251,18 +1249,14 @@ int main(int argc, char *argv[]) {
 	count[2]=dim[2];
 
  	H5Sselect_hyperslab(vdataspace, H5S_SELECT_SET, start, NULL, count,NULL);
-	//relative path here      
- 	sprintf(fname, "%s_%05d_%012d.h5",/*GetFileNoDir(file)*/file.c_str(),fileIndex,Nimgsperfile*ifile);
-	
-	cout<<GetFileNoDir(file)<<endl;
+	//relative path here      	
 	sprintf(fname, "%s_%05d_%012d.h5",GetFileNoDir(file).c_str(),fileIndex,Nimgsperfile*ifile);
-	cout<<fname<<endl;
-
+	
 	hid_t src_space = H5Screate_simple(rank,dim, maxdim); //here
       
-	char fileIndex[200];
-	sprintf(fileIndex , "_%d",ifile);
-	string filedatasetnamereal=filedatasetname+fileIndex;
+	char cfileIndex[200];
+	sprintf(cfileIndex , "_%d",ifile);
+	string filedatasetnamereal=filedatasetname+cfileIndex;
 
 	H5Pset_virtual (dataprop , vdataspace, fname, filedatasetname.c_str(), src_space); //note src_space has not all the attributes 
 	
@@ -1297,6 +1291,86 @@ int main(int argc, char *argv[]) {
       H5Pclose(dataprop); 
       
       H5Fclose(fvid);
+
+      char fnamemaster[1000]; 
+      fapl = H5Pcreate(H5P_FILE_ACCESS);
+      H5Pset_fclose_degree(fapl,H5F_CLOSE_STRONG);
+      sprintf(fnamemaster, "%s_master_%05d.h5",file.c_str(),fileIndex);
+      fvid2 = H5Fcreate(fnamemaster, H5F_ACC_TRUNC, H5P_DEFAULT,fapl);  
+      H5Pclose(fapl);  
+
+      //     hid_t  dxpl = H5Pcreate(H5P_DATASET_XFER);
+      
+    /*
+     * create scan:NXentry
+     */
+      gid = H5Gcreate2(fvid2,"entry",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+    /*
+     * store the NX_class attribute. Notice that you
+     * have to take care to close those hids after use
+     */
+      atts = H5Screate(H5S_SCALAR);
+      atttype = H5Tcopy(H5T_C_S1);
+      H5Tset_size(atttype, 7);
+      attid = H5Acreate(gid,"NX_class", atttype,atts, H5P_DEFAULT,H5P_DEFAULT);
+      H5Awrite(attid, atttype, (char *)"NXentry");
+      H5Sclose(atts);
+      H5Tclose(atttype);
+      H5Aclose(attid);
+      /*
+       * same thing for data:Nxdata in scan:NXentry.
+     * A subroutine would be nice to have here.......
+     */
+      
+      dcpl = H5Pcreate(H5P_DATASET_CREATE);
+      gid = H5Gcreate2(fvid2,"entry/instrument",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+      atts = H5Screate(H5S_SCALAR);
+      atttype = H5Tcopy(H5T_C_S1);
+      H5Tset_size(atttype,12);
+      attid = H5Acreate2(gid,"NX_class", atttype, atts, H5P_DEFAULT,H5P_DEFAULT);
+      H5Awrite(attid,  atttype, (char*)"NXinstrument");
+      H5Sclose(atts);
+      H5Aclose(attid);
+      
+      string instr="entry/instrument/";
+      instr=instr+datasetname;
+      gid = H5Gcreate2(fvid2,instr.c_str(),H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+      atts = H5Screate(H5S_SCALAR);
+      atttype = H5Tcopy(H5T_C_S1);
+      H5Tset_size(atttype,10);
+      attid = H5Acreate2(gid,"NX_class", atttype, atts, H5P_DEFAULT,H5P_DEFAULT);
+      H5Awrite(attid,  atttype, (char*)"NXdetector");
+      H5Sclose(atts);
+      H5Aclose(attid);
+      
+      gid = H5Gcreate2(fvid2,"entry/data",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+      atts = H5Screate(H5S_SCALAR);
+      atttype = H5Tcopy(H5T_C_S1);
+      H5Tset_size(atttype, 6);//H5T_VARIABLE);
+      attid = H5Acreate2(gid,"NX_class", atttype, atts, H5P_DEFAULT,H5P_DEFAULT);
+      H5Awrite(attid, atttype, (char *)"NXdata");
+      H5Sclose(atts);
+      H5Tclose(atttype);
+      H5Aclose(attid);
+      //general (all images)
+           
+      /* Set VDS creation property. */
+      dataprop = H5Pcreate(H5P_DATASET_CREATE);
+      //fillvalue here as well no. I will make sure I write everything
+
+      for(int ifile=0; ifile<files;++ifile){
+	//     H5Lcreate_external(GetFileNoDir(fnamevirtual).c_str(),filedatasetname.c_str(), fvid2, filedatasetname.c_str(), H5P_DEFAULT, H5P_DEFAULT);
+     	char cfileIndex[200];
+	sprintf(cfileIndex , "_%d",ifile);
+	string filedatasetnamereal=filedatasetname+cfileIndex;
+	
+	//questo e' per farlo in un altro modo con tanti dataset linkati (ALBULA LO LEGGE)
+	sprintf(fname, "%s_%05d_%012d.h5",GetFileNoDir(file).c_str(),fileIndex,Nimgsperfile*ifile);
+	H5Lcreate_external(fname,filedatasetname.c_str(), fvid2, filedatasetnamereal.c_str(), H5P_DEFAULT, H5P_DEFAULT);
+      }
+
+      H5Fclose(fvid2);
+
     } //fileframeindex0    
 #endif
     
