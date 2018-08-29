@@ -309,6 +309,21 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
   
   return 1;
 }
+string GetFileNoDir(string file){
+  string::size_type position=0;
+  string::size_type last_position=0;
+  
+  while(1){
+    position = file.find ('/',position+1);
+    if (position == string::npos) break;
+    last_position=position;
+  }
+  //now I know position
+  file.erase (0,last_position+1);
+ 
+  return file;
+}
+
 //const static int imageHeader=frameheadersize;
 
 int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user)

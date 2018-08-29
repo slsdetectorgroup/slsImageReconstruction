@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
 		       ypix, timestamp, expTime, period,imgs ) != 1) return -1;
  
   // int Nimgscashed=1;//read 10 images at the same time
- 
+  
   vec<unsigned int*> buffer;
   //vector <unsigned int*> buffer;
   buffer.reserve(n_v *n_h*2*2/**Nimgscashed*/);
@@ -216,7 +216,6 @@ int main(int argc, char *argv[]) {
   //(int)(imgs/Nimgsperfile) ;
   ifstream infile[numModules];
   
-
   // open all files at once
   //loop on each receiver to get frame buffer
   //  for(int ifiles=0; ifiles<Nfiles; ifiles++){
@@ -299,7 +298,7 @@ int main(int argc, char *argv[]) {
      */
      atts = H5Screate(H5S_SCALAR);
      atttype = H5Tcopy(H5T_C_S1);
-     H5Tset_size(atttype, 8);//H5T_VARIABLE);
+     H5Tset_size(atttype, 7);
      attid = H5Acreate(gid,"NX_class", atttype,atts, H5P_DEFAULT,H5P_DEFAULT);
      H5Awrite(attid, atttype, (char *)"NXentry");
      H5Sclose(atts);
@@ -1252,8 +1251,13 @@ int main(int argc, char *argv[]) {
 	count[2]=dim[2];
 
  	H5Sselect_hyperslab(vdataspace, H5S_SELECT_SET, start, NULL, count,NULL);
-       	sprintf(fname, "%s_%05d_%012d.h5",file.c_str(),fileIndex,Nimgsperfile*ifile);
+	//relative path here      
+ 	sprintf(fname, "%s_%05d_%012d.h5",/*GetFileNoDir(file)*/file.c_str(),fileIndex,Nimgsperfile*ifile);
 	
+	cout<<GetFileNoDir(file)<<endl;
+	sprintf(fname, "%s_%05d_%012d.h5",GetFileNoDir(file).c_str(),fileIndex,Nimgsperfile*ifile);
+	cout<<fname<<endl;
+
 	hid_t src_space = H5Screate_simple(rank,dim, maxdim); //here
       
 	char fileIndex[200];
