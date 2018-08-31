@@ -72,7 +72,7 @@ template <typename T>
 class vec : public std::vector<T>  {};
 
 int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
-		      string& timestamp, double& expTime, double& period, int& imgs, int& imgspfile ){
+		      string& timestamp, double& expTime,  double& subexptime, double& period, double& subperiod, int& imgs, int& imgspfile ){
 
   cout << "Getting File Parameters from " << file << endl;
   string str;
@@ -162,20 +162,27 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       istringstream sstr(str);
       sstr >> str >> str >> str >> expTime;
     }
+    //  SubExptime (ns)    		: 2621440
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str >> subexptime;
+    }
 
     //SubPeriod(ns)              : 2661440
     if(getline(infile,str)){
       istringstream sstr(str);
-      // sstr >> str >> str >> str >> period;
+      sstr >> str >> str >>  subperiod;
     }
-   
- //Period (ns)	: 1000000000
+    
+    //Period (ns)	: 1000000000
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str >> str >> period;
     }
     expTime*=1e-9;
     period*= 1e-9;
+    subexptime*=1e-9;
+    subperiod*= 1e-9;
    
     //Timestamp
     if(getline(infile,str)){
@@ -183,13 +190,12 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       //cout<<"Str:"<<str<<endl;
       sstr >> str >> str>> strdayw >> strmonth >> strday>> strtime >> stryear;
       timestamp = stryear+"/"+strmonth+"/"+strday+" "+strtime+".000 CEST";
-      cout<<"timestamp  "<<timestamp<<endl;
     }
 
     //two empty lines
     getline(infile,str);
     getline(infile,str);
-    getline(infile,str);
+    
     /*
       #Frame Header
       Frame Number                    : 8 bytes
@@ -214,7 +220,6 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       istringstream sstr(str);
       sstr >> str >> str>> str >> dummyint;
       frameheadersize+=dummyint;
-      cout<<dummyint<<endl;
     }
   
     //SubFrame Number/ExpLength
@@ -290,18 +295,15 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       istringstream sstr(str);
       sstr >> str >>str >> str >> dummyint;
       frameheadersize+=dummyint;
-      cout<<dummyint<<endl;
     }
     //Packets Caught Mask        
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str >> str >> str>> dummyint;
-      cout<<dummyint<<endl;
       frameheadersize+=dummyint;
     }
 
     if(frameheadersize!= 8+4+4+8+8+2+2+2+2+4+2+1+1+64) {
-      cout<<frameheadersize<<endl;
       assert(0);
     } 
 
