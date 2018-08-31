@@ -195,11 +195,11 @@ int main(int argc, char *argv[]) {
   //put master on top always
   int  tenGiga, xpix, ypix, imageHeader, imageSize,imgs;
   string timestamp;
-  double expTime, period;
+  double expTime, period, subexptime;
   
   sprintf(fname,"%s_master_%d.raw",file.c_str(),fileIndex);
   if(getFileParameters(fname, tenGiga, imageHeader, imageSize, xpix, 
-		       ypix, timestamp, expTime, period,imgs ) != 1) return -1;
+		       ypix, timestamp, expTime, subexptime, period,imgs ) != 1) return -1;
  
   // int Nimgscashed=1;//read 10 images at the same time
   

@@ -72,7 +72,7 @@ template <typename T>
 class vec : public std::vector<T>  {};
 
 int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
-		      string& timestamp, double& expTime, double& period, int& imgs ){
+		      string& timestamp, double& expTime, double& subexptime, double& period, int& imgs ){
 
   cout << "Getting File Parameters from " << file << endl;
   string str;
@@ -154,6 +154,12 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       istringstream sstr(str);
       sstr >> str >> str >> str >> expTime;
     }
+    //  SubExptime (ns)    		: 2621440
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str >> subexptime;
+    }
+
     //Period (ns)	: 1000000000
     if(getline(infile,str)){
       istringstream sstr(str);
@@ -161,6 +167,7 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
     }
     expTime*=1e-9;
     period*= 1e-9;
+    subexptime*=1e-9;
 
     //Timestamp
     if(getline(infile,str)){
@@ -170,7 +177,6 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       timestamp = stryear+"/"+strmonth+"/"+strday+" "+strtime+".000 CEST";
     }
     //two empty lines
-    getline(infile,str);
     getline(infile,str);
     getline(infile,str);
     /*
@@ -273,7 +279,7 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       frameheadersize+=dummyint;
     }
     if(frameheadersize!= 8+4+4+8+8+2+2+2+2+4+2+1+1) {
-      ;
+      assert(0);
     } 
     ih= frameheadersize;  
     infile.close();
