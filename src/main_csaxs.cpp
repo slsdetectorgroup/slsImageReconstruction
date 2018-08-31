@@ -196,10 +196,11 @@ int main(int argc, char *argv[]) {
   int  tenGiga, xpix, ypix, imageHeader, imageSize,imgs;
   string timestamp;
   double expTime, period;
-  
+  int Nimgsperfile;
+
   sprintf(fname,"%s_master_%d.raw",file.c_str(),fileIndex);
   if(getFileParameters(fname, tenGiga, imageHeader, imageSize, xpix, 
-		       ypix, timestamp, expTime, period,imgs ) != 1) return -1;
+		       ypix, timestamp, expTime, period,imgs, Nimgsperfile ) != 1) return -1;
  
   // int Nimgscashed=1;//read 10 images at the same time
  
@@ -211,7 +212,6 @@ int main(int argc, char *argv[]) {
   int numFrames = fileFrameIndex+1 ;
   //now loop over all frames
   //for each frame
-  int Nimgsperfile=5000; //to be fixed in next realease when configurable
   // const int Nfiles= ( imgs%Nimgsperfile) ? (int)(imgs/Nimgsperfile)+1 :
   //(int)(imgs/Nimgsperfile) ;
   ifstream infile[numModules];

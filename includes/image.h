@@ -72,7 +72,7 @@ template <typename T>
 class vec : public std::vector<T>  {};
 
 int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
-		      string& timestamp, double& expTime, double& period, int& imgs ){
+		      string& timestamp, double& expTime, double& period, int& imgs, int& imgspfile ){
 
   cout << "Getting File Parameters from " << file << endl;
   string str;
@@ -84,18 +84,20 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
   int dr;
   
   /*
-    Version            		: 1.0
-    Dynamic Range      		: 32
-    Ten Giga           		: 0
-    Image Size         		: 524288 bytes
-    x                  		: 512 pixels
-    y                  		: 256 pixels
-    Total Frames       		: 1
-    Exptime (ns)       		: 100000000000
-    SubExptime (ns)    		: 2621440
-    Period (ns)        		: 1000000000
-    Timestamp          		: Wed Sep 13 11:58:11 2017   
-  */
+    Version                    : 2.0
+    Dynamic Range              : 32
+    Ten Giga                   : 1
+    Image Size                 : 524288 bytes
+    x                          : 512 pixels
+    y                          : 256 pixels
+    Max. Frames Per File       : 10000
+    Total Frames               : 1
+    Exptime (ns)               : 1000000000
+    SubExptime (ns)            : 2621440
+    SubPeriod(ns)              : 2661440
+    Period (ns)                : 0
+    Timestamp                  : Fri Aug 31 15:35:55 2018
+    */
   infile.open(file.c_str(),ios::in | ios::binary);
   if (infile.is_open()) {
 
@@ -142,6 +144,12 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       sstr >> str >> str >> y;
     }
 
+    // Max. Frames Per File       : 10000
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str >> str >> imgspfile;
+    }
+
     //Total Frames 
     if(getline(infile,str)){
       istringstream sstr(str);
@@ -154,21 +162,30 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       istringstream sstr(str);
       sstr >> str >> str >> str >> expTime;
     }
-    //Period (ns)	: 1000000000
+
+    //SubPeriod(ns)              : 2661440
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      // sstr >> str >> str >> str >> period;
+    }
+   
+ //Period (ns)	: 1000000000
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str >> str >> period;
     }
     expTime*=1e-9;
     period*= 1e-9;
-
+   
     //Timestamp
     if(getline(infile,str)){
       istringstream sstr(str);
       //cout<<"Str:"<<str<<endl;
       sstr >> str >> str>> strdayw >> strmonth >> strday>> strtime >> stryear;
       timestamp = stryear+"/"+strmonth+"/"+strday+" "+strtime+".000 CEST";
+      cout<<"timestamp  "<<timestamp<<endl;
     }
+
     //two empty lines
     getline(infile,str);
     getline(infile,str);
@@ -180,7 +197,7 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       Packet Number                   : 4 bytes
       Bunch ID                        : 8 bytes
       Timestamp                       : 8 bytes
-      Module Id                               : 2 bytes
+      Module Id                       : 2 bytes
       X Coordinate                    : 2 bytes
       Y Coordinate                    : 2 bytes
       Z Coordinate                    : 2 bytes
@@ -188,6 +205,7 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       Round Robin Number              : 2 bytes
       Detector Type                   : 1 byte
       Header Version                  : 1 byte
+      Packets Caught Mask             : 64 bytes
     */
 
     getline(infile,str);
@@ -196,6 +214,7 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       istringstream sstr(str);
       sstr >> str >> str>> str >> dummyint;
       frameheadersize+=dummyint;
+      cout<<dummyint<<endl;
     }
   
     //SubFrame Number/ExpLength
@@ -271,10 +290,21 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       istringstream sstr(str);
       sstr >> str >>str >> str >> dummyint;
       frameheadersize+=dummyint;
+      cout<<dummyint<<endl;
     }
-    if(frameheadersize!= 8+4+4+8+8+2+2+2+2+4+2+1+1) {
-      ;
+    //Packets Caught Mask        
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str >> str>> dummyint;
+      cout<<dummyint<<endl;
+      frameheadersize+=dummyint;
+    }
+
+    if(frameheadersize!= 8+4+4+8+8+2+2+2+2+4+2+1+1+64) {
+      cout<<frameheadersize<<endl;
+      assert(0);
     } 
+
     ih= frameheadersize;  
     infile.close();
   }else{
