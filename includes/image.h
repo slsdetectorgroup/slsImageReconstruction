@@ -147,7 +147,7 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
     // Max. Frames Per File       : 10000
     if(getline(infile,str)){
       istringstream sstr(str);
-      sstr >> str >> str >> str >> str >> imgspfile;
+      sstr >> str >> str >> str >> str >> str >>  imgspfile;
     }
 
     //Total Frames 
