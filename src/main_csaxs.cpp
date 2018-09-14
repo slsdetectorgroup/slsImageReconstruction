@@ -32,6 +32,7 @@
 //#define BITSHUFFLE
 #define ZLIB
 //#define SZIP
+//#define MASTERVIRTUAL
 
 #ifdef HDF5f
 //#include "hdf5.h"
@@ -278,11 +279,8 @@ int main(int argc, char *argv[]) {
      */
     fapl = H5Pcreate(H5P_FILE_ACCESS);
     H5Pset_fclose_degree(fapl,H5F_CLOSE_STRONG);
-    if(isFileFrameIndex)
-      sprintf(fname, "%s_%05d_%012d.h5",file.c_str(),fileIndex,fileFrameIndex);
-    else
-      sprintf(fname, "%s_master_%05d.h5",file.c_str(),fileIndex);
-    
+    sprintf(fname, "%s_%05d_%012d.h5",file.c_str(),fileIndex,fileFrameIndex);
+        
     fid = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT,fapl);  
     H5Pclose(fapl);
     
@@ -354,9 +352,7 @@ int main(int argc, char *argv[]) {
 
     /* Dataset must be chunked for compression */  
     hsize_t cdims[3]={1,dim[1],dim[2]};
-    //hsize_t block[3]={1,dim[1],dim[2]};
-    // hsize_t stride[3]={1,dim[1],dim[2]};
-
+   
     H5Pset_chunk (dataprop , rank, cdims);
   
     //do not remove here
@@ -1169,7 +1165,8 @@ int main(int argc, char *argv[]) {
 #ifdef HDF5f
     //now create master virtual dataset
     //createonly for the first datafile (note not created for single images)
-    if( isFileFrameIndex==true  && fileFrameIndex==0){
+#ifdef MASTERVIRTUAL
+    if(fileFrameIndex==0){
       char fnamevirtual[1000]; 
       fapl = H5Pcreate(H5P_FILE_ACCESS);
       H5Pset_fclose_degree(fapl,H5F_CLOSE_STRONG);
@@ -1260,8 +1257,6 @@ int main(int argc, char *argv[]) {
 
 	H5Pset_virtual (dataprop , vdataspace, fname, filedatasetname.c_str(), src_space); //note src_space has not all the attributes 
 	
-	//questo e' per farlo in un altro modo con tanti dataset linkati (ALBULA LO LEGGE)
-	//H5Lcreate_external(fname,filedatasetname.c_str(), fvid, filedatasetnamereal.c_str(), H5P_DEFAULT, H5P_DEFAULT);
       }
 
       /* Create a virtual dataset. */
@@ -1359,7 +1354,6 @@ int main(int argc, char *argv[]) {
       //fillvalue here as well no. I will make sure I write everything
 
       for(int ifile=0; ifile<files;++ifile){
-	//     H5Lcreate_external(GetFileNoDir(fnamevirtual).c_str(),filedatasetname.c_str(), fvid2, filedatasetname.c_str(), H5P_DEFAULT, H5P_DEFAULT);
      	char cfileIndex[200];
 	sprintf(cfileIndex , "_%d",ifile);
 	string filedatasetnamereal=filedatasetname+cfileIndex;
@@ -1372,6 +1366,7 @@ int main(int argc, char *argv[]) {
       H5Fclose(fvid2);
 
     } //fileframeindex0    
+#endif
 #endif
     
     //cout<<"only to read took "<<tdif/1e6<<endl;
