@@ -32,6 +32,7 @@
 //#define BITSHUFFLE
 #define ZLIB
 //#define SZIP
+//#define MASTERVIRTUAL
 
 #ifdef HDF5f
 //#include "hdf5.h"
@@ -280,11 +281,8 @@ int main(int argc, char *argv[]) {
      */
     fapl = H5Pcreate(H5P_FILE_ACCESS);
     H5Pset_fclose_degree(fapl,H5F_CLOSE_STRONG);
-    if(isFileFrameIndex)
-      sprintf(fname, "%s_%05d_%012d.h5",file.c_str(),fileIndex,fileFrameIndex);
-    else
-      sprintf(fname, "%s_master_%05d.h5",file.c_str(),fileIndex);
-    
+    sprintf(fname, "%s_%05d_%012d.h5",file.c_str(),fileIndex,fileFrameIndex);
+        
     fid = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT,fapl);  
     H5Pclose(fapl);
     
@@ -1171,7 +1169,8 @@ int main(int argc, char *argv[]) {
 #ifdef HDF5f
     //now create master virtual dataset
     //createonly for the first datafile (note not created for single images)
-    if( isFileFrameIndex==true  && fileFrameIndex==0){
+#ifdef MASTERVIRTUAL
+    if( fileFrameIndex==0){
       char fnamemaster[1000]; 
       fapl = H5Pcreate(H5P_FILE_ACCESS);
       H5Pset_fclose_degree(fapl,H5F_CLOSE_STRONG);
@@ -1296,7 +1295,7 @@ int main(int argc, char *argv[]) {
       H5Fclose(fvid);
     } //fileframeindex0    
 #endif
-    
+#endif   
     //cout<<"only to read took "<<tdif/1e6<<endl;
     return 1;
 }
