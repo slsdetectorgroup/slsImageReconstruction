@@ -235,9 +235,9 @@ int main(int argc, char *argv[]) {
 
 #ifdef MYROOT
     //now open a single root file
-    TFile* ofile = new TFile(TString::Format("%s-det%d%s_%d.root",file.c_str(),
-					     nr,frames,fileIndex).Data(),
-			     "RECREATE");
+  TFile* ofile = new TFile(TString::Format("%s%s_%d.root",file.c_str(),
+					   frames,fileIndex).Data(),
+			   "RECREATE");
 #endif  //If ROOT
 
   
@@ -530,8 +530,8 @@ int main(int argc, char *argv[]) {
 #endif
 #ifdef MYROOT
 	//check horizontal or vertical
-	TH2F* hmap= new TH2F(TString::Format("hmap%d",numFrames+im).Data(),
-			     TString::Format("hmap%d",numFrames+im).Data(),
+	TH2F* hmap= new TH2F(TString::Format("hmap%d",numFrames/*+im*/).Data(),
+			     TString::Format("hmap%d",numFrames/*+im*/).Data(),
 			     ( longedge_x ? npix_x_g : npix_y_g), 0, 
 			     ( longedge_x ? npix_x_g : npix_y_g), 
 			     ( longedge_x ? npix_y_g : npix_x_g), 0,
