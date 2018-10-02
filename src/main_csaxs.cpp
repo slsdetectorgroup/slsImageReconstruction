@@ -26,11 +26,11 @@
 
 //#define MYCBF //choose 
 //#define MSHeader
-//#define MYROOT //choose 
-#define HDF5f
+#define MYROOT //choose 
+//#define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
-#define ZLIB
+//#define ZLIB
 //#define SZIP
 //#define MASTERVIRTUAL
 
@@ -136,12 +136,14 @@ int main(int argc, char *argv[]) {
     int nyt=npix_y_user;
     npix_x_user=nyt;
     npix_y_user=nxt;
-  }
+  }  
   
   //number of modules in vertical and horizontal
   int n_v = npix_y_user/npix_y_sm;
-  if( npix_y_user==256)  n_v=1;
+  if( npix_y_user==256 && longedge_x==1)  n_v=1;
+  if( npix_y_user==512 &&  npix_x_user==512)  n_v=1;
   int n_h = npix_x_user/npix_x_sm;
+  if( npix_y_user==512 &&  npix_x_user==512)  n_h=1;
   //Gap pixels
   int gap_pix_x_sm = GapPixelsBetweenChips_x * (NumChip_x-1);
   int gap_pix_y_sm = GapPixelsBetweenChips_y * (NumChip_y-1);
@@ -150,10 +152,19 @@ int main(int argc, char *argv[]) {
   //+ gap pixels between modules * (number of modules -1)
   int npix_x_g = npix_x_sm * n_h  +  gap_pix_x_sm *  n_h + GapPixelsBetweenModules_x  * (n_h-1);
   int npix_y_g = npix_y_sm * n_v  +  gap_pix_y_sm *  n_v + GapPixelsBetweenModules_y  * (n_v-1);
-  if( npix_y_user==256) { 
-    npix_y_g = npix_y_user;
+  if(longedge_x &&  npix_y_user==256)
+    {
+      npix_y_g = npix_y_user;   
+    }
+  if(!longedge_x &&  npix_x_user==256){ 
+    npix_x_g = npix_x_user;   
   }
-
+  if(npix_y_user==512 && npix_x_user==512)
+    {
+      npix_y_g = npix_y_user+2;
+      npix_x_g = npix_x_user+2;
+    }
+  
   //map including gap pixels
   uint* map=new uint[npix_x_g*npix_y_g];
   // custum_container <unit>* map;
@@ -172,21 +183,29 @@ int main(int argc, char *argv[]) {
   
   //initialize receiverdata and fnum for all half modules
   int numModules = n_v *n_h*NumHalfModules*2;
-  if( npix_y_user==256)   numModules=2;
+  if( (longedge_x && npix_y_user==256) ||
+      longedge_x==0 && npix_x_user==256)   numModules=2;
+
+  if(npix_y_user==512 && npix_x_user==512) numModules=2;
+
   int fnum;
   int nr=0;
   for(int imod_h=0; imod_h<n_h; ++imod_h){
     for(int imod_v=0; imod_v<n_v; ++imod_v){
       for(int it=0;it<2;++it){
 	for(int ileft=0; ileft<2;++ileft){
-	  if( npix_y_user==256 && it==1 ) continue;
+	  if((( longedge_x && npix_y_user==256) || 
+	      (!longedge_x && npix_x_user==256) )
+	     && it==1 ) continue;
+	  if(npix_y_user==512 && npix_x_user==512 && ileft==1)continue;
 	  fnum=0;
 	  nr++;
 	}
       }
     }
   }
-    
+
+
   //get dynamic range and configure receiverdata depending on top and bottom
   char fname[1000]; 
   char frames[20]="";
@@ -538,9 +557,6 @@ int main(int argc, char *argv[]) {
 			     ( longedge_x ? npix_y_g : npix_x_g));
 #endif  //If ROOT
     
-
-
-
 	//get a 2d map of the image
 	//initialize
 	if(dynamicrange==4 ) 
@@ -551,9 +567,8 @@ int main(int argc, char *argv[]) {
 	    map[ik]=255;
 	if(dynamicrange==16 ) 
 	  for(int ik=0; ik<npix_y_g*npix_x_g;++ik) map[ik]=4095;
-	if(dynamicrange==32 ) 
+	if(dynamicrange==32) 
 	  for(int ik=0; ik<npix_y_g*npix_x_g;++ik) map[ik]=((long int)(pow(2,32))-1);
-            
 	int startchipx=0;
 	int startchipy=0;
 	int endchipx=4;
@@ -571,14 +586,19 @@ int main(int argc, char *argv[]) {
 	  for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
 	    for( int it=0;it<2;++it){	
 	      for( int ileft=0;ileft<2;++ileft){
-	      
-		if( npix_y_user==256 && it==1) continue; 
-	      
+		
+		if( ((longedge_x && npix_y_user==256) 
+		     || (!longedge_x && npix_x_user==256)) 
+		     && it==1) continue; 
+		
+		if(npix_y_user==512 && npix_x_user==512 && ileft==1)
+		  continue;
+
 		//getting values //top
 		if(it==0){
 		  startchipy=1;    
 		  endchipy=2;
-		
+		  
 		  if(ileft==0){		  
 		    startchipx=0;
 		    endchipx=2;
@@ -587,25 +607,44 @@ int main(int argc, char *argv[]) {
 		    startchipx=2;
 		    endchipx=4;
 		  }
-		  if(npix_y_user==256){
+		  if((longedge_x && npix_y_user==256)
+		     || (!longedge_x && npix_x_user==256)){
 		    startchipy=0;    
 		    endchipy=1;
 		  } 
-
-		  for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
-		    for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-		      for(int iy=0; iy<NumChanPerChip_y;++iy){
-			int x_t= GetX(0, ichipx, imod_h);
-			int y_t= GetY(iy, ichipy,imod_v);
-			int k=GetK(x_t,y_t,npix_x_g);
-			memcpy(&map[k], 
-			       &buffer[nnr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy],
+	    
+		   if(npix_y_user!=512 && npix_x_user!=512){
+		     for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+		       for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+			 for(int iy=0; iy<NumChanPerChip_y;++iy){
+			   int x_t= GetX(0, ichipx, imod_h);
+			   int y_t= GetY(iy, ichipy,imod_v);
+			   int k=GetK(x_t,y_t,npix_x_g);
+			   memcpy(&map[k], 
+				  &buffer[nnr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy],
 			       NumChanPerChip_x *sizeof(int));
-		      } //num ch chip y
-		    }//ichipy
-		  }//ichipx
+			 } //num ch chip y
+		       }//ichipy
+		     }//ichipx
+		   }//not quad
+		   else{
+		     //quad
+		     for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+		       for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+			 for(int iy=0; iy<NumChanPerChip_y;++iy){
+			   for(int ix=0; ix<NumChanPerChip_x;++ix){
+			     int x_t= GetX(ix, ichipx, imod_h);
+			     int y_t= GetY(iy, ichipy,imod_v);
+			     int k=GetK(x_t,y_t,npix_x_g);
+			     map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
+			   }//ix
+			 } //num ch chip y
+		       }//ichipy
+		     }//ichipx
+		   }//quad
 		} //it ==0 		
 	    
+
 		//getting values for bottom
 		if(it==1) {
 		  startchipy=0;    
@@ -619,26 +658,43 @@ int main(int argc, char *argv[]) {
 		    endchipx=4;
 		  }		 
 		
-		  for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
-		    for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-		      for(int iy=0; iy<NumChanPerChip_y;++iy){
-			// for(int ix=0; ix<NumChanPerChip_x;++ix){
-			int x_t=GetX(0, ichipx, imod_h);
-			int y_t= GetY(iy,ichipy,imod_v);
-			int k=GetK(x_t,y_t,npix_x_g);
-			memcpy(&map[k], &buffer[nnr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)],
-			       NumChanPerChip_x *sizeof(int)); 
+		  if(npix_y_user!=512 && npix_x_user!=512){
+		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
+		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+			for(int iy=0; iy<NumChanPerChip_y;++iy){
+			  // for(int ix=0; ix<NumChanPerChip_x;++ix){
+			  int x_t=GetX(0, ichipx, imod_h);
+			  int y_t= GetY(iy,ichipy,imod_v);
+			  int k=GetK(x_t,y_t,npix_x_g);
+			  memcpy(&map[k], &buffer[nnr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)],
+				 NumChanPerChip_x *sizeof(int)); 
+			}
 		      }
 		    }
-		  }
-		} //it==1
+		  }else{
+		    //quad
+		  for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
+		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+			for(int iy=0; iy<NumChanPerChip_y;++iy){
+			  for(int ix=0; ix<NumChanPerChip_x;++ix){
+			    int x_t=GetX(ix, ichipx, imod_h);
+			    int y_t= GetY(iy,ichipy,imod_v);
+			    int k=GetK(x_t,y_t,npix_x_g);
+			    map[k]=buffer[nnr][(NumChanPerChip_x*NumChip_x_port-1)-(ix+(ichipx%2)*NumChanPerChip_x)+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
+					       
+			  }
+			}
+		      }
+		  }	
+		  }//quad
+		}//it==1
 		nnr++;
 	      }//ileft
 	    } //it
 
-	    //interpolation easier at the end of the module map(thanks chage later even divide here )
+	    //interpolation easier at the end of the module map
 	    //corner gap pixels gap pixels
-	
+	    
 	    //gettimeofday(&tsss,NULL);
 	    //tdif+=(1e6*(tsss.tv_sec - tss.tv_sec)+(long)(tsss.tv_usec)-(long)(tss.tv_usec));
 	    //tss=tsss;
@@ -651,9 +707,17 @@ int main(int argc, char *argv[]) {
 	    for( int ichipx=0; ichipx<3; ++ichipx){
 	      for( int ichipy=0; ichipy<2; ++ichipy){
 		for(int iy=0; iy<NumChanPerChip_y;++iy){ 
-	       
-		  //exclude border y
-		  if(ichipy==1 && iy==0) {
+		 
+		  if( ((longedge_x && npix_y_user==256) ||
+		       (!longedge_x && npix_x_user==256))
+		      && ichipy==1) continue;
+
+		 if(npix_y_user==512 && npix_x_user==512 && ichipx>0)continue;
+		 //exclude border y
+		 if(ichipy==1 && iy==0) {
+		   //cout<<ichipx<<endl;
+		   //assert(0);
+
 		    //first corner
 		    int x_t= GetX(ix, ichipx, imod_h);
 		    int y_t= GetY(iy, ichipy,imod_v);
@@ -779,9 +843,13 @@ int main(int argc, char *argv[]) {
 		      
 		    }//kinterpolate
 
-		  }else{
+		 }else{
 		    if(ichipy==0 && iy==NumChanPerChip_y-1) continue; //already taken care
+		    //before I have done the corners.
+		    //now do sides betweeen chips
 		    else{
+
+		      //this also for HM
 		      int x_t= GetX(ix, ichipx, imod_h);
 		      int y_t= GetY(iy, ichipy,imod_v);
 		      int k=GetK(x_t,y_t, npix_x_g);
@@ -812,44 +880,55 @@ int main(int argc, char *argv[]) {
 	      }//loop on y
 	    } //loop on chip y
 
-	    //other edge
-	    int iy=NumChanPerChip_y-1;
-	    int ichipy=0;//bottom
-	    for(int ichipx=0; ichipx<NumChip_x;++ichipx){
-	      for(int ix=0; ix<NumChanPerChip_x;++ix){ 
-		//exclude border x
-		if(ichipx!=(NumChip_x-1) && ix==(NumChanPerChip_x-1)) continue;
-		if(ichipx!=0 && ix==0) continue;
-		int x_t= GetX(ix, ichipx, imod_h);
-		int y_t= GetY(iy, ichipy,imod_v);
-		int k=GetK(x_t,y_t,npix_x_g);
-		int xvirtual= x_t;
-		int yvirtual= y_t+1;
-		int kvirtual=GetK(xvirtual,yvirtual,npix_x_g);
-		//now find the matching pair on the other side
-		//virtual
-		int xvirtual2= x_t;
-		int yvirtual2= y_t+2;
-		int kvirtual2=GetK(xvirtual2,yvirtual2, npix_x_g);
-		//real
-		int x_t2= x_t;
-		int y_t2= y_t+3;
-		int k2=GetK(x_t2,y_t2,npix_x_g);
-	      
-		if(fillgaps==kZero) FillGapsBetweenChipZero(map,k,kvirtual,kvirtual2,k2);
-		if(fillgaps==kDivide) FillGapsBetweenChipDivide(map,k,kvirtual,kvirtual2,k2);			    
-		if(fillgaps==kInterpolate) FillGapsBetweenChipInterpolate(map,k,kvirtual,kvirtual2,k2);	
-		if(fillgaps==kMask) FillGapsBetweenChipMask(map,k,kvirtual,kvirtual2,k2);	
-		if(fillgaps==kInterpolate2) FillGapsBetweenChipInterpolate2(map,GetK(x_t,y_t-1,npix_x_g),k,kvirtual,
-									    kvirtual2,k2,GetK(x_t2,y_t2+1,npix_x_g));	
-	   
-	      }//xchannels
-	    } //chips	
-   		    
+       	    if( (longedge_x && npix_y_user!=256 ) ||
+		(!longedge_x && npix_x_user!=256 )) {
+	      //other edge (between half modules)
+	      int iy=NumChanPerChip_y-1;
+	      int ichipy=0;//bottom
+	      for(int ichipx=0; ichipx<NumChip_x;++ichipx){
+		if( npix_y_user==512 &&  npix_x_user==512
+		    && ichipx>1) continue;
+		
+		for(int ix=0; ix<NumChanPerChip_x;++ix){ 
+		  //exclude border x
+		  if( (ichipx!=(NumChip_x-1)) && (ix==(NumChanPerChip_x-1)) 
+		       &&  (npix_y_user!=512) &&  (npix_x_user!=512))
+		    continue;
+		  if( (npix_y_user==512) &&  (npix_x_user==512) && 
+		      (ix==(NumChanPerChip_x-1)) && 
+		      ichipx==0) continue;
+		  if(ichipx!=0 && ix==0) continue;
+		  
+		  //fa normale
+		  int x_t= GetX(ix, ichipx, imod_h);
+		  int y_t= GetY(iy, ichipy,imod_v);
+		  int k=GetK(x_t,y_t,npix_x_g);
+		  int xvirtual= x_t;
+		  int yvirtual= y_t+1;
+		  int kvirtual=GetK(xvirtual,yvirtual,npix_x_g);
+		  //now find the matching pair on the other side
+		  //virtual
+		  int xvirtual2= x_t;
+		  int yvirtual2= y_t+2;
+		  int kvirtual2=GetK(xvirtual2,yvirtual2, npix_x_g);
+		  //real
+		  int x_t2= x_t;
+		  int y_t2= y_t+3;
+		  int k2=GetK(x_t2,y_t2,npix_x_g);
+		  
+		  if(fillgaps==kZero) FillGapsBetweenChipZero(map,k,kvirtual,kvirtual2,k2);
+		  if(fillgaps==kDivide) FillGapsBetweenChipDivide(map,k,kvirtual,kvirtual2,k2);			    
+		  if(fillgaps==kInterpolate) FillGapsBetweenChipInterpolate(map,k,kvirtual,kvirtual2,k2);	
+		  if(fillgaps==kMask) FillGapsBetweenChipMask(map,k,kvirtual,kvirtual2,k2);	
+		  if(fillgaps==kInterpolate2) FillGapsBetweenChipInterpolate2(map,GetK(x_t,y_t-1,npix_x_g),k,kvirtual,
+									      kvirtual2,k2,GetK(x_t2,y_t2+1,npix_x_g));	
+		  
+		}//xchannels
+	      } //chips	
+	    } //notr HM
 	  }//v mods
 	} //h mods close all loops
-
-
+	
 	//now rotate everything 
 	if(!longedge_x){
 	  //rotate on the output matrix
