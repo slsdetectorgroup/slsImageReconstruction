@@ -1,17 +1,17 @@
 WD				=	$(shell pwd)
 
 CBFLIBDIR		=	/scratch/CBFlib-0.9.5
-#HDF5DIR		        =	/afs/psi.ch/project/sls_det_software/software_packages/linux6/hdf5/1.10.1
-HDF5DIR		        =	/scratch/hdf5/1.10.1
+#HDF5DIR		        =	/afs/psi.ch/project/sls_det_software/software_packages/linux6/hdf5/1.10.3/hdf5
+HDF5DIR		        =	/scratch/hdf5-1.10.3/hdf5-1.10.3/hdf5/
 LZ4DIR		        =	/scratch/lz4
 
 
 LIBRARYCBF		=	$(CBFLIBDIR)/lib/*.o
-LIBHDF5			=	-L$(HDF5DIR)/lib/ -lhdf5 -lhdf5_hl_cpp -lhdf5_cpp -lsz -lz 
+LIBHDF5			=	-L$(HDF5DIR)/lib/ -lhdf5 -lhdf5_hl #-lhdf5_hl_cpp -lhdf5_cpp -lsz -lz 
 LIBHDF5CBF			=	-L$(CBFLIBDIR)/lib/ -lhdf5
 LIBLZ4			=	-L$(LZ4DIR)/lib/ -llz4
-EXTPLUGINDIR	= /scratch/HDF5-External-Filter-Plugins/plugins/
-EXTPLUGINLIB	= -L$(EXTPLUGINDIR) -lh5lz4
+#EXTPLUGINDIR	= /scratch/HDF5-External-Filter-Plugins/plugins/
+#EXTPLUGINLIB	= -L$(EXTPLUGINDIR) -lh5lz4
 
 
 INCLUDESCBF		=	-I $(CBFLIBDIR)/include
