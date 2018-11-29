@@ -26,11 +26,11 @@
 
 //#define MYCBF //choose 
 //#define MSHeader
-//#define MYROOT //choose 
-#define HDF5f
+#define MYROOT //choose 
+//#define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
-#define ZLIB
+//#define ZLIB
 //#define SZIP
 //#define MASTERVIRTUAL
 
@@ -89,27 +89,6 @@ void FillROOT(TH2F* hmap,  int longedge_x, int x_t, int y_t,
     hmap->SetBinContent(x_t+1, y_t+1, k_t);
   else
     hmap->SetBinContent(y_t+1, x_t+1, k_t);
-}
-
-void FillROOTEdge(TH2F* hmap,  int longedge_x, int x_t, int y_t, 
-		  unsigned int k_t,
-		  int  xvirtual1, int yvirtual1, 
-		  unsigned int kvirtual1)
-{
-  FillROOT(hmap,longedge_x, x_t, y_t,k_t);
-  FillROOT(hmap,longedge_x, xvirtual1, yvirtual1, kvirtual1);
-}
-
-void FillROOTCorner(TH2F* hmap,  int longedge_x, int x_t, int y_t, 
-		    unsigned int k_t,
-		    int  xvirtual1, int yvirtual1, unsigned int kvirtual1,
-		    int  xvirtual2, int yvirtual2, unsigned int kvirtual2,
-		    int  xvirtual3, int yvirtual3, unsigned int kvirtual3)
-{
-  FillROOT(hmap,longedge_x, x_t, y_t,k_t);
-  FillROOT(hmap,longedge_x, xvirtual1, yvirtual1, kvirtual1);
-  FillROOT(hmap,longedge_x, xvirtual2, yvirtual2, kvirtual2);
-  FillROOT(hmap,longedge_x, xvirtual3, yvirtual3, kvirtual3);
 }
 #endif
 
@@ -183,8 +162,8 @@ int main(int argc, char *argv[]) {
   
   //initialize receiverdata and fnum for all half modules
   int numModules = n_v *n_h*NumHalfModules*2;
-  if( (longedge_x && npix_y_user==256) ||
-      longedge_x==0 && npix_x_user==256)   numModules=2;
+  if( ((longedge_x==1) && (npix_y_user==256)) ||
+      ((longedge_x==0) && (npix_x_user==256)))   numModules=2;
 
   if(npix_y_user==512 && npix_x_user==512) numModules=2;
 
@@ -251,9 +230,9 @@ int main(int argc, char *argv[]) {
       infile[inr/*+(ifiles*nr)*/].open(fname,ios::in | ios::binary);
   }//loop on receivers
   //} //loop on how many files
-
+  
 #ifdef MYROOT
-    //now open a single root file
+  //now open a single root file
   TFile* ofile = new TFile(TString::Format("%s%s_%d.root",file.c_str(),
 					   frames,fileIndex).Data(),
 			   "RECREATE");
@@ -588,11 +567,12 @@ int main(int argc, char *argv[]) {
 	      for( int ileft=0;ileft<2;++ileft){
 		
 		if( ((longedge_x && npix_y_user==256) 
-		     || (!longedge_x && npix_x_user==256)) 
-		     && it==1) continue; 
+		   || (!longedge_x && npix_x_user==256)) 
+		  && it==1) continue; 
 		
 		if(npix_y_user==512 && npix_x_user==512 && ileft==1)
-		  continue;
+		continue;
+		//if( npix_y_user==256 && it==1) continue; 
 
 		//getting values //top
 		if(it==0){
@@ -607,13 +587,19 @@ int main(int argc, char *argv[]) {
 		    startchipx=2;
 		    endchipx=4;
 		  }
+		  
 		  if((longedge_x && npix_y_user==256)
 		     || (!longedge_x && npix_x_user==256)){
 		    startchipy=0;    
 		    endchipy=1;
 		  } 
-	    
-		   if(npix_y_user!=512 && npix_x_user!=512){
+
+		  //if(npix_y_user==256){
+		  //startchipy=0;    
+		  //endchipy=1;
+		  //} 
+		  
+		  if(npix_y_user!=512 || npix_x_user!=512){
 		     for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
 		       for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
 			 for(int iy=0; iy<NumChanPerChip_y;++iy){
@@ -626,39 +612,39 @@ int main(int argc, char *argv[]) {
 			 } //num ch chip y
 		       }//ichipy
 		     }//ichipx
-		   }//not quad
-		   else{
-		     //quad
-		     for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
-		       for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-			 for(int iy=0; iy<NumChanPerChip_y;++iy){
-			   for(int ix=0; ix<NumChanPerChip_x;++ix){
-			     int x_t= GetX(ix, ichipx, imod_h);
-			     int y_t= GetY(iy, ichipy,imod_v);
-			     int k=GetK(x_t,y_t,npix_x_g);
-			     map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
-			   }//ix
-			 } //num ch chip y
-		       }//ichipy
-		     }//ichipx
-		   }//quad
-		} //it ==0 		
-	    
+		  }//not quad
+		  else{
+		    //quad
+		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+			for(int iy=0; iy<NumChanPerChip_y;++iy){
+			     for(int ix=0; ix<NumChanPerChip_x;++ix){
+			       int x_t= GetX(ix, ichipx, imod_h);
+			       int y_t= GetY(iy, ichipy,imod_v);
+			       int k=GetK(x_t,y_t,npix_x_g);
+			       map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
+			     }//ix
+			   } //num ch chip y
+			 }//ichipy
+		       }//ichipx
+		     }//quad
+		  } //it ==0 		
+		   
 
 		//getting values for bottom
 		if(it==1) {
 		  startchipy=0;    
 		  endchipy=1;
-		  if(ileft==0){		  
+		  if(ileft==0){
 		    startchipx=0;
 		    endchipx=2;
 		  }
-		  if(ileft==1){		  
+		  if(ileft==1){
 		    startchipx=2;
 		    endchipx=4;
 		  }		 
-		
-		  if(npix_y_user!=512 && npix_x_user!=512){
+		  
+		  if((npix_y_user!=512) || (npix_x_user!=512)){
 		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
 		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
 			for(int iy=0; iy<NumChanPerChip_y;++iy){
@@ -667,13 +653,14 @@ int main(int argc, char *argv[]) {
 			  int y_t= GetY(iy,ichipy,imod_v);
 			  int k=GetK(x_t,y_t,npix_x_g);
 			  memcpy(&map[k], &buffer[nnr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)],
-				 NumChanPerChip_x *sizeof(int)); 
+				 NumChanPerChip_x *sizeof(int));
 			}
 		      }
 		    }
-		  }else{
+		  }
+		  else{
 		    //quad
-		  for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
+		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
 		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
 			for(int iy=0; iy<NumChanPerChip_y;++iy){
 			  for(int ix=0; ix<NumChanPerChip_x;++ix){
@@ -681,17 +668,17 @@ int main(int argc, char *argv[]) {
 			    int y_t= GetY(iy,ichipy,imod_v);
 			    int k=GetK(x_t,y_t,npix_x_g);
 			    map[k]=buffer[nnr][(NumChanPerChip_x*NumChip_x_port-1)-(ix+(ichipx%2)*NumChanPerChip_x)+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
-					       
+			    
 			  }
 			}
 		      }
-		  }	
+		    }	
 		  }//quad
 		}//it==1
 		nnr++;
-	      }//ileft
-	    } //it
-
+		}//ileft
+	      }//it
+	    
 	    //interpolation easier at the end of the module map
 	    //corner gap pixels gap pixels
 	    
@@ -1090,11 +1077,11 @@ int main(int argc, char *argv[]) {
     
     
 #ifdef MYROOT
-	for(int ix=0; ix<npix_x_g; ++ix){
-	  for(int iy=0; iy<npix_y_g; ++iy){
-	    int kold=ix+ npix_x_g*iy;
-	    FillROOT(hmap,longedge_x, ix, iy, map[kold]);
-	  }
+	for(int iy=0; iy<npix_y_g; ++iy){
+	    for(int ix=0; ix<npix_x_g; ++ix){
+	      int kold=ix+ npix_x_g*iy;
+	      FillROOT(hmap,longedge_x, ix, iy, map[kold]);
+	    }
 	}
 	hmap->SetStats(kFALSE);
 	hmap->Draw("colz");
