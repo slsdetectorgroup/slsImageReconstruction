@@ -599,38 +599,37 @@ int main(int argc, char *argv[]) {
 		  //endchipy=1;
 		  //} 
 		  
-		  if(npix_y_user!=512 || npix_x_user!=512){
-		     for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
-		       for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-			 for(int iy=0; iy<NumChanPerChip_y;++iy){
-			   int x_t= GetX(0, ichipx, imod_h);
-			   int y_t= GetY(iy, ichipy,imod_v);
-			   int k=GetK(x_t,y_t,npix_x_g);
-			   memcpy(&map[k], 
-				  &buffer[nnr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy],
-			       NumChanPerChip_x *sizeof(int));
-			 } //num ch chip y
-		       }//ichipy
-		     }//ichipx
-		  }//not quad
-		  else{
+		  if((npix_y_user==512) && (npix_x_user==512)){
 		    //quad
 		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
 		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
 			for(int iy=0; iy<NumChanPerChip_y;++iy){
-			     for(int ix=0; ix<NumChanPerChip_x;++ix){
-			       int x_t= GetX(ix, ichipx, imod_h);
-			       int y_t= GetY(iy, ichipy,imod_v);
-			       int k=GetK(x_t,y_t,npix_x_g);
-			       map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
-			     }//ix
-			   } //num ch chip y
-			 }//ichipy
-		       }//ichipx
-		     }//quad
-		  } //it ==0 		
-		   
-
+			  for(int ix=0; ix<NumChanPerChip_x;++ix){
+			    int x_t= GetX(ix, ichipx, imod_h);
+			    int y_t= GetY(iy, ichipy,imod_v);
+			    int k=GetK(x_t,y_t,npix_x_g);
+			    map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
+			  }//ix
+			} //num ch chip y
+		      }//ichipy
+		    }//ichipx
+		  }//quad		 
+		  else{
+		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+			for(int iy=0; iy<NumChanPerChip_y;++iy){
+			  int x_t= GetX(0, ichipx, imod_h);
+			  int y_t= GetY(iy, ichipy,imod_v);
+			   int k=GetK(x_t,y_t,npix_x_g);
+			   memcpy(&map[k], 
+				  &buffer[nnr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy],
+				  NumChanPerChip_x *sizeof(int));
+			} //num ch chip y
+		       }//ichipy
+		    }//ichipx
+		  }//not quad
+		} //it ==0 		
+		
 		//getting values for bottom
 		if(it==1) {
 		  startchipy=0;    
@@ -644,7 +643,22 @@ int main(int argc, char *argv[]) {
 		    endchipx=4;
 		  }		 
 		  
-		  if((npix_y_user!=512) || (npix_x_user!=512)){
+		  if((npix_y_user==512) && (npix_x_user==512)){
+		    //quad
+		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
+		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+			for(int iy=0; iy<NumChanPerChip_y;++iy){
+			  for(int ix=0; ix<NumChanPerChip_x;++ix){
+			    int x_t=GetX(ix, ichipx, imod_h);
+			    int y_t= GetY(iy,ichipy,imod_v);
+			    int k=GetK(x_t,y_t,npix_x_g);
+			    map[k]=buffer[nnr][(NumChanPerChip_x*NumChip_x_port-1)-(ix+(ichipx%2)*NumChanPerChip_x)+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
+			  }
+			}
+		      }
+		    }	
+		  }//quad
+		  else{
 		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
 		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
 			for(int iy=0; iy<NumChanPerChip_y;++iy){
@@ -657,27 +671,11 @@ int main(int argc, char *argv[]) {
 			}
 		      }
 		    }
-		  }
-		  else{
-		    //quad
-		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
-		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-			for(int iy=0; iy<NumChanPerChip_y;++iy){
-			  for(int ix=0; ix<NumChanPerChip_x;++ix){
-			    int x_t=GetX(ix, ichipx, imod_h);
-			    int y_t= GetY(iy,ichipy,imod_v);
-			    int k=GetK(x_t,y_t,npix_x_g);
-			    map[k]=buffer[nnr][(NumChanPerChip_x*NumChip_x_port-1)-(ix+(ichipx%2)*NumChanPerChip_x)+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
-			    
-			  }
-			}
-		      }
-		    }	
-		  }//quad
+		  }//not quad
 		}//it==1
 		nnr++;
-		}//ileft
-	      }//it
+	      }//ileft
+	    }//it
 	    
 	    //interpolation easier at the end of the module map
 	    //corner gap pixels gap pixels
