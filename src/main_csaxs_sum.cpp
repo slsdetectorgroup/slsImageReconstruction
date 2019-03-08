@@ -24,9 +24,9 @@
 
 #include "image.h"
 
-#define MYCBF //choose 
-#define MSHeader
-///#define MYROOT //choose 
+//#define MYCBF //choose 
+//#define MSHeader
+#define MYROOT //choose 
 //#define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
   
 #ifdef MYROOT
   //now open a single root file
-  TFile* ofile = new TFile(TString::Format("%s%s_%d.root",file.c_str(),
+  TFile* ofile = new TFile(TString::Format("%s_Sum%s_%d.root",file.c_str(),
 					   frames,fileIndex).Data(),
 			   "RECREATE");
 #endif  //If ROOT
@@ -528,15 +528,6 @@ int main(int argc, char *argv[]) {
 	FILE *out;
 	cbf_handle cbf;
 #endif
-#ifdef MYROOT
-	//check horizontal or vertical
-	TH2F* hmap= new TH2F(TString::Format("hmap%d",numFrames/*+im*/).Data(),
-			     TString::Format("hmap%d",numFrames/*+im*/).Data(),
-			     ( longedge_x ? npix_x_g : npix_y_g), 0, 
-			     ( longedge_x ? npix_x_g : npix_y_g), 
-			     ( longedge_x ? npix_y_g : npix_x_g), 0,
-			     ( longedge_x ? npix_y_g : npix_x_g));
-#endif  //If ROOT
     
 	//get a 2d map of the image
 	//initialize
@@ -560,7 +551,7 @@ int main(int argc, char *argv[]) {
 	int endchipy=1;
 
 
-	int Nimgs=1600;
+	int Nimgs=30000;
 
    
 	//omp_set_dynamic(0);     // Explicitly disable dynamic teams
@@ -1087,13 +1078,21 @@ int main(int argc, char *argv[]) {
 	cbf_failnez (cbf_free_handle (cbf));
     
 #endif  //If CBF
-    
-    
+	
+	    
 #ifdef MYROOT
+	//check horizontal or vertical
+	TH2F* hmap= new TH2F(TString::Format("hmap%d",numFrames/Nimgs/*+im*/).Data(),
+			     TString::Format("hmap%d",numFrames/Nimgs/*+im*/).Data(),
+			     ( longedge_x ? npix_x_g : npix_y_g), 0, 
+			     ( longedge_x ? npix_x_g : npix_y_g), 
+			     ( longedge_x ? npix_y_g : npix_x_g), 0,
+			     ( longedge_x ? npix_y_g : npix_x_g));
+
 	for(int iy=0; iy<npix_y_g; ++iy){
 	    for(int ix=0; ix<npix_x_g; ++ix){
 	      int kold=ix+ npix_x_g*iy;
-	      FillROOT(hmap,longedge_x, ix, iy, map[kold]);
+	      FillROOT(hmap,longedge_x, ix, iy, map2[kold]);
 	    }
 	}
 	hmap->SetStats(kFALSE);

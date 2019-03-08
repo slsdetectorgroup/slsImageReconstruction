@@ -24,6 +24,7 @@ CFLAGS		+=  -Wall
 LDLIBS		+= 	-lm  -lstdc++ 
 
 PROGS				= 	image
+PROGSROOT_SUM			= 	imageSum
 PROGS_CSAXS			= 	cbfMaker
 PROGS_CSAXS_HDF5		= 	hdf5Maker
 PROGS_CSAXS_OMNY_HDF5		= 	hdf5MakerOMNY
@@ -48,7 +49,7 @@ OBJSCSAXS 		= 	$(SRC_CSAXS_CLNT:.cpp=.o)
 OBJSSUM 		= 	$(SRC_SUM_CLNT:.cpp=.o)	
 
 
-all: clean $(PROGS)  $(PROGS_CSAXS)  $(PROGS_CSAXS_1.5M) $(PROGS_CSAXS_OMNY) $(PROGS_CSAXS_9M) #$(PROGS_SUM) #$(PROGS_HALF) 
+all: clean $(PROGS) $(PROGSROOT_SUM) $(PROGS_CSAXS)  $(PROGS_CSAXS_1.5M) $(PROGS_CSAXS_OMNY) $(PROGS_CSAXS_9M) #$(PROGS_SUM) #$(PROGS_HALF) 
 
 boot: $(OBJS) $(OBJSCSAXS) $(OBJSSUM)
 
@@ -59,6 +60,12 @@ $(PROGS):
 	mv $(PROGS) $(DESTDIR) 
 	cd $(WD)
 
+$(PROGSROOT_SUM): 
+	@echo $(WD)
+	mkdir -p $(DESTDIR) 
+	$(CCX)  -o $@  $(SRC_SUM_CLNT) $(INCLUDES) $(CFLAGS) $(LDLIBS) `$(ROOTSYS)/bin/root-config --cflags --libs` 
+	mv $(PROGSROOT_SUM) $(DESTDIR) 
+	cd $(WD)
 
 $(PROGS_CSAXS): 
 	@echo $(WD)
@@ -124,6 +131,7 @@ $(PROGS_SUM):
 
 clean:
 	rm -rf $(DESTDIR)$(PROGS)
+	rm -rf $(DESTDIR)$(PROGS_SUM)
 	rm -rf $(DESTDIR)$(PROGS_CSAXS)
 	#rm -rf $(DESTDIR)$(PROGS_HALF)
 	rm -rf $(DESTDIR)$(PROGS_CSAXS_1.5M)
