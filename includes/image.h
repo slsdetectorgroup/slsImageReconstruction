@@ -332,6 +332,7 @@ string GetFileNoDir(string file){
 }
 
 string GetDir(string file){
+  cout<<file<<endl;
   string::size_type position=0;
   string::size_type last_position=0;
   
@@ -340,11 +341,10 @@ string GetDir(string file){
     if (position == string::npos) break;
     last_position=position;
   }
-  //now I know position
-  //file.erase (0,last_position+1);
-  
-  file.erase (last_position+2,file.size());
-  cout<<"dir  "<< file<<endl;
+  //  cout<<file<<"   "<<last_position+1<<"   "<<file.size()<<endl;
+  file.erase (last_position,file.size());
+ 
+  cout<<file<<endl;
   return file;
 }
 
@@ -358,8 +358,7 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
   }
   file=argv[1];
 
-
-  //extract file index and file name with _d0
+   //extract file index and file name with _d0
   int i;
   size_t uscore=file.rfind("_");
   if (uscore==string::npos) {
@@ -390,13 +389,14 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
     file=s;
 
     //more parameters for ten giga, user pixels, startdet
-    if(argc>2){
+  if(argc>1){
       if(argc < 6){
 	//cprintf(RED, "Error: Not enough arguments: cbfMaker [file_name_with_dir][outputdir]"
 	//	"[numpixels_x][numpixels_y] [modulelongedge_x] [start_detector_Index]\nExiting.\n");
       //cout<<"dlkdk"<<endl;
       //exit(-1);
       }
+    
       if(argc>2) outdir=argv[2];
       else outdir= GetDir(file);
       if(argc>4)  npix_x_user=atoi(argv[3]);
@@ -757,14 +757,16 @@ void FillGapsBetweenChipMask(uint* map, int k, int kvirtual,
 }
 
 int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int& longedge_x, int& fillgaps, string& datasetname, int &startdet){
+  
   if(argc < 2){
     cprintf(RED, "Error: Not enough arguments: cbfMaker [file_name_with_dir] \nExiting.\n");
     exit(-1);
   }
-  file=argv[1];
+   file=argv[1];
+
   getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, fileFrameIndex, npix_x_user, npix_y_user);
 
-  if(argc>2){
+  //  if(argc>2){
         
     if(argc>5) longedge_x=atoi(argv[5]);
     else longedge_x=1;
@@ -793,8 +795,8 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
     //datasetname="Eiger";
     //startdet=0;
     //return 1;
-  }
-  return 0;
+    //}
+  return 1;
 }
 
 int local_exit(int status) {
