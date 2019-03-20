@@ -24,13 +24,13 @@
 
 #include "image.h"
 
-//#define MYCBF //choose 
-//#define MSHeader
+#define MYCBF //choose 
+#define MSHeader
 //#define MYROOT //choose 
-#define HDF5f
+//#define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
-#define ZLIB
+//#define ZLIB
 //#define SZIP
 //#define MASTERVIRTUAL
 
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
   int numFrames = fileFrameIndex+1 ;
   //now loop over all frames
   //for each frame
-  int Nimgsperfile=5000; //to be fixed in next realease when configurable
+  int Nimgsperfile=2000; //to be fixed in next realease when configurable
   // const int Nfiles= ( imgs%Nimgsperfile) ? (int)(imgs/Nimgsperfile)+1 :
   //(int)(imgs/Nimgsperfile) ;
   ifstream infile[numModules];
@@ -864,7 +864,9 @@ int main(int argc, char *argv[]) {
 	//---> here I should also fill
 	/* Create and initializes new internal CBF Object*/
 	cbf_failnez (cbf_make_handle (&cbf));
-	sprintf(fname, "%s_%05d_%05d.cbf",file.c_str(),fileIndex, numFrames);
+	sprintf(fname, "%s/%s_%05d_%05d.cbf",outdir.c_str(),
+		GetFileNoDir(file).c_str(),fileIndex, numFrames);
+	
 	out = fopen (fname, "w");
 		
 	//fake headers

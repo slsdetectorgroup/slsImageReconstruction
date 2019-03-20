@@ -34,6 +34,7 @@ const int GapPixelsBetweenModules_y = 36;
 int frameheadersize=0;
 int imagesize=0;
 int dynamicrange;
+string outdir;
 
 //gap pixel threatement 
 enum { kZero, kDivide, kInterpolate, kMask, kInterpolate2 };
@@ -330,6 +331,23 @@ string GetFileNoDir(string file){
   return file;
 }
 
+string GetDir(string file){
+  string::size_type position=0;
+  string::size_type last_position=0;
+  
+  while(1){
+    position = file.find ('/',position+1);
+    if (position == string::npos) break;
+    last_position=position;
+  }
+  //now I know position
+  //file.erase (0,last_position+1);
+  
+  file.erase (last_position+2,file.size());
+  cout<<"dir  "<< file<<endl;
+  return file;
+}
+
 //const static int imageHeader=frameheadersize;
 
 int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user)
@@ -373,26 +391,18 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
 
     //more parameters for ten giga, user pixels, startdet
     if(argc>2){
-      if(argc < 4){
-	cprintf(RED, "Error: Not enough arguments: cbfMaker [file_name_with_dir] "
-		"[numpixels_x][numpixels_y] [modulelongedge_x] [start_detector_Index]\nExiting.\n");
-	exit(-1);
+      if(argc < 6){
+	//cprintf(RED, "Error: Not enough arguments: cbfMaker [file_name_with_dir][outputdir]"
+	//	"[numpixels_x][numpixels_y] [modulelongedge_x] [start_detector_Index]\nExiting.\n");
+      //cout<<"dlkdk"<<endl;
+      //exit(-1);
       }
-      npix_x_user=atoi(argv[2]);
-      npix_y_user=atoi(argv[3]);
-      cprintf(BLUE,
-	      "\n"
-	      "File Name                 : %s\n"
-	      "File Index                : %d\n"
-	      "Frame Index Enable        : %d\n"
-	      "Frame Index               : %d\n"
-	      "Number of pixels in x dir : %d\n"
-	      "Number of pixels in y dir : %d\n",
-	      file.c_str(),fileIndex,isFileFrameIndex,fileFrameIndex, npix_x_user,npix_y_user);
-      return 1;
-    }else{
-      npix_x_user=1024;
-      npix_y_user=512;
+      if(argc>2) outdir=argv[2];
+      else outdir= GetDir(file);
+      if(argc>4)  npix_x_user=atoi(argv[3]);
+      else npix_x_user=1024;
+      if(argc>4)  npix_y_user=atoi(argv[4]);
+      else npix_y_user=512;
       cprintf(BLUE,
 	      "\n"
 	      "File Name                   : %s\n"
@@ -404,7 +414,6 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
     }
     return 0;
 }
-
 
 bool CheckFrames( int fnum, int numFrames)
 {
@@ -757,26 +766,33 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
 
   if(argc>2){
         
-    if(argc>4) longedge_x=atoi(argv[4]);
+    if(argc>5) longedge_x=atoi(argv[5]);
     else longedge_x=1;
-    if(argc>5) fillgaps=atoi(argv[5]);
+    if(argc>6) fillgaps=atoi(argv[6]);
     else fillgaps=kInterpolate; //0 no filling, 1 division, 2 interpolation 3 mask, interpolate alternative
-    if(argc>6) datasetname=(argv[6]);
+    if(argc>7) datasetname=(argv[7]);
     else datasetname="eiger_3"; //single module
-    if(argc>7) startdet=atoi(argv[7]);
+    if(argc>8) startdet=atoi(argv[8]);
     else startdet=0;
     cprintf(BLUE,
 	    "Module long edge is on x  : %d\n"
 	    "Fill gaps between chips   : %d\n"
 	    "Start detector index      : %d\n",
 	    longedge_x, fillgaps, startdet);
+
+    
+    cout<<outdir<<endl;
+    cout<<npix_x_user<<"  "<< npix_y_user<<endl;
+    cout<<longedge_x<<endl;
+    cout<<fillgaps<<endl;
+    cout<<datasetname<<endl;
     return 1;
-  }else{
-    longedge_x=1;
-    fillgaps=kInterpolate;
-    datasetname="Eiger";
-    startdet=0;
-    return 1;
+    //}else{
+    //longedge_x=1;
+    //fillgaps=kInterpolate;
+    //datasetname="Eiger";
+    //startdet=0;
+    //return 1;
   }
   return 0;
 }
