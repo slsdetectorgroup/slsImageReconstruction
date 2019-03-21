@@ -233,20 +233,19 @@ int main(int argc, char *argv[]) {
 
 #ifdef MYROOT
     //now open a single root file
-    TFile* ofile = new TFile(TString::Format("%s%s_%d.root",file.c_str(),
-					     frames,fileIndex).Data(),
-			     "RECREATE");
+  TFile* ofile = new TFile(TString::Format("%s/%s%s_%d.root",outdir.c_str(),
+					   GetFileNoDir(file).c_str(),
+					   frames,fileIndex).Data(),
+			   "RECREATE");
 #endif  //If ROOT
-
   
-    //    cout<<"total files  "<<Nfiles<<endl;
-
-    // int Nimagesexpected[Nfiles];
-    //for(int ifile=0; ifile<Nfiles-1; ifile++)
-    // Nimagesexpected[ifile]=Nimgsperfile;
-    //Nimagesexpected[Nfiles-1]=imgs-(Nfiles-1)*Nimgsperfile;
-    //cout<< "TOTAL Imags: "<< imgs<<" last image expected for last file is "<<Nimagesexpected[Nfiles-1]<<endl;
-     
+  //    cout<<"total files  "<<Nfiles<<endl;
+  // int Nimagesexpected[Nfiles];
+  //for(int ifile=0; ifile<Nfiles-1; ifile++)
+  // Nimagesexpected[ifile]=Nimgsperfile;
+  //Nimagesexpected[Nfiles-1]=imgs-(Nfiles-1)*Nimgsperfile;
+  //cout<< "TOTAL Imags: "<< imgs<<" last image expected for last file is "<<Nimagesexpected[Nfiles-1]<<endl;
+  
     int Nimagesexpected=Nimgsperfile+numFrames; //assumes 2000 more tahn number   
     if(imgs<Nimagesexpected)  Nimagesexpected=imgs+1;
     cout<< "last image expected for this file is "<<Nimagesexpected-1<<endl;
@@ -279,8 +278,10 @@ int main(int argc, char *argv[]) {
      */
     fapl = H5Pcreate(H5P_FILE_ACCESS);
     H5Pset_fclose_degree(fapl,H5F_CLOSE_STRONG);
-    sprintf(fname, "%s_%05d_%012d.h5",file.c_str(),fileIndex,fileFrameIndex);
-        
+    sprintf(fname, "%s/%s_%05d_%012d.h5",outdir.c_str(),
+					   GetFileNoDir(file).c_str(),
+	    fileIndex,fileFrameIndex);
+    
     fid = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT,fapl);  
     H5Pclose(fapl);
     
@@ -1172,7 +1173,8 @@ int main(int argc, char *argv[]) {
       char fnamevirtual[1000]; 
       fapl = H5Pcreate(H5P_FILE_ACCESS);
       H5Pset_fclose_degree(fapl,H5F_CLOSE_STRONG);
-      sprintf(fnamevirtual, "%s_virtual_%05d.h5",file.c_str(),fileIndex);
+      sprintf(fnamevirtual, "%s/%s_virtual_%05d.h5",outdir.c_str(),
+	      GetFileNoDir(file).c_str(),fileIndex);
       fvid = H5Fcreate(fnamevirtual, H5F_ACC_TRUNC, H5P_DEFAULT,fapl);  
       H5Pclose(fapl);  
 
