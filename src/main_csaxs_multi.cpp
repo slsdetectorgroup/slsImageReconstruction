@@ -11,6 +11,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <algorithm> 
+#include <sstream>
+#include <cmath>
+#include <cassert>
+
+#include "image.h"
 
 using namespace std;
 
@@ -21,13 +26,17 @@ int main(int argc, char *argv[]) {
 		exit(-1);
 	}
 
+	string od;
+	if(argc>2) od= string(argv[2]);
+	else od =GetDir(argv[1]);
+	
 	string exe = string(argv[0]);
 	size_t exePos = exe.rfind("1.5M");
 	if( exePos!= string::npos){
 	  exe.erase(exePos,4);
 	  
 	  //1.5M
-	  string command = exe + " " + string(argv[1]) + " 512 3072 0 2 eiger_2";
+	  string command = exe + " " + string(argv[1]) + " " + od + " 512 3072 0 2 eiger_2";
 	  cout<<"command:"<<command<<endl;
 	  system(command.c_str());
 	}
@@ -37,7 +46,7 @@ int main(int argc, char *argv[]) {
 	  exe.erase(exePos,4);
 	  
 	  //1.5M OMNY 
-	  string command = exe + " " + string(argv[1]) + " 1536 1024 0 2 eiger_4";
+	  string command = exe + " " + string(argv[1]) + " " + od +" 1536 1024 0 2 eiger_4";
 	  cout<<"command:"<<command<<endl;
 	  system(command.c_str());
 
@@ -47,7 +56,7 @@ int main(int argc, char *argv[]) {
 	if( exePos!= string::npos){
 	  exe.erase(exePos,2);
 	  //9M
-	  string command = exe + " " + string(argv[1]) + " 3072 3072 0 2 eiger_1";
+	  string command = exe + " " + string(argv[1]) + " " + od +" 3072 3072 0 2 eiger_1";
 	  cout<<"command:"<<command<<endl;
 	  system(command.c_str());
 	}

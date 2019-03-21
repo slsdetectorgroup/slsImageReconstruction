@@ -6,9 +6,9 @@ HDF5DIR		        =	/scratch/hdf5-1.10.3/hdf5-1.10.3/hdf5/
 LZ4DIR		        =	/scratch/lz4
 
 
-LIBRARYCBF		=	$(CBFLIBDIR)/lib/*.o
+#LIBRARYCBF		=	$(CBFLIBDIR)/lib/*.o
 LIBHDF5			=	-L$(HDF5DIR)/lib/ -lhdf5 -lhdf5_hl #-lhdf5_hl_cpp -lhdf5_cpp -lsz -lz 
-LIBHDF5CBF			=	-L$(CBFLIBDIR)/lib/ -lhdf5
+LIBHDF5CBF			=	-L$(CBFLIBDIR)/lib/ -lhdf5 -lcbf
 LIBLZ4			=	-L$(LZ4DIR)/lib/ -llz4
 #EXTPLUGINDIR	= /scratch/HDF5-External-Filter-Plugins/plugins/
 #EXTPLUGINLIB	= -L$(EXTPLUGINDIR) -lh5lz4

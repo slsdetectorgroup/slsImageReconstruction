@@ -24,9 +24,9 @@
 
 #include "image.h"
 
-//#define MYCBF //choose 
-//#define MSHeader
-#define MYROOT //choose 
+#define MYCBF //choose 
+#define MSHeader
+//#define MYROOT //choose 
 //#define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
@@ -232,8 +232,8 @@ int main(int argc, char *argv[]) {
   //} //loop on how many files
   
 #ifdef MYROOT
-  //now open a single root file
-  TFile* ofile = new TFile(TString::Format("%s%s_%d.root",file.c_str(),
+  TFile* ofile = new TFile(TString::Format("%s/%s%s_%d.root",outdir.c_str(),
+					   GetFileNoDir(file).c_str(),
 					   frames,fileIndex).Data(),
 			   "RECREATE");
 #endif  //If ROOT
@@ -279,7 +279,8 @@ int main(int argc, char *argv[]) {
      */
     fapl = H5Pcreate(H5P_FILE_ACCESS);
     H5Pset_fclose_degree(fapl,H5F_CLOSE_STRONG);
-    sprintf(fname, "%s_%05d_%012d.h5",file.c_str(),fileIndex,fileFrameIndex);
+    sprintf(fname, "%s/%s_%05d_%012d.h5",outdir.c_str(),
+	    GetFileNoDir(file).c_str(),fileIndex,fileFrameIndex);
         
     fid = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT,fapl);  
     H5Pclose(fapl);
@@ -932,7 +933,8 @@ int main(int argc, char *argv[]) {
 	//---> here I should also fill
 	/* Create and initializes new internal CBF Object*/
 	cbf_failnez (cbf_make_handle (&cbf));
-	sprintf(fname, "%s_%05d_%05d.cbf",file.c_str(),fileIndex, numFrames);
+	sprintf(fname, "%s/%s_%05d_%05d.cbf",outdir.c_str(),
+		GetFileNoDir(file).c_str(),fileIndex, numFrames);
 	out = fopen (fname, "w");
 		
 	//fake headers
@@ -1238,7 +1240,8 @@ int main(int argc, char *argv[]) {
       char fnamemaster[1000]; 
       fapl = H5Pcreate(H5P_FILE_ACCESS);
       H5Pset_fclose_degree(fapl,H5F_CLOSE_STRONG);
-      sprintf(fnamemaster, "%s_master_%05d.h5",file.c_str(),fileIndex);
+      sprintf(fnamemaster, "%s/%s_master_%05d.h5",outdir.c_str(),
+	      GetFileNoDir(file).c_str(),fileIndex);
       fvid = H5Fcreate(fnamemaster, H5F_ACC_TRUNC, H5P_DEFAULT,fapl);  
       H5Pclose(fapl);  
 
@@ -1316,7 +1319,8 @@ int main(int argc, char *argv[]) {
 	count[2]=dim[2];
 
  	H5Sselect_hyperslab(vdataspace, H5S_SELECT_SET, start, NULL, count,NULL);
-       	sprintf(fname, "%s_%05d_%012d.h5",file.c_str(),fileIndex,Nimgsperfile*ifile);
+	//relative path here 
+       	sprintf(fname, "%s_%05d_%012d.h5",GetFileNoDir(file).c_str(),fileIndex,Nimgsperfile*ifile);
 	
 	hid_t src_space = H5Screate_simple(rank,dim, maxdim); //here
       
