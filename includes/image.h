@@ -390,12 +390,12 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
 
     //more parameters for ten giga, user pixels, startdet
   if(argc>1){
-      if(argc < 6){
+    // if(argc < 6){
 	//cprintf(RED, "Error: Not enough arguments: cbfMaker [file_name_with_dir][outputdir]"
 	//	"[numpixels_x][numpixels_y] [modulelongedge_x] [start_detector_Index]\nExiting.\n");
       //cout<<"dlkdk"<<endl;
       //exit(-1);
-      }
+      //}
     
       if(argc>2) outdir=argv[2];
       else outdir= GetDir(file);
@@ -411,7 +411,7 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
 	      "File Frame Index            : %d\n",
 	      file.c_str(),fileIndex,isFileFrameIndex,fileFrameIndex);
       return 1;
-    }
+  }
     return 0;
 }
 
@@ -796,7 +796,7 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
     //startdet=0;
     //return 1;
     //}
-  return 1;
+    // return 1;
 }
 
 int local_exit(int status) {
