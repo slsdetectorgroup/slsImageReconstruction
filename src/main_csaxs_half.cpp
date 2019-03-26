@@ -24,24 +24,23 @@
 
 #include "image.h"
 
-#define MYCBF //choose 
-#define MSHeader
-//#define MYROOT //choose 
+//#define MYCBF //choose 
+//#define MSHeader
+#define MYROOT //choose 
 //#define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
 //#define ZLIB
 //#define SZIP
 //#define MASTERVIRTUAL
-//#define HALF
-#define QUART
+#define HALF
+//#define QUART
 
 #ifdef HDF5f
 #include "hdf5.h"
 //#include "H5Cpp.h"
 #include "H5DOpublic.h"
 #define DEFLATE_SIZE_ADJUST(s) (ceil(((double)(s))*1.001)+12)
- 
 #endif
 
 #ifdef LZ4
@@ -101,6 +100,13 @@ int main(int argc, char *argv[]) {
   int npix_x_user= npix_x_sm;
   int npix_y_user= npix_y_sm;
   
+#ifdef HALF
+  int npix_y_half=128;
+#endif
+#ifdef QUART
+  int npix_y_half=64;
+#endif
+  
   //get command line arguments
   string file, datasetname;
   int fileIndex, fileFrameIndex=0,startdet=0;
@@ -152,22 +158,14 @@ int main(int argc, char *argv[]) {
   //custum_container <unit8_t>* map;
   uint* mapr=new uint[npix_x_g*npix_y_g];
 
-#ifdef HALF
+#if defined(HALF) || defined(QUART)
   //map including gap pixels
-  uint* maphalf=new uint[npix_x_g*((128*2)+2)];
+  uint* maphalf=new uint[npix_x_g*((npix_y_half*2)+2)];
   // custum_container <unit>* map;
   //custum_container <unit8_t>* map;
-  uint* maphalfr=new uint[npix_x_g*((128*2)+2)];
+  uint* maphalfr=new uint[npix_x_g*((npix_y_half*2)+2)];
 #endif
   
-#ifdef QUART
-  //map including gap pixels
-  uint* maphalf=new uint[npix_x_g*((64*2)+2)];
-  // custum_container <unit>* map;
-  //custum_container <unit8_t>* map;
-  uint* maphalfr=new uint[npix_x_g*((64*2)+2)];
- #endif
- 
   cprintf(BLUE,
 	  "Number of Pixels (incl gap pixels) in x dir : %d\n"
 	  "Number of Pixels (incl gap pixels) in y dir : %d\n"
@@ -549,10 +547,10 @@ int main(int argc, char *argv[]) {
 	//check horizontal or vertical
 	TH2F* hmap= new TH2F(TString::Format("hmap%d",numFrames/*+im*/).Data(),
 			     TString::Format("hmap%d",numFrames/*+im*/).Data(),
-			     ( longedge_x ? npix_x_g : npix_y_g), 0, 
-			     ( longedge_x ? npix_x_g : npix_y_g), 
-			     ( longedge_x ? npix_y_g : npix_x_g), 0,
-			     ( longedge_x ? npix_y_g : npix_x_g));
+			     ( longedge_x ? npix_x_g : npix_y_half*2+2), 0, 
+			     ( longedge_x ? npix_x_g : npix_y_half*2+2), 
+			     ( longedge_x ? npix_y_half*2+2 : npix_x_g), 0,
+			     ( longedge_x ? npix_y_half*2+2 : npix_x_g));
 #endif  //If ROOT
     
 	//get a 2d map of the image
@@ -945,28 +943,28 @@ int main(int argc, char *argv[]) {
 	  }
 	} //short edege
 
-#ifdef HALF
+#if defined(HALF) || defined(QUART)  
 	//Now reduce the map to what I want
 	for(int ix=0; ix<npix_x_g; ++ix){
-	  for(int iy=128; iy<386; ++iy){
+	  for(int iy=(NumChanPerChip_y-npix_y_half); 
+	      iy<(npix_y_g-(NumChanPerChip_y-npix_y_half)); ++iy){
 	    int kold=ix+ npix_x_g*iy;
-	    int knew=ix+ npix_x_g*(iy-128);
+	    int knew=ix+ npix_x_g*(iy-(NumChanPerChip_y-npix_y_half));
 	    maphalf[knew]=map[kold];
+#ifdef MYROOT
+	    FillROOT(hmap,longedge_x, ix, iy-(NumChanPerChip_y-npix_y_half),
+		     maphalf[knew]);
+#endif  //If ROOT
 	  }
 	}
+#ifdef MYROOT
+	hmap->SetStats(kFALSE);
+	hmap->Draw("colz");
+	hmap->Write();
+	delete hmap;
+#endif  //If ROOT
 #endif
-
-#ifdef QUART
-	//Now reduce the map to what I want
-	for(int ix=0; ix<npix_x_g; ++ix){
-	  for(int iy=192; iy<322; ++iy){
-	    int kold=ix+ npix_x_g*iy;
-	    int knew=ix+ npix_x_g*(iy-192);
-	    maphalf[knew]=map[kold];
-	  }
-	}
-#endif
-
+	
 #ifdef MYCBF
 	
 	FILE *out;
@@ -1083,7 +1081,7 @@ int main(int argc, char *argv[]) {
 	  /* Make new column at current data category */
 	  cbf_failnez (cbf_new_column   (cbf, "data"))
      
- #ifdef HALF
+#if defined(HALF) || defined(QUART)
 	  /* Create the binary data */
 	  cbf_failnez (cbf_set_integerarray_wdims_fs (
 						      cbf, 								//cbf_handle handle
@@ -1092,33 +1090,14 @@ int main(int argc, char *argv[]) {
 						      &(maphalf[0]) , 						//void *array
 						      sizeof (int),						 //size_t elsize
 						      1,									//int elsigned
-						      (128*2+2) * npix_x_g,	    //size_t elements
+						      (npix_y_half*2+2) * npix_x_g,	    //size_t elements
 						      "little_endian",					 // const char *byteorder
 						      npix_x_g ,		       		 //size_t dimfast
-						      (128*2)+2,				  //size_t dimmid
+						      (npix_y_half*2)+2,				  //size_t dimmid
 						      0,							       	//size_t dimslow
 						      4095 								//size_t padding
 						      ));
 #endif
-#ifdef QUART
-	  /* Create the binary data */
-	  cbf_failnez (cbf_set_integerarray_wdims_fs (
-						      cbf, 								//cbf_handle handle
-						      CBF_BYTE_OFFSET| CBF_FLAT_IMAGE, 	// unsigned int compression
-						      1,									//int binary_id
-						      &(maphalf[0]) , 						//void *array
-						      sizeof (int),						 //size_t elsize
-						      1,									//int elsigned
-						      (64*2+2) * npix_x_g,	    //size_t elements
-						      "little_endian",					 // const char *byteorder
-						      npix_x_g ,		       		 //size_t dimfast
-						      (64*2)+2,				  //size_t dimmid
-						      0,							       	//size_t dimslow
-						      4095 								//size_t padding
-						      ));
-#endif
-
-  
 
 	/** write everything to file */
 	cbf_failnez (cbf_write_file (
@@ -1134,21 +1113,7 @@ int main(int argc, char *argv[]) {
 	cbf_failnez (cbf_free_handle (cbf));
     
 #endif  //If CBF
-    
-    
-#ifdef MYROOT
-	for(int iy=0; iy<npix_y_g; ++iy){
-	    for(int ix=0; ix<npix_x_g; ++ix){
-	      int kold=ix+ npix_x_g*iy;
-	      FillROOT(hmap,longedge_x, ix, iy, map[kold]);
-	    }
-	}
-	hmap->SetStats(kFALSE);
-	hmap->Draw("colz");
-	hmap->Write();
-	delete hmap;
-#endif  //If ROOT
-
+	
 #ifdef HDF5f
 	/*
 	 * store the counts dataset
