@@ -35,8 +35,8 @@
 //#define MASTERVIRTUAL
 
 #ifdef HDF5f
-#include "hdf5.h"
-//#include "H5Cpp.h"
+//#include "hdf5.h"
+#include "H5Cpp.h"
 #include "H5DOpublic.h"
 #define DEFLATE_SIZE_ADJUST(s) (ceil(((double)(s))*1.001)+12)
  
