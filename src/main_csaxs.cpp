@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
   int numFrames = fileFrameIndex+1 ;
   //now loop over all frames
   //for each frame
-  int Nimgsperfile=5000; //to be fixed in next realease when configurable
+  int Nimgsperfile=30000; //to be fixed in next realease when configurable
   // const int Nfiles= ( imgs%Nimgsperfile) ? (int)(imgs/Nimgsperfile)+1 :
   //(int)(imgs/Nimgsperfile) ;
   ifstream infile[numModules];
