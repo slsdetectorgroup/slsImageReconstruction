@@ -27,6 +27,7 @@ PROGS				= 	image
 PROGSROOT_SUM			= 	imageSum
 PROGS_CSAXS			= 	cbfMaker
 PROGS_CSAXS_HDF5		= 	hdf5Maker
+PROGS_CSAXS_TXT		        = 	txtMaker
 PROGS_CSAXS_OMNY_HDF5		= 	hdf5MakerOMNY
 PROGS_CSAXS_9M_HDF5		= 	hdf5Maker9M
 PROGS_CSAXS_1.5M_HDF5		= 	hdf5Maker1.5M
@@ -77,6 +78,12 @@ $(PROGS_CSAXS_HDF5):
 	@echo $(WD)
 	$(CCX)  -o $@  $(SRC_CSAXS_CLNT) $(INCLUDES)  $(INCLUDESHDF5) $(INCLUDELZ4) $(LIBHDF5) $(EXTPLUGINLIB) $(CFLAGS) $(LDLIBS) 
 	mv $(PROGS_CSAXS_HDF5) $(DESTDIR) 
+	cd $(WD)
+
+$(PROGS_CSAXS_TXT): 
+	@echo $(WD)
+	$(CCX)  -o $@  $(SRC_CSAXS_CLNT) $(INCLUDES) $(CFLAGS) $(LDLIBS) 
+	mv $(PROGS_CSAXS_TXT) $(DESTDIR) 
 	cd $(WD)
 
 $(PROGS_HALF): 

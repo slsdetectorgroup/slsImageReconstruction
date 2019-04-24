@@ -27,10 +27,11 @@
 //#define MYCBF //choose 
 //#define MSHeader
 //#define MYROOT //choose 
-#define HDF5f
+#define TXT
+//#define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
-#define ZLIB
+//#define ZLIB
 //#define SZIP
 //#define MASTERVIRTUAL
 
@@ -237,6 +238,12 @@ int main(int argc, char *argv[]) {
 					   frames,fileIndex).Data(),
 			   "RECREATE");
 #endif  //If ROOT
+#ifdef TXT
+  FILE *out;
+  sprintf(fname, "%s/%s%s_%d.txt",outdir.c_str(),
+	  GetFileNoDir(file).c_str(),frames,fileIndex);
+  out = fopen (fname, "w");
+#endif
 
   
     //    cout<<"total files  "<<Nfiles<<endl;
@@ -927,6 +934,31 @@ int main(int argc, char *argv[]) {
 	  }
 	} //short edege
 
+
+#ifdef TXT
+	//rotate on the output matrix
+	for(int ix=0; ix<npix_x_g; ++ix){
+	  for(int iy=0; iy<npix_y_g; ++iy){
+	    int kold=ix+ npix_x_g*iy;
+	    if(map[kold]>0){
+	      int  knew=(npix_y_g-iy)+ npix_y_g*ix;
+	      //  mapr[knew]=map[kold];
+	      //  fprintf(out,
+	      //	"###CBF: VERSION 1.0, CBFlib v0.9.5 - SLS EIGER detector\r\n"
+	      //	"# Detector: Eiger\r\n"
+	      //	);
+	      char printData[500];
+	      if(longedge_x)  sprintf(printData,"%d %d %d %d\n",numFrames, ix, iy, map[kold]);
+	      else {
+		int  knew=(npix_y_g-iy)+ npix_y_g*ix;
+		sprintf(printData,"%d %d %d %d\n",numFrames,(npix_y_g- iy), ix, mapr[knew]);
+	      }
+	      fprintf(out,printData);
+	    }//if content
+	  }
+	}
+    	
+#endif
 #ifdef MYCBF
 	
 	FILE *out;
@@ -1060,7 +1092,7 @@ int main(int argc, char *argv[]) {
 						      longedge_x? npix_x_g : npix_y_g,		       		 //size_t dimfast
 						      longedge_x? npix_y_g : npix_x_g,				  //size_t dimmid
 						      0,							       	//size_t dimslow
-						      4095 								//size_t padding
+						      max 								//size_t padding
 						      ));
 
   
@@ -1367,6 +1399,10 @@ int main(int argc, char *argv[]) {
       H5Fclose(fvid);
     } //fileframeindex0    
 #endif
+#endif 
+
+#ifdef TXT
+    fclose (out);
 #endif   
     //cout<<"only to read took "<<tdif/1e6<<endl;
     return 1;
