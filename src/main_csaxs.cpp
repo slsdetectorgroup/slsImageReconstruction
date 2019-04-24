@@ -476,6 +476,7 @@ int main(int argc, char *argv[]) {
 
     //   for(int ifiles=0; ifiles<Nfiles; ifiles++){
     //while(nf[ifiles]<= Nimagesexpected[ifiles]+ifiles*Nimgsperfile){
+   
     
     while(numFrames< Nimagesexpected){
 
@@ -548,7 +549,7 @@ int main(int argc, char *argv[]) {
 	if(dynamicrange==16 ) 
 	  for(int ik=0; ik<npix_y_g*npix_x_g;++ik) map[ik]=4095;
 	if(dynamicrange==32 ) 
-	  for(int ik=0; ik<npix_y_g*npix_x_g;++ik) map[ik]=((long int)(pow(2,32))-1);
+	  for(int ik=0; ik<npix_y_g*npix_x_g;++ik) map[ik]=4294967295;
             
 	int startchipx=0;
 	int startchipy=0;
@@ -890,8 +891,12 @@ int main(int argc, char *argv[]) {
 		"# Exposure_time %f s\r\n"
 		"# Exposure_period %f s\r\n"
 		"# Tau = 0 s\r\n",expTime,period);
-	unsigned int max=pow(2,dynamicrange)-1;
-	if(dynamicrange==16) max=pow(2,12)-1;
+	unsigned int max;
+	if(dynamicrange==16) max=4095;
+	if(dynamicrange==8) max=255;
+	if(dynamicrange==4) max=15;
+	if(dynamicrange==32) max=4294967295;
+
 	sprintf(limits, "# Count_cutoff %ld counts\r\n",max );
 	fprintf(out,limits);
 	fprintf(out,
