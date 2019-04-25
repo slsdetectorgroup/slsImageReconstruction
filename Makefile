@@ -24,10 +24,12 @@ CFLAGS		+=  -Wall
 LDLIBS		+= 	-lm  -lstdc++ 
 
 PROGS				= 	image
+PROGS_QUAD			= 	imageQuad
 PROGSROOT_SUM			= 	imageSum
 PROGS_CSAXS			= 	cbfMaker
 PROGS_CSAXS_HDF5		= 	hdf5Maker
 PROGS_CSAXS_TXT		        = 	txtMaker
+PROGS_CSAXS_TXT_QUAD		= 	txtMakerQuad
 PROGS_CSAXS_OMNY_HDF5		= 	hdf5MakerOMNY
 PROGS_CSAXS_9M_HDF5		= 	hdf5Maker9M
 PROGS_CSAXS_1.5M_HDF5		= 	hdf5Maker1.5M
@@ -61,6 +63,13 @@ $(PROGS):
 	mv $(PROGS) $(DESTDIR) 
 	cd $(WD)
 
+$(PROGS_QUAD): 
+	@echo $(WD)
+	mkdir -p $(DESTDIR) 
+	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES) $(CFLAGS) $(LDLIBS) `$(ROOTSYS)/bin/root-config --cflags --libs` 
+	mv $(PROGS_QUAD) $(DESTDIR) 
+	cd $(WD)
+
 $(PROGSROOT_SUM): 
 	@echo $(WD)
 	mkdir -p $(DESTDIR) 
@@ -84,6 +93,12 @@ $(PROGS_CSAXS_TXT):
 	@echo $(WD)
 	$(CCX)  -o $@  $(SRC_CSAXS_CLNT) $(INCLUDES) $(CFLAGS) $(LDLIBS) 
 	mv $(PROGS_CSAXS_TXT) $(DESTDIR) 
+	cd $(WD)
+
+$(PROGS_CSAXS_TXT_QUAD): 
+	@echo $(WD)
+	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES) $(CFLAGS) $(LDLIBS) 
+	mv $(PROGS_CSAXS_TXT_QUAD) $(DESTDIR) 
 	cd $(WD)
 
 $(PROGS_HALF): 

@@ -61,6 +61,15 @@ int main(int argc, char *argv[]) {
 	  system(command.c_str());
 	}
 
+	exePos = exe.rfind("Quad");
+	if( exePos!= string::npos){
+	  exe.erase(exePos,4);
+	  //9M
+	  string command = exe + " " + string(argv[1]) + " " + od +" 512 512 1 2 eiger";
+	  cout<<"command:"<<command<<endl;
+	  system(command.c_str());
+	}
+
 	
 	return 1;
 }

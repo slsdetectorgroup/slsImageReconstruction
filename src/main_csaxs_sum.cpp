@@ -479,6 +479,9 @@ int main(int argc, char *argv[]) {
 
     //   for(int ifiles=0; ifiles<Nfiles; ifiles++){
     //while(nf[ifiles]<= Nimagesexpected[ifiles]+ifiles*Nimgsperfile){
+
+    int Nimgs=30000;
+    cout<<"SUMMING "<< Nimgs <<"  images"<<endl;
     
     while(numFrames< Nimagesexpected){
 
@@ -550,8 +553,6 @@ int main(int argc, char *argv[]) {
 	int endchipx=4;
 	int endchipy=1;
 
-
-	int Nimgs=30000;
 
    
 	//omp_set_dynamic(0);     // Explicitly disable dynamic teams

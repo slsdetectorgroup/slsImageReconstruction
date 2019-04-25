@@ -26,8 +26,8 @@
 
 //#define MYCBF //choose 
 //#define MSHeader
-//#define MYROOT //choose 
-#define TXT
+#define MYROOT //choose 
+//#define TXT
 //#define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
