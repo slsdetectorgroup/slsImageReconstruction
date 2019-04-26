@@ -24,8 +24,9 @@
 
 #include "image.h"
 
-#define MYCBF //choose 
-#define MSHeader
+//#define MYCBF //choose 
+//#define MSHeader
+#define TIFFFILE
 //#define MYROOT //choose 
 //#define TXT
 //#define HDF5f
@@ -64,6 +65,10 @@
 #include "TH2F.h"
 #include "TCanvas.h"
 #include "TFile.h"
+#endif
+
+#ifdef TIFFFILE
+#include "tiffio.h"
 #endif
 
 using namespace std;
@@ -244,7 +249,6 @@ int main(int argc, char *argv[]) {
 	  GetFileNoDir(file).c_str(),frames,fileIndex);
   out = fopen (fname, "w");
 #endif
-
   
     //    cout<<"total files  "<<Nfiles<<endl;
 
@@ -959,6 +963,39 @@ int main(int argc, char *argv[]) {
 	}
     	
 #endif
+
+#ifdef TIFFFILE
+   //one tiff file per image
+  sprintf(fname, "%s/%s_%05d_%05d.tiff",outdir.c_str(),
+  	  GetFileNoDir(file).c_str(),fileIndex, numFrames);
+  TIFF * tif = TIFFOpen(fname, "w");
+ 
+  TIFFSetField(tif,TIFFTAG_IMAGEWIDTH,longedge_x? npix_x_g : npix_y_g );
+  TIFFSetField(tif, TIFFTAG_IMAGELENGTH, longedge_x ? npix_y_g : npix_x_g );
+  TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL,1);
+  //4 bit not supported
+  if(dynamicrange!=4) 
+    TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, dynamicrange);
+  else 
+    TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8);
+  TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT); 
+  TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+  TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_PALETTE/*_MINISBLACK*/);
+  //TIFFSetField(tif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_IEEEFP);
+  TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
+  TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, 
+	       TIFFDefaultStripSize(tif,(longedge_x? npix_x_g : npix_y_g ) ));
+  
+ for(int irow=0; irow<(longedge_x ? npix_y_g : npix_x_g); irow++)
+   TIFFWriteScanline(tif,  
+		     ( longedge_x ? 
+		       &(map[irow*(longedge_x? npix_x_g : npix_y_g) ]) 
+		       : &(mapr[irow*(longedge_x? npix_x_g : npix_y_g) ])),
+		     irow, 0);
+ TIFFClose(tif); 
+
+#endif
+
 #ifdef MYCBF
 	
 	FILE *out;

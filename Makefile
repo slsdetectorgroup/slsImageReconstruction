@@ -12,14 +12,14 @@ LIBHDF5CBF			=	-L$(CBFLIBDIR)/lib/ -lhdf5 -lcbf
 LIBLZ4			=	-L$(LZ4DIR)/lib/ -llz4
 #EXTPLUGINDIR	= /scratch/HDF5-External-Filter-Plugins/plugins/
 #EXTPLUGINLIB	= -L$(EXTPLUGINDIR) -lh5lz4
-
+LIBCBFTIFF		=  -L/usr/lib64/ -ltiff 	#-L$(CBFLIBDIR)/lib/ -ltiff 
 
 INCLUDESCBF		=	-I $(CBFLIBDIR)/include
 INCLUDESHDF5		=	-I $(HDF5DIR)/include 
 INCLUDELZ4              =  -I $(LZ4DIR)/lib
 INCLUDES		= 	-I. -Iincludes  
 
-CCX			=	gcc -O3 -pthread  #-fopenmp 
+CCX			=	gcc -O3 -pthread 
 CFLAGS		+=  -Wall 
 LDLIBS		+= 	-lm  -lstdc++ 
 
@@ -28,6 +28,8 @@ PROGS_QUAD			= 	imageQuad
 PROGSROOT_SUM			= 	imageSum
 PROGS_CSAXS			= 	cbfMaker
 PROGS_CSAXS_HDF5		= 	hdf5Maker
+PROGS_CSAXS_TIFF		= 	tiffMaker
+PROGS_CSAXS_TIFF_QUAD		= 	tiffMakerQuad
 PROGS_CSAXS_TXT		        = 	txtMaker
 PROGS_CSAXS_TXT_QUAD		= 	txtMakerQuad
 PROGS_CSAXS_OMNY_HDF5		= 	hdf5MakerOMNY
@@ -106,6 +108,18 @@ $(PROGS_CSAXS_TXT_QUAD):
 	@echo $(WD)
 	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES) $(CFLAGS) $(LDLIBS) 
 	mv $(PROGS_CSAXS_TXT_QUAD) $(DESTDIR) 
+	cd $(WD)
+
+$(PROGS_CSAXS_TIFF): 
+	@echo $(WD)
+	$(CCX)  -o $@  $(SRC_CSAXS_CLNT) $(INCLUDES) $(INCLUDESCBF) $(CFLAGS) $(LDLIBS) $(LIBCBFTIFF) 
+	mv $(PROGS_CSAXS_TIFF) $(DESTDIR) 
+	cd $(WD)
+
+$(PROGS_CSAXS_TIFF_QUAD): 
+	@echo $(WD)
+	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES) $(INCLUDESCBF) $(CFLAGS) $(LDLIBS) $(LIBCBFTIFF) 
+	mv $(PROGS_CSAXS_TIFF_QUAD) $(DESTDIR) 
 	cd $(WD)
 
 $(PROGS_HALF): 
