@@ -34,6 +34,7 @@ PROGS_CSAXS_OMNY_HDF5		= 	hdf5MakerOMNY
 PROGS_CSAXS_9M_HDF5		= 	hdf5Maker9M
 PROGS_CSAXS_1.5M_HDF5		= 	hdf5Maker1.5M
 PROGS_SUM			= 	cbfMakerSum
+PROGS_CSAXS_QUAD		= 	cbfMakerQuad
 PROGS_HALF			= 	cbfMakerHalf
 PROGS_CSAXS_1.5M        	= 	cbfMaker1.5M
 PROGS_CSAXS_OMNY        	= 	cbfMakerOMNY
@@ -81,6 +82,12 @@ $(PROGS_CSAXS):
 	@echo $(WD)
 	$(CCX)  -o $@  $(SRC_CSAXS_CLNT) $(INCLUDES)  $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5CBF) $(CFLAGS) $(LDLIBS) 
 	mv $(PROGS_CSAXS) $(DESTDIR) 
+	cd $(WD)
+
+$(PROGS_CSAXS_QUAD): 
+	@echo $(WD)
+	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES)  $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5CBF) $(CFLAGS) $(LDLIBS) 
+	mv $(PROGS_CSAXS_QUAD) $(DESTDIR) 
 	cd $(WD)
 
 $(PROGS_CSAXS_HDF5): 

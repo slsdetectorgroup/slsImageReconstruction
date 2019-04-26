@@ -24,9 +24,9 @@
 
 #include "image.h"
 
-//#define MYCBF //choose 
-//#define MSHeader
-#define MYROOT //choose 
+#define MYCBF //choose 
+#define MSHeader
+//#define MYROOT //choose 
 //#define TXT
 //#define HDF5f
 //#define LZ4
