@@ -943,17 +943,12 @@ int main(int argc, char *argv[]) {
 	//rotate on the output matrix
 	for(int ix=0; ix<npix_x_g; ++ix){
 	  for(int iy=0; iy<npix_y_g; ++iy){
-	    int kold=ix+ npix_x_g*iy;
+	    int kold=ix+ npix_x_g*iy;   
 	    if(map[kold]>0){
-	      int  knew=(npix_y_g-iy)+ npix_y_g*ix;
-	      //  mapr[knew]=map[kold];
-	      //  fprintf(out,
-	      //	"###CBF: VERSION 1.0, CBFlib v0.9.5 - SLS EIGER detector\r\n"
-	      //	"# Detector: Eiger\r\n"
-	      //	);
 	      char printData[500];
-	      if(longedge_x)  sprintf(printData,"%d %d %d %d\n",numFrames, ix, iy, map[kold]);
-	      else {
+	      if(longedge_x) {
+		sprintf(printData,"%d %d %d %d\n",numFrames, ix, iy, map[kold]);
+	      } else{
 		int  knew=(npix_y_g-iy)+ npix_y_g*ix;
 		sprintf(printData,"%d %d %d %d\n",numFrames,(npix_y_g- iy), ix, mapr[knew]);
 	      }
@@ -973,25 +968,66 @@ int main(int argc, char *argv[]) {
   TIFFSetField(tif,TIFFTAG_IMAGEWIDTH,longedge_x? npix_x_g : npix_y_g );
   TIFFSetField(tif, TIFFTAG_IMAGELENGTH, longedge_x ? npix_y_g : npix_x_g );
   TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL,1);
-  //4 bit not supported
-  if(dynamicrange!=4) 
-    TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, dynamicrange);
-  else 
-    TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8);
+
+
   TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT); 
   TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-  TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_PALETTE/*_MINISBLACK*/);
-  //TIFFSetField(tif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_IEEEFP);
+  TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_PALETTE);
+  // TIFFSetField(tif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_IEEEFP);
   TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
   TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, 
 	       TIFFDefaultStripSize(tif,(longedge_x? npix_x_g : npix_y_g ) ));
-  
- for(int irow=0; irow<(longedge_x ? npix_y_g : npix_x_g); irow++)
-   TIFFWriteScanline(tif,  
-		     ( longedge_x ? 
-		       &(map[irow*(longedge_x? npix_x_g : npix_y_g) ]) 
-		       : &(mapr[irow*(longedge_x? npix_x_g : npix_y_g) ])),
-		     irow, 0);
+
+
+  if(dynamicrange==32) {
+    TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, dynamicrange);
+    for(int irow=0; irow<(longedge_x ? npix_y_g : npix_x_g); ++irow)
+      TIFFWriteScanline(tif,  
+			( longedge_x ? 
+			  &(map[irow*(longedge_x? npix_x_g : npix_y_g) ]) 
+			  : &(mapr[irow*(longedge_x? npix_x_g : npix_y_g) ])),
+			irow, 0); 
+  }
+  //4 bit not supported
+  if(dynamicrange==4 || dynamicrange==8){ 
+    
+    unsigned char* a=new unsigned char[npix_x_g*npix_y_g];  
+    if(longedge_x){
+      for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
+	a[ik]=(unsigned char)map[ik];
+    }
+    else 
+      for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
+	a[ik]=(unsigned char)mapr[ik];
+    
+    TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8);
+    for(int irow=0; irow<(longedge_x ? npix_y_g : npix_x_g); ++irow)
+      TIFFWriteScanline(tif,  
+			( longedge_x ? 
+			  &(a[irow*(longedge_x? npix_x_g : npix_y_g) ]) 
+			  : &(a[irow*(longedge_x? npix_x_g : npix_y_g) ])),
+			irow, 0);
+  }
+  if(dynamicrange==16){ 
+    
+    unsigned short* a=new unsigned short[npix_x_g*npix_y_g];  
+    if(longedge_x){
+      for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
+	a[ik]=(unsigned short)map[ik];
+    }
+    else 
+      for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
+	a[ik]=(unsigned short)mapr[ik];
+    
+    TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 16);
+    for(int irow=0; irow<(longedge_x ? npix_y_g : npix_x_g); ++irow)
+      TIFFWriteScanline(tif,  
+			( longedge_x ? 
+			  &(a[irow*(longedge_x? npix_x_g : npix_y_g) ]) 
+			  : &(a[irow*(longedge_x? npix_x_g : npix_y_g) ])),
+			irow, 0);
+  }
+
  TIFFClose(tif); 
 
 #endif
@@ -1186,11 +1222,11 @@ int main(int argc, char *argv[]) {
        
 	  unsigned short* a=new unsigned short[npix_x_g*npix_y_g];
 	  if(longedge_x){
-	    for (int ik=0; ik<npix_x_g*npix_y_g; ik++)
+	    for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
 	      a[ik]=(unsigned short )map[ik];
 	  }
 	  else 
-	    for (int ik=0; ik<npix_x_g*npix_y_g; ik++)
+	    for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
 	      a[ik]=(unsigned short)mapr[ik];
 
 	  const Bytef *z_src = (const Bytef*)a;
@@ -1217,11 +1253,11 @@ int main(int argc, char *argv[]) {
 	  
 	    unsigned char* a=new unsigned char[npix_x_g*npix_y_g];
 	    if(longedge_x){
-	      for (int ik=0; ik<npix_x_g*npix_y_g; ik++)
+	      for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
 		a[ik]=(unsigned char)map[ik];
 	    }
 	    else 
-	      for (int ik=0; ik<npix_x_g*npix_y_g; ik++)
+	      for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
 		a[ik]=(unsigned char)mapr[ik];
 	  
 	    const Bytef *z_src = (const Bytef*)a;
