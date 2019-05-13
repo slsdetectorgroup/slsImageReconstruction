@@ -24,9 +24,9 @@
 
 #include "image.h"
 
-//#define MYCBF //choose 
-//#define MSHeader
-#define TIFFFILE
+#define MYCBF //choose 
+#define MSHeader
+//#define TIFFFILE
 //#define MYROOT //choose 
 //#define TXT
 //#define HDF5f
@@ -974,8 +974,7 @@ int main(int argc, char *argv[]) {
   TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
   TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_PALETTE);
   // TIFFSetField(tif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_IEEEFP);
-  TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
-  TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, 
+    TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, 
 	       TIFFDefaultStripSize(tif,(longedge_x? npix_x_g : npix_y_g ) ));
 
 

@@ -1,7 +1,7 @@
 WD				=	$(shell pwd)
 
 CBFLIBDIR		=	/scratch/CBFlib-0.9.5
-HDF5DIR		        =	/afs/psi.ch/project/sls_det_software/software_packages/linux6/hdf5/1.10.3/
+HDF5DIR		        =	/afs/psi.ch/project/sls_det_software/software_packages/linux6/hdf5/1.10.3
 #HDF5DIR		        =	/scratch/hdf5-1.10.3/hdf5-1.10.3/hdf5/
 #LZ4DIR		        =	/scratch/lz4
 
