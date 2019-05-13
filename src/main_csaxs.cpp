@@ -1158,7 +1158,7 @@ int main(int argc, char *argv[]) {
 						      1,									//int binary_id
 						      ( longedge_x ? &(map[0]) : &(mapr[0])), 						//void *array
 						      sizeof (int),						 //size_t elsize
-						      1,									//int elsigned
+						      0,									//int elsigned
 						      longedge_x ?  npix_y_g * npix_x_g: npix_x_g * npix_y_g,	    //size_t elements
 						      "little_endian",					 // const char *byteorder
 						      longedge_x? npix_x_g : npix_y_g,		       		 //size_t dimfast
