@@ -19,7 +19,7 @@ INCLUDESHDF5		=	-I $(HDF5_SERIAL_INCLUDE_DIR)
 INCLUDELZ4              =  -I $(LZ4DIR)/lib
 INCLUDES		= 	-I. -Iincludes  
 
-CCX			=	gcc -O3 -pthread  #-fopenmp 
+CCX			=	gcc -O3 -pthread  -fopenmp 
 CFLAGS		+=  -Wall 
 LDLIBS		+= 	-lm  -lstdc++ 
 

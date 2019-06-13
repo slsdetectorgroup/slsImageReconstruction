@@ -581,7 +581,7 @@ void FillCornerGapsBetweenChipDivide(uint* map, int k,
     map[kvirtual3]=gpixelc;
     
     //asign randomly other hits
-    for(int i=0; i<(koriginal%4);i++){
+    for(uint i=0; i<(koriginal%4);i++){
       double random_variable = std::rand()/(double)RAND_MAX;
       if(random_variable>=0 && random_variable<0.25) map[k]++;
       if(random_variable>=0.25 && random_variable<0.5) map[kvirtual1]++;
@@ -607,7 +607,7 @@ void FillGapsBetweenChipDivide(uint* map, int k, int kvirtual)
     map[kvirtual]=gpixelc;
     
     //asign randomly other hits
-    for(int i=0; i<(koriginal%2);i++){
+    for(uint i=0; i<(koriginal%2);i++){
       double random_variable = std::rand()/(double)RAND_MAX;
       if(random_variable>=0 && random_variable<0.5) map[k]++;
       if(random_variable>=0.5 && random_variable<=1) map[kvirtual]++;
@@ -714,12 +714,12 @@ void FillGapsBetweenChipInterpolate2(unsigned int* map, int k_b, int k, int kvir
     map[k2]=(double)d*c4/(c+d);
     map[kvirtual2]=(double)c*c4/(c+d);
 
-    for(int i=0; i<(c1%2);i++){
+    for(uint i=0; i<(c1%2);i++){
       double random_variable = std::rand()/(double)RAND_MAX;
       if(random_variable>=0 && random_variable<0.5) map[k]++;
       if(random_variable>=0.5 && random_variable<=1) map[kvirtual]++;
     }
-    for(int i=0; i<(c4%2);i++){
+    for(uint i=0; i<(c4%2);i++){
       double random_variable = std::rand()/(double)RAND_MAX;
       if(random_variable>=0 && random_variable<0.5) map[kvirtual2]++;
       if(random_variable>=0.5 && random_variable<=1) map[k2]++;
