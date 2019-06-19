@@ -1,0 +1,25 @@
+CCX			=	g++
+CFLAGS		=  -Wall -g
+BASERX_INCLUDE		=	../slsDetectorsPackage/slsReceiverSoftware/include
+INCLUDES	= 	-I. -I$(BASERX_INCLUDE) -I$(BASERX_INCLUDE)/rapidjson/ -I$(BASERX_INCLUDE)/rapidjson/error  
+LDLIBS		= 	-lm  -lstdc++ -L$(BASERX_INCLUDE) -L$(BASERX_INCLUDE) -lzmq -pthread -lrt  
+PROGS		= 	zmqModule
+DESTDIR		= 	bin
+INSTMODE	= 	0777
+
+SRC			=	src/ZmqModule.cpp 
+OBJS		= 	$(SRC:.cpp=.o)
+
+
+all: clean $(PROGS)  
+
+boot: $(OBJS) 
+
+$(PROGS): 
+	mkdir -p $(DESTDIR) 
+	$(CCX)  -o $@   $(SRC) $(INCLUDES)  $(CFLAGS) $(LDLIBS) 
+	mv $(PROGS) $(DESTDIR)
+	
+
+clean:
+	rm -rf  *.o $(DESTDIR)/$(PROGS)

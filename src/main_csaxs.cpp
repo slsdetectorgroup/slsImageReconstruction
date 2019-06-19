@@ -24,11 +24,11 @@
 
 #include "image.h"
 
-#define MYCBF //choose 
-#define MSHeader
+//#define MYCBF //choose 
+//#define MSHeader
 //#define TIFFFILE
 //#define MYROOT //choose 
-//#define TXT
+#define TXT
 //#define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
