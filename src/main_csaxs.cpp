@@ -24,11 +24,11 @@
 
 #include "image.h"
 
-//#define MYCBF //choose 
+#define MYCBF //choose 
 //#define MSHeader
 //#define TIFFFILE
 //#define MYROOT //choose 
-#define TXT
+//#define TXT
 //#define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
@@ -216,6 +216,7 @@ int main(int argc, char *argv[]) {
   //FILE *out;
   //nr high again
   int numFrames = fileFrameIndex+1 ;
+  
   //now loop over all frames
   //for each frame
   // const int Nfiles= ( imgs%Nimgsperfile) ? (int)(imgs/Nimgsperfile)+1 :
@@ -530,7 +531,6 @@ int main(int argc, char *argv[]) {
   
 	if(buffer.size()!=nr/*readim*/) assert(0);
     
-
 	//loop on the many images now
 	//for(int im=0; im<readim; im++){
 	//   cout<<numFrames+im<<endl;

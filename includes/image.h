@@ -83,22 +83,27 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
   string timestamp_s;
   string period_s;
   int dr;
+  int gpenabled,quad; 
   
   /*
-    Version                    : 2.0
+    Version                    : 4.0
+    Detector Type              : 3
     Dynamic Range              : 32
     Ten Giga                   : 1
     Image Size                 : 524288 bytes
-    x                          : 512 pixels
-    y                          : 256 pixels
-    Max. Frames Per File       : 10000
-    Total Frames               : 1
-    Exptime (ns)               : 1000000000
+    nPixelsX                   : 512 pixels
+    nPixelsY                   : 256 pixels
+    Max Frames Per File        : 10000
+    Total Frames               : 3
+    Exptime (ns)               : 10000000
     SubExptime (ns)            : 2621440
-    SubPeriod(ns)              : 2661440
+    SubPeriod(ns)              : 2621440
     Period (ns)                : 0
-    Timestamp                  : Fri Aug 31 15:35:55 2018
-    */
+    Gap Pixels Enable          : 0
+    Quad Enable                : 0
+    Timestamp                  : Wed Aug 21 16:30:20 2019
+   */
+
   infile.open(file.c_str(),ios::in | ios::binary);
   if (infile.is_open()) {
 
@@ -108,31 +113,38 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
     //version
     if(getline(infile,str)){
       istringstream sstr(str);
-      sstr >> str >> str >> str;
+      sstr >> str >> str >> str >> str;
       cout<<"Version:"<<str<<endl;  
     }
+    //detector type
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str;
+    }
+    
     //dynamic range
     if(getline(infile,str)){
       istringstream sstr(str);
-      cout<<"Str dynamic range:"<<str<<endl;
       sstr >> str >> str >>  str >> dr;
       dynamicrange=dr;
+     cout<<"dynamic range:"<<dr<<endl;
     }
 
     //ten giga
     if(getline(infile,str)){
       istringstream sstr(str);
-      cout<<"Str ten giga:"<<str<<endl;
+      //      cout<<"Str ten giga:"<<str<<endl;
       sstr >> str >> str >> str >> tg;
+      cout<<"ten giga :"<<tg<<endl; 
     }
-
+    
     //image size
     if(getline(infile,str)){
       istringstream sstr(str);
-      cout<<"Str image size:"<<str<<endl;
       sstr >> str >> str >> str >> is;
       imagesize=is;
     }
+    
     //x
     if(getline(infile,str)){
       istringstream sstr(str);
@@ -144,7 +156,7 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       istringstream sstr(str);
       sstr >> str >> str >> y;
     }
-
+    
     // Max. Frames Per File       : 10000
     if(getline(infile,str)){
       istringstream sstr(str);
@@ -185,6 +197,18 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
     subexptime*=1e-9;
     subperiod*= 1e-9;
    
+    //Gap Pixels Enable          : 0
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str >> str >> gpenabled;
+      if(gpenabled==1) assert(0 && "gapppixel not supported yet"); 
+    }
+    //Quad Enable                : 0
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str >> quad;
+      if(quad==1) assert(0 && "quad not supported yet"); 
+    }
     //Timestamp
     if(getline(infile,str)){
       istringstream sstr(str);
@@ -192,7 +216,7 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       sstr >> str >> str>> strdayw >> strmonth >> strday>> strtime >> stryear;
       timestamp = stryear+"/"+strmonth+"/"+strday+" "+strtime+".000 CEST";
     }
-
+    
     //two empty lines
     getline(infile,str);
     getline(infile,str);
