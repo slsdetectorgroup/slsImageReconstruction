@@ -85,20 +85,20 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
   int dr;
   
   /*
-    Version                    : 2.0
-    Dynamic Range              : 32
+    Version                    : 3.0
+    Dynamic Range              : 4
     Ten Giga                   : 1
-    Image Size                 : 524288 bytes
-    x                          : 512 pixels
-    y                          : 256 pixels
+    Image Size                 : 65536 bytes
+    row                        : 512 pixels
+    col                        : 256 pixels
     Max. Frames Per File       : 10000
-    Total Frames               : 1
-    Exptime (ns)               : 1000000000
+    Total Frames               : 1000
+    Exptime (ns)               : 45000
     SubExptime (ns)            : 2621440
-    SubPeriod(ns)              : 2661440
-    Period (ns)                : 0
-    Timestamp                  : Fri Aug 31 15:35:55 2018
-    */
+    SubPeriod(ns)              : 2621440
+    Period (ns)                : 50000
+    Timestamp                  : Wed Apr  3 18:23:01 2019
+  */
   infile.open(file.c_str(),ios::in | ios::binary);
   if (infile.is_open()) {
 
@@ -205,9 +205,9 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       Bunch ID                        : 8 bytes
       Timestamp                       : 8 bytes
       Module Id                       : 2 bytes
-      X Coordinate                    : 2 bytes
-      Y Coordinate                    : 2 bytes
-      Z Coordinate                    : 2 bytes
+      Row                             : 2 bytes
+      Column                          : 2 bytes
+      Reserved                        : 2 bytes
       Debug                           : 4 bytes
       Round Robin Number              : 2 bytes
       Detector Type                   : 1 byte
@@ -255,22 +255,22 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       sstr >> str >>str >> str >> dummyint;
       frameheadersize+=dummyint;
     }	
-    //X Coordinate
+    //X 
     if(getline(infile,str)){
       istringstream sstr(str);
-      sstr >> str >>str >> str >> dummyint;
+      sstr >> str  >> str >> dummyint;
       frameheadersize+=dummyint;
     }	
     //Y Coordinate 
     if(getline(infile,str)){
       istringstream sstr(str);
-      sstr >> str >>str >> str >> dummyint;
+      sstr >> str >> str >> dummyint;
       frameheadersize+=dummyint;
     }	
     //Z Coordinate
     if(getline(infile,str)){
       istringstream sstr(str);
-      sstr >> str >>str >> str >> dummyint;
+      sstr >> str  >> str >> dummyint;
       frameheadersize+=dummyint;
     }	
     //Debug
