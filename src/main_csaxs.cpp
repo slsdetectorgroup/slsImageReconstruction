@@ -32,7 +32,7 @@
 #define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
-#define ZLIB
+//#define ZLIB
 //#define SZIP
 #define MASTERVIRTUAL
 
@@ -1210,15 +1210,6 @@ int main(int argc, char *argv[]) {
 	H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, start, NULL, count, NULL);
 
 	if(dynamicrange==16){
-	  size_t buf_size = cdims[1]*cdims[2]*sizeof(unsigned short);
-	  Bytef* z_dst;             /*destination buffer            */
-	  uLongf z_dst_nbytes = (uLongf)(DEFLATE_SIZE_ADJUST(buf_size));
-	  uLong z_src_nbytes = (uLong)buf_size;
-      
-	  unsigned short *outbuf[1];
-	  outbuf[0]  = (unsigned short*)malloc((size_t)z_dst_nbytes);
-	  z_dst = (Bytef *)outbuf[0];
-       
 	  unsigned short* a=new unsigned short[npix_x_g*npix_y_g];
 	  if(longedge_x){
 	    for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
@@ -1227,20 +1218,42 @@ int main(int argc, char *argv[]) {
 	  else 
 	    for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
 	      a[ik]=(unsigned short)mapr[ik];
-
+#ifdef ZLIB
+	  size_t buf_size = cdims[1]*cdims[2]*sizeof(unsigned short);
+	  Bytef* z_dst;             /*destination buffer            */
+	  uLongf z_dst_nbytes = (uLongf)(DEFLATE_SIZE_ADJUST(buf_size));
+	  uLong z_src_nbytes = (uLong)buf_size;
+	  
+	  unsigned short *outbuf[1];
+	  outbuf[0]  = (unsigned short*)malloc((size_t)z_dst_nbytes);
+	  z_dst = (Bytef *)outbuf[0];
+	  
 	  const Bytef *z_src = (const Bytef*)a;
 	  compress2(z_dst, &z_dst_nbytes, z_src, z_src_nbytes, aggression);
-	
+	  
 	  H5DOwrite_chunk(dataset, dxpl, 
 			  filter_mask  , start, (size_t)z_dst_nbytes,outbuf[0]);
-
-	  //H5Dwrite(dataset, datatype , dataspaceimg, dataspace, H5P_DEFAULT,a);
+#endif
+#ifndef ZLIB
+	  H5Dwrite(dataset, datatype , dataspaceimg, dataspace, H5P_DEFAULT,a);
+#endif
 	  delete [] a;
+#ifdef ZLIB
 	  free(outbuf[0]);
-
+#endif
 	} else 
 	  if(dynamicrange==8 || dynamicrange==4){
-	  
+	    
+	    unsigned char* a=new unsigned char[npix_x_g*npix_y_g];
+	    if(longedge_x){
+	      for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
+		a[ik]=(unsigned char)map[ik];
+	    }
+	    else 
+	      for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
+		a[ik]=(unsigned char)mapr[ik];
+#ifdef ZLIB
+	    
 	    size_t buf_size = cdims[1]*cdims[2]*sizeof(unsigned char);
 	    Bytef* z_dst;             /*destination buffer            */
 	    uLongf z_dst_nbytes = (uLongf)(DEFLATE_SIZE_ADJUST(buf_size));
@@ -1250,14 +1263,6 @@ int main(int argc, char *argv[]) {
 	    outbuf[0]  = (unsigned char*)malloc((size_t)z_dst_nbytes);
 	    z_dst = (Bytef *)outbuf[0];
 	  
-	    unsigned char* a=new unsigned char[npix_x_g*npix_y_g];
-	    if(longedge_x){
-	      for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
-		a[ik]=(unsigned char)map[ik];
-	    }
-	    else 
-	      for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
-		a[ik]=(unsigned char)mapr[ik];
 	  
 	    const Bytef *z_src = (const Bytef*)a;
 	    compress2(z_dst, &z_dst_nbytes, z_src, z_src_nbytes, aggression);
@@ -1265,31 +1270,39 @@ int main(int argc, char *argv[]) {
 	    H5DOwrite_chunk(dataset, H5P_DEFAULT, 
 			    0, start, 
 			    (size_t)z_dst_nbytes,outbuf[0]);
-	    //H5Dwrite(dataset, datatype , dataspaceimg, dataspace, H5P_DEFAULT,a);
+#endif
+#ifndef ZLIB
+	    H5Dwrite(dataset, datatype , dataspaceimg, dataspace, H5P_DEFAULT,a);
+#endif
 	    delete [] a;
+#ifdef ZLIB	    
 	    free(outbuf[0]);
+#endif
 	  }else{
+	    
+#ifdef ZLIB	    
 	    size_t buf_size = cdims[1]*cdims[2]*sizeof(unsigned int);
 	    Bytef* z_dst;             /*destination buffer            */
 	    uLongf z_dst_nbytes = (uLongf)(DEFLATE_SIZE_ADJUST(buf_size));
 	    uLong z_src_nbytes = (uLong)buf_size;
-	
+	    
 	    unsigned int *outbuf[1];
 	    outbuf[0]  = (unsigned int*)malloc((size_t)z_dst_nbytes);
 	    z_dst = (Bytef *)outbuf[0];
-	
+	    
 	    const Bytef *z_src = (const Bytef*)(longedge_x ? map: mapr);    
 	    compress2(z_dst, &z_dst_nbytes, z_src, z_src_nbytes, aggression);
 	
 	    H5DOwrite_chunk(dataset, dxpl, 
-			    filter_mask  , start, (size_t)z_dst_nbytes, outbuf[0]);
-	
-	    //H5Dwrite(dataset, datatype , dataspaceimg, dataspace, H5P_DEFAULT, 
-	    // (longedge_x ? map: mapr));
-	
+			    filter_mask  , start, (size_t)z_dst_nbytes, outbuf[0]); 
 	    free(outbuf[0]);
+#endif	
+#ifndef ZLIB
+	    H5Dwrite(dataset, datatype , dataspaceimg, dataspace, H5P_DEFAULT, 
+		     (longedge_x ? map: mapr));
+#endif
 	  }
-
+	
 	H5Sclose(dataspaceimg);
 	//atts = H5Screate(H5S_SCALAR);
 	//atttype = H5Tcopy(H5T_C_S1);
