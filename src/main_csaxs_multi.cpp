@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
 	if( exePos!= string::npos){
 	  exe.erase(exePos,4);
 	  //9M
-	  string command = exe + " " + string(argv[1]) + " " + od +" 512 512 1 2 eiger";
+	  string command = exe + " " + string(argv[1]) + " " + od +" 512 512 1 2 data";
 	  cout<<"command:"<<command<<endl;
 	  system(command.c_str());
 	}

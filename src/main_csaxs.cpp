@@ -28,13 +28,13 @@
 //#define MSHeader
 //#define TIFFFILE
 //#define MYROOT //choose 
-#define TXT
-//#define HDF5f
+//#define TXT
+#define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
-//#define ZLIB
+#define ZLIB
 //#define SZIP
-//#define MASTERVIRTUAL
+#define MASTERVIRTUAL
 
 #ifdef HDF5f
 #include "hdf5.h"

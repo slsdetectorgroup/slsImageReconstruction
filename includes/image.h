@@ -799,7 +799,7 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
     if(argc>6) fillgaps=atoi(argv[6]);
     else fillgaps=kInterpolate; //0 no filling, 1 division, 2 interpolation 3 mask, interpolate alternative
     if(argc>7) datasetname=(argv[7]);
-    else datasetname="eiger_3"; //single module
+    else datasetname="data";//"eiger_3"; //single module
     if(argc>8) startdet=atoi(argv[8]);
     else startdet=0;
     cprintf(BLUE,
