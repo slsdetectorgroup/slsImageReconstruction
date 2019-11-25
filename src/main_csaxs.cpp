@@ -24,17 +24,17 @@
 
 #include "image.h"
 
-#define MYCBF //choose 
+//#define MYCBF //choose 
 //#define MSHeader
 //#define TIFFFILE
 //#define MYROOT //choose 
 //#define TXT
-//#define HDF5f
+#define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
 //#define ZLIB
 //#define SZIP
-//#define MASTERVIRTUAL
+#define MASTERVIRTUAL
 
 #ifdef HDF5f
 #include "hdf5.h"
@@ -1210,15 +1210,6 @@ int main(int argc, char *argv[]) {
 	H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, start, NULL, count, NULL);
 
 	if(dynamicrange==16){
-	  size_t buf_size = cdims[1]*cdims[2]*sizeof(unsigned short);
-	  Bytef* z_dst;             /*destination buffer            */
-	  uLongf z_dst_nbytes = (uLongf)(DEFLATE_SIZE_ADJUST(buf_size));
-	  uLong z_src_nbytes = (uLong)buf_size;
-      
-	  unsigned short *outbuf[1];
-	  outbuf[0]  = (unsigned short*)malloc((size_t)z_dst_nbytes);
-	  z_dst = (Bytef *)outbuf[0];
-       
 	  unsigned short* a=new unsigned short[npix_x_g*npix_y_g];
 	  if(longedge_x){
 	    for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
@@ -1228,19 +1219,42 @@ int main(int argc, char *argv[]) {
 	    for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
 	      a[ik]=(unsigned short)mapr[ik];
 
+#ifdef ZLIB
+	  size_t buf_size = cdims[1]*cdims[2]*sizeof(unsigned short);
+	  Bytef* z_dst;             /*destination buffer            */
+	  uLongf z_dst_nbytes = (uLongf)(DEFLATE_SIZE_ADJUST(buf_size));
+	  uLong z_src_nbytes = (uLong)buf_size;
+      
+	  unsigned short *outbuf[1];
+	  outbuf[0]  = (unsigned short*)malloc((size_t)z_dst_nbytes);
+	  z_dst = (Bytef *)outbuf[0];
+       
+
+
 	  const Bytef *z_src = (const Bytef*)a;
 	  compress2(z_dst, &z_dst_nbytes, z_src, z_src_nbytes, aggression);
 	
 	  H5DOwrite_chunk(dataset, dxpl, 
 			  filter_mask  , start, (size_t)z_dst_nbytes,outbuf[0]);
+#endif
+#ifndef ZLIB
 
-	  //H5Dwrite(dataset, datatype , dataspaceimg, dataspace, H5P_DEFAULT,a);
+	  H5Dwrite(dataset, datatype , dataspaceimg, dataspace, H5P_DEFAULT,a);
+#endif
 	  delete [] a;
+#ifdef ZLIB
 	  free(outbuf[0]);
-
+#endif
 	} else 
 	  if(dynamicrange==8 || dynamicrange==4){
-	  
+	   unsigned char* a=new unsigned char[npix_x_g*npix_y_g];
+	    if(longedge_x){
+	      for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
+		a[ik]=(unsigned char)map[ik];
+	    } else 
+	      for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
+		a[ik]=(unsigned char)mapr[ik];
+#ifdef ZLIB
 	    size_t buf_size = cdims[1]*cdims[2]*sizeof(unsigned char);
 	    Bytef* z_dst;             /*destination buffer            */
 	    uLongf z_dst_nbytes = (uLongf)(DEFLATE_SIZE_ADJUST(buf_size));
@@ -1250,14 +1264,6 @@ int main(int argc, char *argv[]) {
 	    outbuf[0]  = (unsigned char*)malloc((size_t)z_dst_nbytes);
 	    z_dst = (Bytef *)outbuf[0];
 	  
-	    unsigned char* a=new unsigned char[npix_x_g*npix_y_g];
-	    if(longedge_x){
-	      for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
-		a[ik]=(unsigned char)map[ik];
-	    }
-	    else 
-	      for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)
-		a[ik]=(unsigned char)mapr[ik];
 	  
 	    const Bytef *z_src = (const Bytef*)a;
 	    compress2(z_dst, &z_dst_nbytes, z_src, z_src_nbytes, aggression);
@@ -1265,10 +1271,16 @@ int main(int argc, char *argv[]) {
 	    H5DOwrite_chunk(dataset, H5P_DEFAULT, 
 			    0, start, 
 			    (size_t)z_dst_nbytes,outbuf[0]);
-	    //H5Dwrite(dataset, datatype , dataspaceimg, dataspace, H5P_DEFAULT,a);
+#endif
+#ifndef ZLIB
+	    H5Dwrite(dataset, datatype , dataspaceimg, dataspace, H5P_DEFAULT,a);
+#endif
 	    delete [] a;
+#ifdef ZLIB
 	    free(outbuf[0]);
+#endif
 	  }else{
+#ifdef ZLIB
 	    size_t buf_size = cdims[1]*cdims[2]*sizeof(unsigned int);
 	    Bytef* z_dst;             /*destination buffer            */
 	    uLongf z_dst_nbytes = (uLongf)(DEFLATE_SIZE_ADJUST(buf_size));
@@ -1283,11 +1295,12 @@ int main(int argc, char *argv[]) {
 	
 	    H5DOwrite_chunk(dataset, dxpl, 
 			    filter_mask  , start, (size_t)z_dst_nbytes, outbuf[0]);
-	
-	    //H5Dwrite(dataset, datatype , dataspaceimg, dataspace, H5P_DEFAULT, 
-	    // (longedge_x ? map: mapr));
-	
 	    free(outbuf[0]);
+#endif	
+#ifndef ZLIB
+	    H5Dwrite(dataset, datatype , dataspaceimg, dataspace, H5P_DEFAULT, 
+		     (longedge_x ? map: mapr));
+#endif	
 	  }
 
 	H5Sclose(dataspaceimg);
@@ -1462,6 +1475,54 @@ int main(int argc, char *argv[]) {
       H5Sclose(atts);
       H5Aclose(attid);
 
+      //Detector
+      
+      //Exposure_period
+      atts = H5Screate(H5S_SCALAR);
+      attid = H5Acreate2(dataset,"Exposure_period", H5T_IEEE_F64LE, atts, 
+			 H5P_DEFAULT,H5P_DEFAULT);
+      H5Awrite(attid, H5T_IEEE_F64LE,&period);
+      H5Sclose(atts);
+      H5Aclose(attid);
+      
+      //Exposure_time
+      atts = H5Screate(H5S_SCALAR);
+      attid = H5Acreate2(dataset,"Exposure_time", H5T_IEEE_F64LE,atts, 
+			 H5P_DEFAULT,H5P_DEFAULT);
+      H5Awrite(attid, H5T_IEEE_F64LE,&expTime);
+      H5Sclose(atts);
+      H5Aclose(attid);
+      
+      //Gain_setting
+      //Image_path
+      //Pixel_size
+      double valued2d[2]={75e-6,75e-6};
+      hsize_t d[2]={1,1};
+      atts = H5Screate_simple(2, d, NULL);
+      attid = H5Acreate2(dataset,"Pixel_size", H5T_IEEE_F64LE,atts, 
+			 H5P_DEFAULT,H5P_DEFAULT);
+      H5Awrite(attid, H5T_IEEE_F64LE,&valued2d);
+      H5Sclose(atts);
+      H5Aclose(attid);
+      //Silicon
+      double valued=320e-6;
+      atts = H5Screate(H5S_SCALAR);
+      attid = H5Acreate2(dataset,"Silicon",H5T_IEEE_F64LE ,atts, 
+			 H5P_DEFAULT,H5P_DEFAULT);
+      H5Awrite(attid,H5T_IEEE_F64LE ,&valued);
+      H5Sclose(atts);
+      H5Aclose(attid);
+      //Tau
+    valued=0;
+    atts = H5Screate(H5S_SCALAR);
+    attid = H5Acreate2(dataset,"Tau", H5T_IEEE_F64LE,atts, 
+		       H5P_DEFAULT,H5P_DEFAULT);
+    H5Awrite(attid, H5T_IEEE_F64LE,&valued);
+    H5Sclose(atts);
+    H5Aclose(attid);
+
+
+    //------ Detector
 
       H5Dclose(dataset); 
       H5Sclose(vdataspace);
