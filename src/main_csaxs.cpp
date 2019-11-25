@@ -1447,13 +1447,13 @@ int main(int argc, char *argv[]) {
       
 	char fileIndex[200];
 	sprintf(fileIndex , "_%d",ifile);
-	string filedatasetnamereal=filedatasetname+fileIndex;
+	string filedatasetnamereal=filedatasetname+"link"+fileIndex;
 
 	H5Pset_virtual (dataprop , vdataspace, fname, filedatasetname.c_str(), src_space); //note src_space has not all the attributes 
 	
 	//questo e' per farlo in un altro modo con tanti dataset linkati (ALBULA LO LEGGE)
-	//H5Lcreate_external(fname,filedatasetname.c_str(), fvid, filedatasetnamereal.c_str(), H5P_DEFAULT, H5P_DEFAULT);
-      }
+	H5Lcreate_external(fname,filedatasetname.c_str(), fvid, filedatasetnamereal.c_str(), H5P_DEFAULT, H5P_DEFAULT);
+      }//for each file
 
       /* Create a virtual dataset. */
       dataset = H5Dcreate2(fvid , filedatasetname.c_str(), datatype, vdataspace,
@@ -1520,7 +1520,6 @@ int main(int argc, char *argv[]) {
     H5Awrite(attid, H5T_IEEE_F64LE,&valued);
     H5Sclose(atts);
     H5Aclose(attid);
-
 
     //------ Detector
 
