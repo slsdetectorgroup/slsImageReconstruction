@@ -1475,6 +1475,57 @@ int main(int argc, char *argv[]) {
       H5Sclose(atts);
       H5Aclose(attid);
 
+      //-----------------------
+      //add more attributes later but this needs to be checked
+      //Detector
+      
+      //Exposure_period
+      atts = H5Screate(H5S_SCALAR);
+      attid = H5Acreate2(dataset,"Exposure_period", H5T_IEEE_F64LE, atts, 
+			 H5P_DEFAULT,H5P_DEFAULT);
+      H5Awrite(attid, H5T_IEEE_F64LE,&period);
+      H5Sclose(atts);
+      H5Aclose(attid);
+      
+      //Exposure_time
+      atts = H5Screate(H5S_SCALAR);
+      attid = H5Acreate2(dataset,"Exposure_time", H5T_IEEE_F64LE,atts, 
+			 H5P_DEFAULT,H5P_DEFAULT);
+      H5Awrite(attid, H5T_IEEE_F64LE,&expTime);
+      H5Sclose(atts);
+      H5Aclose(attid);
+      
+      //Gain_setting
+      //Image_path
+      //Pixel_size
+      double valued2d[2]={75e-6,75e-6};
+      hsize_t d[2]={1,1};
+      atts = H5Screate_simple(2, d, NULL);
+      attid = H5Acreate2(dataset,"Pixel_size", H5T_IEEE_F64LE,atts, 
+			 H5P_DEFAULT,H5P_DEFAULT);
+      H5Awrite(attid, H5T_IEEE_F64LE,&valued2d);
+      H5Sclose(atts);
+      H5Aclose(attid);
+      //Silicon
+      double valued=320e-6;
+      atts = H5Screate(H5S_SCALAR);
+      attid = H5Acreate2(dataset,"Silicon",H5T_IEEE_F64LE ,atts, 
+			 H5P_DEFAULT,H5P_DEFAULT);
+      H5Awrite(attid,H5T_IEEE_F64LE ,&valued);
+      H5Sclose(atts);
+      H5Aclose(attid);
+      //Tau
+    valued=0;
+    atts = H5Screate(H5S_SCALAR);
+    attid = H5Acreate2(dataset,"Tau", H5T_IEEE_F64LE,atts, 
+		       H5P_DEFAULT,H5P_DEFAULT);
+    H5Awrite(attid, H5T_IEEE_F64LE,&valued);
+    H5Sclose(atts);
+    H5Aclose(attid);
+
+
+    //------
+
 
       H5Dclose(dataset); 
       H5Sclose(vdataspace);
