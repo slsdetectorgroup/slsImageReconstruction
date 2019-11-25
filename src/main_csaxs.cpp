@@ -1476,8 +1476,6 @@ int main(int argc, char *argv[]) {
       H5Sclose(atts);
       H5Aclose(attid);
 
-      //-----------------------
-      //add more attributes later but this needs to be checked
       //Detector
       
       //Exposure_period
@@ -1523,7 +1521,7 @@ int main(int argc, char *argv[]) {
     H5Awrite(attid, H5T_IEEE_F64LE,&valued);
     H5Sclose(atts);
     H5Aclose(attid);
-    //------
+    //------Detector
 
       H5Dclose(dataset); 
       H5Sclose(vdataspace);
