@@ -59,6 +59,7 @@ int main(int argc, char *argv[]) {
 	if (argc < 4 || (argc > 4 && argc !=6 )) {
 	  cprintf(RED, "Help: ./zmqModule [numsockets] [receive socket ip] [receive starting port number] [send_socket ip] [send starting port number]\n");
 	  cout<<"./bin/zmqModule 4 \"129.129.202.84\" 30001 \"129.129.202.84\" 30010"<<endl;
+	  //this with zmqport 30010 set before starting teh GUI 
 	  return EXIT_FAILURE;
 	}
 	// recieve parameters
@@ -67,7 +68,7 @@ int main(int argc, char *argv[]) {
 	portnum = atoi(argv[3]);
 
 	// send parameters if any
-	if (argc >3 ) {
+	if (argc >4) {
 		send = true;
 		socketip2 = argv[4];
 		portnum2 = atoi(argv[5]);
@@ -154,12 +155,12 @@ int main(int argc, char *argv[]) {
 					rapidjson::Document doc;
 					if (!zmqsocket[isocket]->ReceiveHeader(isocket, doc,
 									       SLS_DETECTOR_JSON_HEADER_VERSION)) {
-					  cprintf(RED, "%d Got Dummy\n", isocket);
+					  // cprintf(RED, "%d Got Dummy\n", isocket);
 					  // stream dummy  to socket2
 					  if (send) {
 					    zmqsocket2[isocket]->SendHeaderData(isocket, true, 
 										SLS_DETECTOR_JSON_HEADER_VERSION);
-					    cprintf(RED, "%d Sent Dummy\n", isocket);
+					    //cprintf(RED, "%d Sent Dummy\n", isocket);
 					  }
 	// parse error, version error or end of acquisition for socket
 					  runningList[isocket] = false;

@@ -4,14 +4,16 @@ BASERX_INCLUDE		=	../slsDetectorsPackage/slsReceiverSoftware/include
 INCLUDES	= 	-I. -I$(BASERX_INCLUDE) -I$(BASERX_INCLUDE)/rapidjson/ -I$(BASERX_INCLUDE)/rapidjson/error  
 LDLIBS		= 	-lm  -lstdc++ -L$(BASERX_INCLUDE) -L$(BASERX_INCLUDE) -lzmq -pthread -lrt  
 PROGS		= 	zmqModule
+PROGSSUM		= 	zmqModuleSum
 DESTDIR		= 	bin
 INSTMODE	= 	0777
 
-SRC			=	src/ZmqModule.cpp 
+SRC		=	src/ZmqModule.cpp 
+SRCSUM		=	src/ZmqModuleSum.cpp 
 OBJS		= 	$(SRC:.cpp=.o)
 
 
-all: clean $(PROGS)  
+all: clean $(PROGS)  $(PROGSSUM)  
 
 boot: $(OBJS) 
 
@@ -19,7 +21,12 @@ $(PROGS):
 	mkdir -p $(DESTDIR) 
 	$(CCX)  -o $@   $(SRC) $(INCLUDES)  $(CFLAGS) $(LDLIBS) 
 	mv $(PROGS) $(DESTDIR)
+$(PROGSSUM): 
+	mkdir -p $(DESTDIR) 
+	$(CCX)  -o $@   $(SRCSUM) $(INCLUDES)  $(CFLAGS) $(LDLIBS) 
+	mv $(PROGSSUM) $(DESTDIR)
 	
 
 clean:
 	rm -rf  *.o $(DESTDIR)/$(PROGS)
+	rm -rf  *.o $(DESTDIR)/$(PROGSSUM)
