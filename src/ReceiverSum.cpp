@@ -9,6 +9,7 @@
 #include <string.h>
 #include <signal.h>	//SIGINT
 #include <cstdlib>		//system
+#include <cassert>
 
 #include "utilities.h"
 #include "logger.h"
@@ -24,17 +25,22 @@ bool keeprunning;
 void sigInterruptHandler(int p){
 	keeprunning = false;
 }
-FILE *fptr;
+
+FILE *fptr[2];//2 as left and right
+int portn;
 
 int startAcquisitionCallBack(char* filepath, char* filename, uint64_t fileindex, uint32_t datasize, void*p){
   cprintf(BLUE,"#### StartAcq:  filepath:%s  filename:%s fileindex:%lld  datasize:%u ####\n",
 	 filepath, filename, fileindex, datasize);
  
   char str[300];
-  sprintf(str,"%s/%s_%lld.txt",filepath, filename, fileindex);
-  std::cout<<str<<std::endl;
-  fptr=fopen(str,"w");
-    
+  for(int iport =0; iport<2; ++iport){
+    sprintf(str,"%s/%sd%d_%lld.txt",filepath, filename, 
+	    (portn==1954 ? 0+iport : 2+iport),
+	    fileindex);
+
+  fptr[iport]=fopen(str,"w");
+  }
   cprintf(BLUE, "--StartAcq: returning 0\n");
   return 0;
 }
@@ -42,7 +48,7 @@ int startAcquisitionCallBack(char* filepath, char* filename, uint64_t fileindex,
 
 void acquisitionFinishedCallBack(uint64_t frames, void*p){
   cprintf(BLUE, "#### AcquisitionFinished: frames:%llu ####\n",frames);
-  fclose(fptr);
+  for(int iport =0; iport<2; ++iport) fclose(fptr[iport]);
 }
 
 void rawDataReadyCallBack(char* metadata, char* datapointer, uint32_t datasize, void* p){
@@ -75,15 +81,21 @@ void rawDataReadyCallBack(char* metadata, char* datapointer, uint32_t datasize, 
 	}//do something
 	//	std::cout<<"   Sum   "<<sum   << std::endl;
 
-	fprintf(fptr,"%d %d %d %d \n",detectorHeader.frameNumber,
-		detectorHeader.row, detectorHeader.column,
-		sum);
+	fprintf(fptr[ detectorHeader.column],"%d %d \n",
+		detectorHeader.frameNumber, sum);
 }
 
 
 int main(int argc, char *argv[]) {
 
 	keeprunning = true;
+	portn=1954;
+	if(argc>2) {
+	  //std::cout<< argv[2]<<std::endl;
+	  //std::cout<< atoi(argv[2])<<std::endl;
+	  if(argc>2) portn=atoi(argv[2]);
+	}
+
 	cprintf(BLUE,"Created [ Tid: %ld ]\n", (long)syscall(SYS_gettid));
 
 	// Catch signal SIGINT to close files and call destructors properly
@@ -114,7 +126,6 @@ int main(int argc, char *argv[]) {
 		cprintf(BLUE,"Exiting [ Tid: %ld ]\n", (long)syscall(SYS_gettid));
 		exit(EXIT_FAILURE);
 	}
-
 
 	//register callbacks
 
