@@ -238,9 +238,9 @@ int main(int argc, char *argv[]) {
 				
 				//to do the sum interpret all dynamic range
 				//decodeData(image, dataout, size, nPixelsX, nPixelsY);  
-				//		for (int ichan=0; ichan<size/bytesPerPixel; ++ichan) {
-				// sum+=(image[ichan]&0xff);
-				//	}
+				for (int ichan=0; ichan<size/bytesPerPixel; ++ichan) {
+				  sum+=(image[ichan]&0xff);
+					}
 				
 				//decodeData(image, dataout, size, nPixelsX, nPixelsY);  
 				//if (dynamicRange==16 ){
