@@ -28,6 +28,10 @@ void sigInterruptHandler(int p){
 
 FILE *fptr[2];//2 as left and right
 int portn;
+char iptr;
+const int bytesize=8;
+unsigned int ival;
+unsigned int* ivalp;
 
 int startAcquisitionCallBack(char* filepath, char* filename, uint64_t fileindex, uint32_t datasize, void*p){
   cprintf(BLUE,"#### StartAcq:  filepath:%s  filename:%s fileindex:%lld  datasize:%u ####\n",
@@ -38,8 +42,8 @@ int startAcquisitionCallBack(char* filepath, char* filename, uint64_t fileindex,
     sprintf(str,"%s/%sd%d_%lld.txt",filepath, filename, 
 	    (portn==1954 ? 0+iport : 2+iport),
 	    fileindex);
-
-  fptr[iport]=fopen(str,"w");
+    
+    fptr[iport]=fopen(str,"w");
   }
   cprintf(BLUE, "--StartAcq: returning 0\n");
   return 0;
@@ -52,37 +56,74 @@ void acquisitionFinishedCallBack(uint64_t frames, void*p){
 }
 
 void rawDataReadyCallBack(char* metadata, char* datapointer, uint32_t datasize, void* p){
-	slsReceiverDefs::sls_receiver_header* header = (slsReceiverDefs::sls_receiver_header*)metadata;
-	slsReceiverDefs::sls_detector_header detectorHeader = header->detHeader;
-
-	uint32_t sum= 0;
-	/*	
-	  PRINT_IN_COLOR (detectorHeader.modId?detectorHeader.modId:detectorHeader.row,
-	  "#### %d GetData: ####\n"
-	  "frameNumber: %llu\t\texpLength: %u\t\tpacketNumber: %u\t\tbunchId: %llu"
-	  "\t\ttimestamp: %llu\t\tmodId: %u\t\t"
-	  "xCrow%u\t\tcolumn: %u\t\tcolumn: %u\t\tdebug: %u"
-	  "\t\troundRNumber: %u\t\tdetType: %u\t\tversion: %u"
-	  //"\t\tpacketsMask:%s"
-	  "\t\tfirstbytedata: 0x%x\t\tdatsize: %u\n\n",
-	  detectorHeader.row, detectorHeader.frameNumber,
-	  detectorHeader.expLength, detectorHeader.packetNumber, detectorHeader.bunchId,
-	  detectorHeader.timestamp, detectorHeader.modId,
-	  detectorHeader.row, detectorHeader.column, detectorHeader.column,
-	  detectorHeader.debug, detectorHeader.roundRNumber,
-	  detectorHeader.detType, detectorHeader.version,
-	  //header->packetsMask.to_string().c_str(),
+  slsReceiverDefs::sls_receiver_header* header = (slsReceiverDefs::sls_receiver_header*)metadata;
+  slsReceiverDefs::sls_detector_header detectorHeader = header->detHeader;
+  
+  uint64_t sum= 0;
+  /*	
+	PRINT_IN_COLOR (detectorHeader.modId?detectorHeader.modId:detectorHeader.row,
+	"#### %d GetData: ####\n"
+	"frameNumber: %llu\t\texpLength: %u\t\tpacketNumber: %u\t\tbunchId: %llu"
+	"\t\ttimestamp: %llu\t\tmodId: %u\t\t"
+	"xCrow%u\t\tcolumn: %u\t\tcolumn: %u\t\tdebug: %u"
+	"\t\troundRNumber: %u\t\tdetType: %u\t\tversion: %u"
+	//"\t\tpacketsMask:%s"
+	"\t\tfirstbytedata: 0x%x\t\tdatsize: %u\n\n",
+	detectorHeader.row, detectorHeader.frameNumber,
+	detectorHeader.expLength, detectorHeader.packetNumber, detectorHeader.bunchId,
+	detectorHeader.timestamp, detectorHeader.modId,
+	detectorHeader.row, detectorHeader.column, detectorHeader.column,
+	detectorHeader.debug, detectorHeader.roundRNumber,
+	detectorHeader.detType, detectorHeader.version,
+	//header->packetsMask.to_string().c_str(),
 	  ((uint8_t)(*((uint8_t*)(datapointer)))), datasize);
-	*/
-	//	std::cout<<"Frame: "<<detectorHeader.frameNumber<<"   "<<detectorHeader.row<<"   "<<detectorHeader.column;
-	//need to understand how to access the data
-      	for (int ichan=0; ichan<256*256*2; ++ichan) {
-	  sum+= (datapointer[ichan]&0xff);
-	}//do something
-	//	std::cout<<"   Sum   "<<sum   << std::endl;
+  */
+  
+  //skip 2 raws of pixels near the center of the module for hot pixels
+  
+  std::cout<<" Datasize is "<<datasize<<std::endl;
+  //use datasize to know dynamic range
 
-	fprintf(fptr[ detectorHeader.column],"%d %d \n",
-		detectorHeader.frameNumber, sum);
+  //need to get the coirrect size of data at this point
+  if(datasize==65536){
+    for (int ichan=(256*4)/2; ichan<(256)*256*2/2; ++ichan) {
+      iptr=datapointer[ichan]&0xff; //read the byte
+      for (int ipos=0; ipos<2; ++ipos) {
+	//loop over the 8bit (twice)
+	sum+=(iptr>>(ipos*4))&0xf;		//pick the right 4bit
+	
+      }
+    }//ichan
+  }//4 bit
+  
+  if(datasize==131072){
+    //8 bits
+    //skip 2 raws of pixels near the center of the module for hot pixels
+    for (int ichan=(256*4); ichan<(256)*256*2; ++ichan) {
+      sum+= (datapointer[ichan]&0xff);
+    }
+  }//8 bit
+  
+  if(datasize==262144){
+    unsigned short *datapointer16=(unsigned short*) datapointer;
+    //16 bits
+    //skip 2 raws of pixels near the center of the module for hot pixels
+    for (int ichan=(256*4); ichan<(256)*256*2; ++ichan) {
+      sum+= datapointer16[ichan];
+    }
+  }//16 bit
+  if(datasize==524288){
+    unsigned int *datapointer32=(unsigned int*) datapointer;
+    //32 bits
+    //skip 2 raws of pixels near the center of the module for hot pixels
+    for (int ichan=(256*4); ichan<(256)*256*2; ++ichan) {
+      sum+=datapointer32[ichan];
+    }
+  }
+  
+  //column here tells me if left or right
+  fprintf(fptr[ detectorHeader.column],"%d %lld \n",
+	  detectorHeader.frameNumber, sum);
 }
 
 
