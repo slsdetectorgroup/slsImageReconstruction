@@ -33,6 +33,12 @@ const int bytesize=8;
 unsigned int ival;
 unsigned int* ivalp;
 
+int ichanmin4b=(256*4)/2;
+int ichanmax4b=(256)*256*2/2;
+int ichanmin=(256*4);
+int ichanmax=(256)*256*2;
+
+
 int startAcquisitionCallBack(char* filepath, char* filename, uint64_t fileindex, uint32_t datasize, void*p){
   cprintf(BLUE,"#### StartAcq:  filepath:%s  filename:%s fileindex:%lld  datasize:%u ####\n",
 	 filepath, filename, fileindex, datasize);
@@ -81,26 +87,29 @@ void rawDataReadyCallBack(char* metadata, char* datapointer, uint32_t datasize, 
   
   //skip 2 raws of pixels near the center of the module for hot pixels
   
-  std::cout<<" Datasize is "<<datasize<<std::endl;
   //use datasize to know dynamic range
 
   //need to get the coirrect size of data at this point
   if(datasize==65536){
-    for (int ichan=(256*4)/2; ichan<(256)*256*2/2; ++ichan) {
-      iptr=datapointer[ichan]&0xff; //read the byte
+    for (int ichan=ichanmin4b; ichan<ichanmax4b; ++ichan) {
+      uint8_t iptr = datapointer[ichan];
+      sum+=(iptr &0xf);
+      sum+= (iptr>>4);// &0xf;
+ /*
+      iptr=datapointer[ichan];//&0xff; //read the byte
       for (int ipos=0; ipos<2; ++ipos) {
 	//loop over the 8bit (twice)
 	sum+=(iptr>>(ipos*4))&0xf;		//pick the right 4bit
-	
       }
+*/
     }//ichan
   }//4 bit
   
   if(datasize==131072){
     //8 bits
     //skip 2 raws of pixels near the center of the module for hot pixels
-    for (int ichan=(256*4); ichan<(256)*256*2; ++ichan) {
-      sum+= (datapointer[ichan]&0xff);
+    for (int ichan=ichanmin; ichan<ichanmax; ++ichan) {
+      sum+=(uint8_t)datapointer[ichan]; //(datapointer[ichan]&0xff);
     }
   }//8 bit
   
@@ -108,7 +117,7 @@ void rawDataReadyCallBack(char* metadata, char* datapointer, uint32_t datasize, 
     unsigned short *datapointer16=(unsigned short*) datapointer;
     //16 bits
     //skip 2 raws of pixels near the center of the module for hot pixels
-    for (int ichan=(256*4); ichan<(256)*256*2; ++ichan) {
+    for (int ichan=ichanmin; ichan<ichanmax; ++ichan) {
       sum+= datapointer16[ichan];
     }
   }//16 bit
@@ -116,7 +125,7 @@ void rawDataReadyCallBack(char* metadata, char* datapointer, uint32_t datasize, 
     unsigned int *datapointer32=(unsigned int*) datapointer;
     //32 bits
     //skip 2 raws of pixels near the center of the module for hot pixels
-    for (int ichan=(256*4); ichan<(256)*256*2; ++ichan) {
+    for (int ichan=ichanmin; ichan<ichanmax; ++ichan) {
       sum+=datapointer32[ichan];
     }
   }
