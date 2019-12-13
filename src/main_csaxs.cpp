@@ -30,6 +30,7 @@
 //#define MYROOT //choose 
 //#define TXT
 #define HDF5f
+#define MASKMSMODULE
 //#define LZ4
 //#define BITSHUFFLE
 //#define ZLIB
@@ -263,6 +264,8 @@ int main(int argc, char *argv[]) {
     if(imgs<Nimagesexpected)  Nimagesexpected=imgs+1;
     cout<< "last image expected for this file is "<<Nimagesexpected-1<<endl;
 
+    //if trying to convert frames that do not exist
+    if(numFrames>Nimagesexpected-1) return -1;
     //calculate the last nframe
     //int lastnframe=Nimagesexpected-1;
     //while(lastnframe%Nimgscashed>0){
@@ -925,6 +928,12 @@ int main(int argc, char *argv[]) {
 	    } //notr HM
 	  }//v mods
 	} //h mods close all loops
+
+#ifdef MASKMSMODULE
+	//mask a pixel
+	int kmask=GetK(702,338,npix_x_g);
+	map[kmask]=0;
+#endif
 	
 	//now rotate everything 
 	if(!longedge_x){
@@ -1447,15 +1456,16 @@ int main(int argc, char *argv[]) {
       
 	char fileIndex[200];
 	sprintf(fileIndex , "_%d",ifile);
-	string filedatasetnamereal=filedatasetname+"link"+fileIndex;
+	string filedatasetnamereal=filedatasetname+/*"link"*/""+fileIndex;
 
-	H5Pset_virtual (dataprop , vdataspace, fname, filedatasetname.c_str(), src_space); //note src_space has not all the attributes 
+	//H5Pset_virtual (dataprop , vdataspace, fname, filedatasetname.c_str(), src_space); //note src_space has not all the attributes 
 	
 	//questo e' per farlo in un altro modo con tanti dataset linkati (ALBULA LO LEGGE)
 	H5Lcreate_external(fname,filedatasetname.c_str(), fvid, filedatasetnamereal.c_str(), H5P_DEFAULT, H5P_DEFAULT);
       }//for each file
 
-      /* Create a virtual dataset. */
+#if 0   
+   /* Create a virtual dataset. */
       dataset = H5Dcreate2(fvid , filedatasetname.c_str(), datatype, vdataspace,
       		   H5P_DEFAULT, dataprop, H5P_DEFAULT);
 
@@ -1524,6 +1534,7 @@ int main(int argc, char *argv[]) {
     //------ Detector
 
       H5Dclose(dataset); 
+#endif 
       H5Sclose(vdataspace);
       //H5Sclose (src_space);
       H5Pclose(dataprop); 
