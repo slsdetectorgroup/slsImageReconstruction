@@ -30,11 +30,13 @@
 //#define MYROOT //choose 
 //#define TXT
 #define HDF5f
+#define MASKMSMODULE
 //#define LZ4
 //#define BITSHUFFLE
 //#define ZLIB
 //#define SZIP
 #define MASTERVIRTUAL
+//#define IODETECTOR
 
 #ifdef HDF5f
 #include "hdf5.h"
@@ -208,6 +210,17 @@ int main(int argc, char *argv[]) {
 		       ypix, timestamp, expTime, subexptime, period,
 		       subperiod, imgs, Nimgsperfile ) != 1) return -1;
  
+ 
+  //correct imagesize due to double detector  imageSize/=2;
+  //if a single mod geometry divide by 2
+#ifdef IODETECTOR
+  // geometry of a module
+  //make it generale
+  int imageSize_copy= imageSize;
+  imageSize= imageSize_copy - imageSize_copy*4/(numModules+4);
+  //if( npix_y_user==512 && npix_y_user==1024) imageSize=imageSize_copy/2;
+#endif
+ 
   // int Nimgscashed=1;//read 10 images at the same time
  
   vec<unsigned int*> buffer;
@@ -250,17 +263,13 @@ int main(int argc, char *argv[]) {
   out = fopen (fname, "w");
 #endif
   
-    //    cout<<"total files  "<<Nfiles<<endl;
-
-    // int Nimagesexpected[Nfiles];
-    //for(int ifile=0; ifile<Nfiles-1; ifile++)
-    // Nimagesexpected[ifile]=Nimgsperfile;
-    //Nimagesexpected[Nfiles-1]=imgs-(Nfiles-1)*Nimgsperfile;
-    //cout<< "TOTAL Imags: "<< imgs<<" last image expected for last file is "<<Nimagesexpected[Nfiles-1]<<endl;
      
     int Nimagesexpected=Nimgsperfile+numFrames; //assumes 2000 more tahn number   
     if(imgs<Nimagesexpected)  Nimagesexpected=imgs+1;
     cout<< "last image expected for this file is "<<Nimagesexpected-1<<endl;
+
+    //if trying to convert frames that do not exist
+    if(numFrames>Nimagesexpected-1) return -1;
 
     //calculate the last nframe
     //int lastnframe=Nimagesexpected-1;
@@ -926,6 +935,12 @@ int main(int argc, char *argv[]) {
 	  }//v mods
 	} //h mods close all loops
 	
+#ifdef MASKMSMODULE
+	//mask a pixel
+	int kmask=GetK(702,338,npix_x_g);
+	map[kmask]=0;
+#endif
+
 	//now rotate everything 
 	if(!longedge_x){
 	  //rotate on the output matrix
@@ -1447,18 +1462,18 @@ int main(int argc, char *argv[]) {
       
 	char fileIndex[200];
 	sprintf(fileIndex , "_%d",ifile);
-	string filedatasetnamereal=filedatasetname+"link"+fileIndex;
+	string filedatasetnamereal=filedatasetname+/*"link"*/""+fileIndex;
 
-       	H5Pset_virtual (dataprop , vdataspace, fname, filedatasetname.c_str(), src_space); //note src_space has not all the attributes 
+       	//H5Pset_virtual (dataprop , vdataspace, fname, filedatasetname.c_str(), src_space); //note src_space has not all the attributes 
 	
 	//questo e' per farlo in un altro modo con tanti dataset linkati (ALBULA LO LEGGE)
 	H5Lcreate_external(fname,filedatasetname.c_str(), fvid, filedatasetnamereal.c_str(), H5P_DEFAULT, H5P_DEFAULT);
       } //for each file
 
-     
+      #if 0     
       /* Create a virtual dataset. */
       dataset = H5Dcreate2(fvid , filedatasetname.c_str(), datatype, vdataspace,
-      		   H5P_DEFAULT, dataprop, H5P_DEFAULT);
+			   H5P_DEFAULT, dataprop, H5P_DEFAULT);
 
       int vnr=imgs;
       atts = H5Screate(H5S_SCALAR);
@@ -1523,7 +1538,9 @@ int main(int argc, char *argv[]) {
     H5Aclose(attid);
     //------Detector
 
-      H5Dclose(dataset); 
+  
+    H5Dclose(dataset); 
+    #endif
       H5Sclose(vdataspace);
       //H5Sclose (src_space);
       H5Pclose(dataprop); 
