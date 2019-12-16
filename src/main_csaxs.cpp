@@ -30,7 +30,7 @@
 //#define MYROOT //choose 
 //#define TXT
 #define HDF5f
-#define MASKMSMODULE
+//#define MASKMSMODULE
 //#define LZ4
 //#define BITSHUFFLE
 //#define ZLIB
