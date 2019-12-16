@@ -30,12 +30,13 @@
 //#define MYROOT //choose 
 //#define TXT
 #define HDF5f
-#define MASKMSMODULE
+//#define MASKMSMODULE
 //#define LZ4
 //#define BITSHUFFLE
 //#define ZLIB
 //#define SZIP
-#define MASTERVIRTUAL
+//#define MASTERVIRTUAL
+#define MASTERLINK
 
 #ifdef HDF5f
 #include "hdf5.h"
@@ -933,6 +934,8 @@ int main(int argc, char *argv[]) {
 	//mask a pixel
 	int kmask=GetK(702,338,npix_x_g);
 	map[kmask]=0;
+	kmask=GetK(792,250,npix_x_g);
+	map[kmask]=0;
 #endif
 	
 	//now rotate everything 
@@ -1365,7 +1368,7 @@ int main(int argc, char *argv[]) {
 #ifdef HDF5f
     //now create master virtual dataset
     //createonly for the first datafile (note not created for single images)
-#ifdef MASTERVIRTUAL
+#ifdef MASTERVIRTUAL || MASTERLINK
     if( fileFrameIndex==0){
       char fnamemaster[1000]; 
       fapl = H5Pcreate(H5P_FILE_ACCESS);
@@ -1457,14 +1460,17 @@ int main(int argc, char *argv[]) {
 	char fileIndex[200];
 	sprintf(fileIndex , "_%d",ifile);
 	string filedatasetnamereal=filedatasetname+/*"link"*/""+fileIndex;
-
-	//H5Pset_virtual (dataprop , vdataspace, fname, filedatasetname.c_str(), src_space); //note src_space has not all the attributes 
-	
+#ifdef MASTERVIRTUAL 
+	H5Pset_virtual (dataprop , vdataspace, fname, filedatasetname.c_str(), src_space); //note src_space has not all the attributes 
+#endif
+#ifdef MASTERLINK	
 	//questo e' per farlo in un altro modo con tanti dataset linkati (ALBULA LO LEGGE)
 	H5Lcreate_external(fname,filedatasetname.c_str(), fvid, filedatasetnamereal.c_str(), H5P_DEFAULT, H5P_DEFAULT);
-      }//for each file
+   #endif
+   }//for each file
 
-#if 0   
+
+#ifdef MASTERVIRTUAL      
    /* Create a virtual dataset. */
       dataset = H5Dcreate2(fvid , filedatasetname.c_str(), datatype, vdataspace,
       		   H5P_DEFAULT, dataprop, H5P_DEFAULT);
