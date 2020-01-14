@@ -8,7 +8,8 @@ HDF5DIR		        =	/afs/psi.ch/project/sls_det_software/software_packages/linux6
 
 #LIBRARYCBF		=	$(CBFLIBDIR)/lib/*.o
 LIBHDF5			=	$(HDF5DIR)/lib/libhdf5.a ${HDF5DIR}/lib/libhdf5_hl.a	-lz -ldl #-lhdf5 -lhdf5_hl #-lhdf5_hl_cpp -lhdf5_cpp -lsz -lz 
-LIBHDF5CBF			=	-L$(CBFLIBDIR)/lib/ -lhdf5 -lcbf
+#LIBHDF5CBF			=	-L$(CBFLIBDIR)/lib/ -lhdf5 -lcbf
+LIBHDF5CBF		=	$(CBFLIBDIR)/lib/libhdf5.a $(CBFLIBDIR)/lib/libhdf5_hl.a -L$(CBFLIBDIR)/lib/ -lcbf
 LIBLZ4			=	-L$(LZ4DIR)/lib/ -llz4
 #EXTPLUGINDIR	= /scratch/HDF5-External-Filter-Plugins/plugins/
 #EXTPLUGINLIB	= -L$(EXTPLUGINDIR) -lh5lz4
