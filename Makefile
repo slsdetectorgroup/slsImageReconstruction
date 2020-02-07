@@ -2,46 +2,38 @@ WD				=	$(shell pwd)
 
 CBFLIBDIR		=	/scratch/CBFlib-0.9.5
 HDF5DIR		        =	/afs/psi.ch/project/sls_det_software/software_packages/linux6/hdf5/1.10.3
-#HDF5DIR		        =	/scratch/hdf5-1.10.3/hdf5-1.10.3/hdf5/
-#LZ4DIR		        =	/scratch/lz4
-
-
-#LIBRARYCBF		=	$(CBFLIBDIR)/lib/*.o
-LIBHDF5			=	$(HDF5DIR)/lib/libhdf5.a ${HDF5DIR}/lib/libhdf5_hl.a	-lz -ldl #-lhdf5 -lhdf5_hl #-lhdf5_hl_cpp -lhdf5_cpp -lsz -lz 
-#LIBHDF5CBF			=	-L$(CBFLIBDIR)/lib/ -lhdf5 -lcbf
+LIBHDF5			=	$(HDF5DIR)/lib/libhdf5.a ${HDF5DIR}/lib/libhdf5_hl.a	-lz -ldl 
 LIBHDF5CBF		=	$(CBFLIBDIR)/lib/libhdf5.a $(CBFLIBDIR)/lib/libhdf5_hl.a -L$(CBFLIBDIR)/lib/ -lcbf
 LIBLZ4			=	-L$(LZ4DIR)/lib/ -llz4
-#EXTPLUGINDIR	= /scratch/HDF5-External-Filter-Plugins/plugins/
-#EXTPLUGINLIB	= -L$(EXTPLUGINDIR) -lh5lz4
-LIBCBFTIFF		=  -L/usr/lib64/ -ltiff 	#-L$(CBFLIBDIR)/lib/ -ltiff 
+LIBCBFTIFF		=  -L/usr/lib64/ -ltiff 
 
 INCLUDESCBF		=	-I $(CBFLIBDIR)/include
 INCLUDESHDF5		=	-I $(HDF5DIR)/include 
 INCLUDELZ4              =  -I $(LZ4DIR)/lib
 INCLUDES		= 	-I. -Iincludes  
 
-CCX			=	gcc -O3 -pthread 
+CCX			=	gcc -O3 -pthread
 CFLAGS		+=  -Wall 
 LDLIBS		+= 	-lm  -lstdc++ 
 
 PROGS				= 	image
 PROGS_QUAD			= 	imageQuad
 PROGSROOT_SUM			= 	imageSum
-PROGS_CSAXS			= 	cbfMaker
-PROGS_CSAXS_HDF5		= 	hdf5Maker
-PROGS_CSAXS_TIFF		= 	tiffMaker
-PROGS_CSAXS_TIFF_QUAD		= 	tiffMakerQuad
-PROGS_CSAXS_TXT		        = 	txtMaker
-PROGS_CSAXS_TXT_QUAD		= 	txtMakerQuad
-PROGS_CSAXS_OMNY_HDF5		= 	hdf5MakerOMNY
-PROGS_CSAXS_9M_HDF5		= 	hdf5Maker9M
-PROGS_CSAXS_1.5M_HDF5		= 	hdf5Maker1.5M
-PROGS_SUM			= 	cbfMakerSum
-PROGS_CSAXS_QUAD		= 	cbfMakerQuad
-PROGS_HALF			= 	cbfMakerHalf
-PROGS_CSAXS_1.5M        	= 	cbfMaker1.5M
-PROGS_CSAXS_OMNY        	= 	cbfMakerOMNY
-PROGS_CSAXS_9M	                = 	cbfMaker9M
+PROGS_CBF			= 	cbfMaker
+PROGS_CBFSUM			= 	cbfMakerSum
+PROGS_CBF_QUAD		  	= 	cbfMakerQuad
+PROGS_CBF_HALF			= 	cbfMakerHalf
+PROGS_CBF_1.5M        		= 	cbfMaker1.5M
+PROGS_CBF_OMNY        		= 	cbfMakerOMNY
+PROGS_CBF_9M	                = 	cbfMaker9M
+PROGS_HDF5		        = 	hdf5Maker
+PROGS_TIFF			= 	tiffMaker
+PROGS_TIFF_QUAD			= 	tiffMakerQuad
+PROGS_TXT		        = 	txtMaker
+PROGS_TXT_QUAD			= 	txtMakerQuad
+PROGS_OMNY_HDF5			= 	hdf5MakerOMNY
+PROGS_9M_HDF5			= 	hdf5Maker9M
+PROGS_1.5M_HDF5			= 	hdf5Maker1.5M
 DESTDIR				= 	./bin/
 INSTMODE			= 	0777
 
@@ -56,14 +48,14 @@ OBJSCSAXS 		= 	$(SRC_CSAXS_CLNT:.cpp=.o)
 OBJSSUM 		= 	$(SRC_SUM_CLNT:.cpp=.o)	
 
 
-all: clean $(PROGS) $(PROGSROOT_SUM) $(PROGS_CSAXS)  $(PROGS_CSAXS_1.5M) $(PROGS_CSAXS_OMNY) $(PROGS_CSAXS_9M) #$(PROGS_SUM) #$(PROGS_HALF) 
+all: clean $(PROGS) $(PROGS_CBF) $(PROGS_HDF5) $(PROGS_TIFF) $(PROGS_TXT) 	
 
 boot: $(OBJS) $(OBJSCSAXS) $(OBJSSUM)
 
 $(PROGS): 
 	@echo $(WD)
 	mkdir -p $(DESTDIR) 
-	$(CCX)  -o $@  $(SRC_CLNT) $(INCLUDES) $(CFLAGS) $(LDLIBS) `$(ROOTSYS)/bin/root-config --cflags --libs` 
+	$(CCX)  -o $@  $(SRC_CLNT) -DMYROOT  $(INCLUDES) $(CFLAGS) $(LDLIBS) `$(ROOTSYS)/bin/root-config --cflags --libs` 
 	mv $(PROGS) $(DESTDIR) 
 	cd $(WD)
 
@@ -81,46 +73,48 @@ $(PROGSROOT_SUM):
 	mv $(PROGSROOT_SUM) $(DESTDIR) 
 	cd $(WD)
 
-$(PROGS_CSAXS): 
+$(PROGS_CBF): 
 	@echo $(WD)
-	$(CCX)  -o $@  $(SRC_CSAXS_CLNT) $(INCLUDES)  $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5CBF) $(CFLAGS) $(LDLIBS) 
-	mv $(PROGS_CSAXS) $(DESTDIR) 
+        ## choose if you want header supperted at MS beamline  -DMSHeader	
+	$(CCX)  -o $@  $(SRC_CSAXS_CLNT) -DMYCBF -DMSHeader $(INCLUDES)  $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5CBF) $(CFLAGS) $(LDLIBS) 
+	mv $(PROGS_CBF) $(DESTDIR) 
 	cd $(WD)
 
-$(PROGS_CSAXS_QUAD): 
+$(PROGS_CBF_QUAD): 
 	@echo $(WD)
 	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES)  $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5CBF) $(CFLAGS) $(LDLIBS) 
-	mv $(PROGS_CSAXS_QUAD) $(DESTDIR) 
+	mv $(PROGS_CBF_QUAD) $(DESTDIR) 
 	cd $(WD)
 
-$(PROGS_CSAXS_HDF5): 
+$(PROGS_HDF5): 
 	@echo $(WD)
-	$(CCX)  -o $@  $(SRC_CSAXS_CLNT) $(INCLUDES)  $(INCLUDESHDF5) $(INCLUDELZ4) $(LIBHDF5) $(EXTPLUGINLIB) $(CFLAGS) $(LDLIBS) 
-	mv $(PROGS_CSAXS_HDF5) $(DESTDIR) 
+# CHOSE OPTIONS  -DZLIB (COMPRESSED ZLIB), -DMASTERVIRTUAL (MASTER FILE CONTAINS A VIRTUAL DATASET), -DMASTERLINK (MASETR FILE CONTAINS A LINKED DATASET)
+	$(CCX)  -o $@  $(SRC_CSAXS_CLNT) -DHDF5f -DMASTERLINK $(INCLUDES)  $(INCLUDESHDF5) $(INCLUDELZ4) $(LIBHDF5) $(EXTPLUGINLIB) $(CFLAGS) $(LDLIBS) 
+	mv $(PROGS_HDF5) $(DESTDIR) 
 	cd $(WD)
 
-$(PROGS_CSAXS_TXT): 
+$(PROGS_TXT): 
 	@echo $(WD)
-	$(CCX)  -o $@  $(SRC_CSAXS_CLNT) $(INCLUDES) $(CFLAGS) $(LDLIBS) 
-	mv $(PROGS_CSAXS_TXT) $(DESTDIR) 
+	$(CCX)  -o $@  $(SRC_CSAXS_CLNT) -DTXT $(INCLUDES) $(CFLAGS) $(LDLIBS) 
+	mv $(PROGS_TXT) $(DESTDIR) 
 	cd $(WD)
 
-$(PROGS_CSAXS_TXT_QUAD): 
+$(PROGS_TXT_QUAD): 
 	@echo $(WD)
 	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES) $(CFLAGS) $(LDLIBS) 
-	mv $(PROGS_CSAXS_TXT_QUAD) $(DESTDIR) 
+	mv $(PROGS_TXT_QUAD) $(DESTDIR) 
 	cd $(WD)
 
-$(PROGS_CSAXS_TIFF): 
+$(PROGS_TIFF): 
 	@echo $(WD)
-	$(CCX)  -o $@  $(SRC_CSAXS_CLNT) $(INCLUDES) $(INCLUDESCBF) $(CFLAGS) $(LDLIBS) $(LIBCBFTIFF) 
-	mv $(PROGS_CSAXS_TIFF) $(DESTDIR) 
+	$(CCX)  -o $@  $(SRC_CSAXS_CLNT) -DTIFFFILE $(INCLUDES) $(INCLUDESCBF) $(CFLAGS) $(LDLIBS) $(LIBCBFTIFF) 
+	mv $(PROGS_TIFF) $(DESTDIR) 
 	cd $(WD)
 
-$(PROGS_CSAXS_TIFF_QUAD): 
+$(PROGS_TIFF_QUAD): 
 	@echo $(WD)
 	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES) $(INCLUDESCBF) $(CFLAGS) $(LDLIBS) $(LIBCBFTIFF) 
-	mv $(PROGS_CSAXS_TIFF_QUAD) $(DESTDIR) 
+	mv $(PROGS_TIFF_QUAD) $(DESTDIR) 
 	cd $(WD)
 
 $(PROGS_HALF): 
@@ -129,43 +123,41 @@ $(PROGS_HALF):
 	mv $(PROGS_HALF) $(DESTDIR) 
 	cd $(WD)
 
-$(PROGS_CSAXS_1.5M): 
+$(PROGS_CBF_1.5M): 
 	@echo $(WD)
 	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES) $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5CBF) $(CFLAGS) $(LDLIBS) 
-	mv $(PROGS_CSAXS_1.5M) $(DESTDIR) 
+	mv $(PROGS_CBF_1.5M) $(DESTDIR) 
 	cd $(WD)
 
-$(PROGS_CSAXS_1.5M_HDF5): 
+$(PROGS_1.5M_HDF5): 
 	@echo $(WD)
 	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES)  $(INCLUDESHDF5) $(INCLUDELZ4) $(LIBHDF5) $(EXTPLUGINLIB) $(CFLAGS) $(LDLIBS)
-	mv $(PROGS_CSAXS_1.5M_HDF5) $(DESTDIR) 
+	mv $(PROGS_1.5M_HDF5) $(DESTDIR) 
 	cd $(WD)
 
-$(PROGS_CSAXS_OMNY): 
+$(PROGS_CBF_OMNY): 
 	@echo $(WD)
 	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES) $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5CBF) $(CFLAGS) $(LDLIBS) 
-	mv $(PROGS_CSAXS_OMNY) $(DESTDIR) 
+	mv $(PROGS_CBF_OMNY) $(DESTDIR) 
 	cd $(WD)
 
-$(PROGS_CSAXS_OMNY_HDF5): 
+$(PROGS_OMNY_HDF5): 
 	@echo $(WD)
 	$(CCX)  -o $@  $(SRC_CSAXS_MULTI)  $(INCLUDES)  $(INCLUDESHDF5)  $(INCLUDELZ4) $(LIBHDF5) $(EXTPLUGINLIB) $(CFLAGS) $(LDLIBS) 
-	mv $(PROGS_CSAXS_OMNY_HDF5) $(DESTDIR) 
+	mv $(PROGS_OMNY_HDF5) $(DESTDIR) 
 	cd $(WD)
 
-$(PROGS_CSAXS_9M): 
+$(PROGS_CBF_9M): 
 	@echo $(WD)
 	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES) $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5CBF)  $(CFLAGS) $(LDLIBS) 
-	mv $(PROGS_CSAXS_9M) $(DESTDIR) 
+	mv $(PROGS_CBF_9M) $(DESTDIR) 
 	cd $(WD)
 
-$(PROGS_CSAXS_9M_HDF5): 
+$(PROGS_9M_HDF5): 
 	@echo $(WD)
 	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES) $(INCLUDESHDF5) $(INCLUDELZ4) $(LIBHDF5) $(EXTPLUGINLIB) $(CFLAGS) $(LDLIBS) 
-	mv $(PROGS_CSAXS_9M_HDF5) $(DESTDIR) 
+	mv $(PROGS_9M_HDF5) $(DESTDIR) 
 	cd $(WD)
-
-
 
 $(PROGS_SUM): 
 	@echo $(WD)
@@ -175,9 +167,22 @@ $(PROGS_SUM):
 
 clean:
 	rm -rf $(DESTDIR)$(PROGS)
+	rm -rf $(DESTDIR)$(PROGS_QUAD)
+	rm -rf $(DESTDIR)$(PROGSROOT_SUM)
 	rm -rf $(DESTDIR)$(PROGS_SUM)
-	rm -rf $(DESTDIR)$(PROGS_CSAXS)
-	#rm -rf $(DESTDIR)$(PROGS_HALF)
-	rm -rf $(DESTDIR)$(PROGS_CSAXS_1.5M)
-	rm -rf $(DESTDIR)$(PROGS_CSAXS_OMNY)
-	rm -rf $(DESTDIR)$(PROGS_CSAXS_9M)	
+	rm -rf $(DESTDIR)$(PROGS_CBF)
+	rm -rf $(DESTDIR)$(PROGS_CBF_1.5M)
+	rm -rf $(DESTDIR)$(PROGS_CBF_OMNY)
+	rm -rf $(DESTDIR)$(PROGS_CBF_9M)	
+	rm -rf $(DESTDIR)$(PROGS_CBFSUM)
+	rm -rf $(DESTDIR)$(PROGS_CBF_QUAD)
+	rm -rf $(DESTDIR)$(PROGS_CBF_HALF)
+	rm -rf $(DESTDIR)$(PROGS_CBF_1.5M)
+	rm -rf $(DESTDIR)$(PROGS_TIFF)
+	rm -rf $(DESTDIR)$(PROGS_TIFF_QUAD)
+	rm -rf $(DESTDIR)$(PROGS_TXT)
+	rm -rf $(DESTDIR)$(PROGS_TXT_QUAD)	
+	rm -rf $(DESTDIR)$(PROGS_OMNY_HDF5)	
+	rm -rf $(DESTDIR)$(PROGS_HDF5)		
+	rm -rf $(DESTDIR)$(PROGS_9M_HDF5)	
+	rm -rf $(DESTDIR)$(PROGS_1.5M_HDF5)	

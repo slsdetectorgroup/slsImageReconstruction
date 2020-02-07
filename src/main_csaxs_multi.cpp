@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 	  exe.erase(exePos,4);
 	  
 	  //1.5M
-	  string command = exe + " " + string(argv[1]) + " " + od + " 512 3072 0 2 eiger_2";
+	  string command = exe + " -f " + string(argv[1]) + " -d " + od + " -x 512 -y 3072 -v -g 2 -n eiger_2";
 	  cout<<"command:"<<command<<endl;
 	  system(command.c_str());
 	}
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 	  exe.erase(exePos,4);
 	  
 	  //1.5M OMNY 
-	  string command = exe + " " + string(argv[1]) + " " + od +" 1536 1024 0 2 eiger_4";
+	  string command = exe + " -f " + string(argv[1]) + " -d " + od +" -x 1536 -y 1024 -v -g 2 eiger_4";
 	  cout<<"command:"<<command<<endl;
 	  system(command.c_str());
 
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 	if( exePos!= string::npos){
 	  exe.erase(exePos,2);
 	  //9M
-	  string command = exe + " " + string(argv[1]) + " " + od +" 3072 3072 0 2 eiger_1";
+	  string command = exe + " -f " + string(argv[1]) + " -d " + od +" -x 3072 -y 3072 -v -g 2 -n eiger_1";
 	  cout<<"command:"<<command<<endl;
 	  system(command.c_str());
 	}
@@ -64,8 +64,8 @@ int main(int argc, char *argv[]) {
 	exePos = exe.rfind("Quad");
 	if( exePos!= string::npos){
 	  exe.erase(exePos,4);
-	  //9M
-	  string command = exe + " " + string(argv[1]) + " " + od +" 512 512 1 2 eiger";
+	  //quad
+	  string command = exe + " -f" + string(argv[1]) + " -d " + od +" -x 512 -y 512 -g 2 -n eiger";
 	  cout<<"command:"<<command<<endl;
 	  system(command.c_str());
 	}

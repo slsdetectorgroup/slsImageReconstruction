@@ -24,19 +24,19 @@
 
 #include "image.h"
 
+//ALL THESE NOW DEFINED IN MAKEFILE
 //#define MYCBF //choose 
 //#define MSHeader
 //#define TIFFFILE
 //#define MYROOT //choose 
 //#define TXT
-#define HDF5f
-//#define MASKMSMODULE
+//#define HDF5f
 //#define LZ4
 //#define BITSHUFFLE
 //#define ZLIB
 //#define SZIP
 //#define MASTERVIRTUAL
-#define MASTERLINK
+//#define MASTERLINK
 
 #ifdef HDF5f
 #include "hdf5.h"
@@ -74,7 +74,6 @@
 #endif
 
 using namespace std;
-//using namespace H5;
 
 #ifdef MYCBF
 #undef cbf_failnez
@@ -109,13 +108,14 @@ int main(int argc, char *argv[]) {
   
   //get command line arguments
   string file, datasetname;
-  int fileIndex, fileFrameIndex=0,startdet=0;
+  int fileIndex, fileFrameIndex=0;
   int longedge_x;
   int fillgaps;
   bool isFileFrameIndex = false;
+  bool maskpix=false;
   getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, 
 		       fileFrameIndex, npix_x_user, npix_y_user, 
-		       longedge_x,fillgaps,datasetname,startdet);
+		       longedge_x,fillgaps,datasetname,maskpix);
 
   //cheat and reverse if it is in vertical orientation 
   if (!longedge_x){
@@ -198,8 +198,7 @@ int main(int argc, char *argv[]) {
   char frames[20]="";
   if(isFileFrameIndex)
     sprintf(frames,"_f%012d",fileFrameIndex);//"f000000000000";
-  // int nfile=startdet;
-  //put master on top always
+    //put master on top always
   int  tenGiga, xpix, ypix, imageHeader, imageSize,imgs;
   string timestamp;
   double expTime, period,subexptime, subperiod;
@@ -930,13 +929,33 @@ int main(int argc, char *argv[]) {
 	  }//v mods
 	} //h mods close all loops
 
-#ifdef MASKMSMODULE
-	//mask a pixel
-	int kmask=GetK(702,338,npix_x_g);
-	map[kmask]=0;
-	kmask=GetK(792,250,npix_x_g);
-	map[kmask]=0;
-#endif
+	if(maskpix){
+	  //substitute with read from a file
+	  //mask a pixel
+	  ifstream myReadFile;
+	  string line;
+	  myReadFile.open("maskpix.txt");
+
+	  if (myReadFile.is_open()) {
+	    while (!myReadFile.eof()) {
+	      getline(myReadFile,line);
+	      istringstream iss(line);
+	      int a , b;
+	      if(!(line.empty())){
+	      iss >> a >> b;
+	      cout<<line<<endl;
+	      // cout<<a<<"  "<<b<<endl;
+	      int kmask=GetK(a,b,npix_x_g);
+	      map[kmask]=0;
+	      }//not empty
+	    }
+	  }//if open 
+	  else {cout<<"I cannot read the file"<<endl; assert(0);}
+	  //int kmask=GetK(702,338,npix_x_g);
+	  //map[kmask]=0;
+	  //kmask=GetK(792,250,npix_x_g);
+	  //map[kmask]=0;
+	}//if mask pixels
 	
 	//now rotate everything 
 	if(!longedge_x){

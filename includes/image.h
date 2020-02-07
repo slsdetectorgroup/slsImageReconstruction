@@ -6,6 +6,7 @@
 #include <fstream>
 #include <typeinfo>
 #include <vector>
+#include <unistd.h>
 
 using namespace std;
 
@@ -400,70 +401,84 @@ string GetDir(string file){
   return file;
 }
 
-int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user)
-{
-  if(argc < 2){
-    cprintf(RED, "Error: Not enough arguments: cbfMaker [file_name_with_dir] \nExiting.\n");
-    exit(-1);
-  }
-  file=argv[1];
-
-
-  //extract file index and file name with _d0
-  int i;
-  size_t uscore=file.rfind("_");
-  if (uscore==string::npos) {
-    cprintf(RED, "Error: Invalid file name. No underscore found\nExiting.\n");
-    exit(-1);
-  }
-  string s=file;
-  if (sscanf(s.substr(uscore+1,s.size()-uscore-1).c_str(),"%d",&i)) {
-    fileIndex=i;
-    s=file.substr(0,uscore);
-  } else{
-    cprintf(RED, "Error: Invalid file name. Cannot parse file index from %s\n",file.c_str());
-    exit(-1);
-  }
-  uscore=s.rfind("_");
-  if (sscanf( s.substr(uscore+1,s.size()-uscore-1).c_str(),"f%d",&i)) {
-    isFileFrameIndex = true;
-    fileFrameIndex = i;
-    s=file.substr(0,uscore);
-  }/*else      cout << "Warning: ******************************** cannot parse frame index from " << s << endl; \*/
-    uscore=s.rfind("_");
-    if (sscanf( s.substr(uscore+1,s.size()-uscore-1).c_str(),"d%d",&i)){
-      s=file.substr(0,uscore);
-    }else{
-      cprintf(RED, "Error: Invalid file name. Cannot parse detector index from %s\n",file.c_str());
-      exit(-1);
-    }
-    file=s;
-
-    //more parameters for ten giga, user pixels, startdet
-    if(argc>1){
-      //  if(argc < 6){
-      //cprintf(RED, "Error: Not enough arguments: cbfMaker [file_name_with_dir] "
-      //	"[numpixels_x][numpixels_y] [modulelongedge_x] [start_detector_Index]\nExiting.\n");
-      //	exit(-1);
-      //}
-      if(argc>2) outdir=argv[2];
-      else outdir= GetDir(file);
-      if(argc>4)  npix_x_user=atoi(argv[3]);
-      else npix_x_user=1024;
-      if(argc>4)  npix_y_user=atoi(argv[4]);
-      else npix_y_user=512;
-      cprintf(BLUE,
-	      "\n"
-	      "File Name                 : %s\n"
-	      "File Index                : %d\n"
-	      "Frame Index Enable        : %d\n"
-	      "Frame Index               : %d\n"
-	      "Number of pixels in x dir : %d\n"
-	      "Number of pixels in y dir : %d\n",
-	      file.c_str(),fileIndex,isFileFrameIndex,fileFrameIndex, npix_x_user,npix_y_user);
-      return 1;
-    }
-    return 0;
+int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int& longedge_x, int& fillgaps, string& datasetname, bool& maskpix){
+  
+  int c;
+  string s;
+  size_t uscore;
+  //default
+  npix_x_user=1024;
+  npix_y_user=512;
+  longedge_x=1;
+  fillgaps=kInterpolate;
+  datasetname="data";
+  maskpix=false; 
+  
+  outdir="";
+  while ( (c = getopt(argc, argv, "f:d:x:y:n:vg:m")) != -1) {
+    switch (c) 
+      {
+      case 'f': //[file]
+	int i;  
+	file=optarg;
+        s=file;
+	uscore=file.rfind("_");
+	if (sscanf(s.substr(uscore+1,s.size()-uscore-1).c_str(),"%d",&i)) {
+	  fileIndex=i;
+	  s=file.substr(0,uscore);
+	}
+	uscore=s.rfind("_");
+	if (sscanf( s.substr(uscore+1,s.size()-uscore-1).c_str(),"f%d",&i)) {
+	  isFileFrameIndex = true;
+	  fileFrameIndex = i;
+	  s=file.substr(0,uscore);
+	}
+	uscore=s.rfind("_");
+	if (sscanf( s.substr(uscore+1,s.size()-uscore-1).c_str(),"d%d",&i)){
+	  s=file.substr(0,uscore);
+	}
+	
+	//put all defaults here [file needs to be the first argument tough]
+	file=s; 
+	if(outdir.empty()) outdir= GetDir(file);
+	break;
+      case 'd': //[dir]
+	outdir=optarg;
+	break;    
+      case 'x': //[npix_x]
+	npix_x_user=atoi(optarg);
+	break; 
+      case 'y':// [npix_y]
+	npix_y_user=atoi(optarg);
+	break; 
+      case 'v': //[vertical]
+	longedge_x=0;
+	break;
+      case 'g':  //[gap pix]
+	fillgaps=atoi(optarg);//0 no filling, 1 division, 2 interpolation 3 mask, interpolate alternative
+	break;
+      case 'n': //[name of the dataset ]
+	datasetname=optarg;
+	break;
+      case 'm': //[mask pix]
+	maskpix=true;
+	break;
+	
+  }//switch
+    
+  }//while options
+  
+  cprintf(BLUE,
+	  "\n"
+	  "File Name                 : %s\n"
+	  "File Index                : %d\n"
+	  "Frame Index Enable        : %d\n"
+	  "Frame Index               : %d\n"
+	  "Number of pixels in x dir : %d\n"
+	  "Number of pixels in y dir : %d\n",
+	  file.c_str(),fileIndex,isFileFrameIndex,fileFrameIndex, npix_x_user,npix_y_user);
+  
+  return 1;  
 }
 
 
@@ -808,44 +823,7 @@ void FillGapsBetweenChipMask(uint* map, int k, int kvirtual,
   map[k2]=0;
 }
 
-int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int& longedge_x, int& fillgaps, string& datasetname, int &startdet){
-  if(argc < 2){
-    cprintf(RED, "Error: Not enough arguments: cbfMaker [file_name_with_dir] \nExiting.\n");
-    exit(-1);
-  }
-  file=argv[1];
-  getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, fileFrameIndex, npix_x_user, npix_y_user);
-
-  // if(argc>2){
-        
-    if(argc>5) longedge_x=atoi(argv[5]);
-    else longedge_x=1;
-    if(argc>6) fillgaps=atoi(argv[6]);
-    else fillgaps=kInterpolate; //0 no filling, 1 division, 2 interpolation 3 mask, interpolate alternative
-    if(argc>7) datasetname=(argv[7]);
-    else datasetname="data";//"eiger_3"; //single module
-    if(argc>8) startdet=atoi(argv[8]);
-    else startdet=0;
-    cprintf(BLUE,
-	    "Module long edge is on x  : %d\n"
-	    "Fill gaps between chips   : %d\n"
-	    "Start detector index      : %d\n",
-	    longedge_x, fillgaps, startdet);
-    cout<<outdir<<endl;
-    cout<<npix_x_user<<"  "<< npix_y_user<<endl;
-    cout<<longedge_x<<endl;
-    cout<<fillgaps<<endl;
-    cout<<datasetname<<endl;
-    return 1;
-    // }else{
-    //longedge_x=1;
-    //fillgaps=kInterpolate;
-    //datasetname="Eiger";
-    //startdet=0;
-    //return 1;
-    //}
-    //  return 1;
-}
+ 
 
 int local_exit(int status) {
   exit(status);
