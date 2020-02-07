@@ -2,6 +2,7 @@ WD				=	$(shell pwd)
 
 CBFLIBDIR		=	/scratch/CBFlib-0.9.5
 HDF5DIR		        =	/afs/psi.ch/project/sls_det_software/software_packages/linux6/hdf5/1.10.3
+#HDF5DIR		        =	$(HDF5_SERIAL_DIR)
 LIBHDF5			=	$(HDF5DIR)/lib/libhdf5.a ${HDF5DIR}/lib/libhdf5_hl.a	-lz -ldl 
 LIBHDF5CBF		=	$(CBFLIBDIR)/lib/libhdf5.a $(CBFLIBDIR)/lib/libhdf5_hl.a -L$(CBFLIBDIR)/lib/ -lcbf
 LIBLZ4			=	-L$(LZ4DIR)/lib/ -llz4
@@ -9,10 +10,11 @@ LIBCBFTIFF		=  -L/usr/lib64/ -ltiff
 
 INCLUDESCBF		=	-I $(CBFLIBDIR)/include
 INCLUDESHDF5		=	-I $(HDF5DIR)/include 
+#INCLUDESHDF5		=	-I $(HDF5_SERIAL_INCLUDE_DIR)  
 INCLUDELZ4              =  -I $(LZ4DIR)/lib
 INCLUDES		= 	-I. -Iincludes  
 
-CCX			=	gcc -O3 -pthread
+CCX			=	gcc -O3 -pthread  -fopenmp 
 CFLAGS		+=  -Wall 
 LDLIBS		+= 	-lm  -lstdc++ 
 

@@ -15,7 +15,7 @@
 #include <map>
 #include <getopt.h>
 #include <cmath>
-//#include <omp.h>
+#include <omp.h>
 #include <cassert>	
 #include <algorithm> 
 #include <sys/time.h>
