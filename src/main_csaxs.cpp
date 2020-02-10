@@ -24,20 +24,6 @@
 
 #include "image.h"
 
-//ALL THESE NOW DEFINED IN MAKEFILE
-//#define MYCBF //choose 
-//#define MSHeader
-//#define TIFFFILE
-//#define MYROOT //choose 
-//#define TXT
-//#define HDF5f
-//#define LZ4
-//#define BITSHUFFLE
-//#define ZLIB
-//#define SZIP
-//#define MASTERVIRTUAL
-//#define MASTERLINK
-
 #ifdef HDF5f
 #include "hdf5.h"
 //#include "H5Cpp.h"
@@ -496,16 +482,17 @@ int main(int argc, char *argv[]) {
     //while(nf[ifiles]<= Nimagesexpected[ifiles]+ifiles*Nimgsperfile){
     
     while(numFrames< Nimagesexpected){
-
-	//here nr is not volatile anymore
+            
+      //here nr is not volatile anymore
 	//loop on each receiver to get frame buffer
-    
+      
 	// int readim= Nimgscashed;
 	//if(numFrames>lastnframe) readim=1;
     
 	//    unsigned int* longbuffer =
 	//new unsigned int[readim*(imageHeader+imageSize)/sizeof(int)];
     
+      //#pragma omp parallel for ordered
 	for(int inr=0; inr<nr; ++inr){
 	  unsigned int* dataout = new unsigned int [ xpix* ypix]; //will delete it in buffer
 	  //read data
@@ -527,6 +514,7 @@ int main(int argc, char *argv[]) {
 	  //     xpix*ypix*sizeof(unsigned int));
 
 	  //decodeData(/*intbuffer*/ , dataout, imageSize, xpix, ypix);  			    
+	  //#pragma omp ordered
 	  buffer.push_back(dataout);  
 	
 	  //  }//for every image
@@ -534,9 +522,7 @@ int main(int argc, char *argv[]) {
   
 	if(buffer.size()!=nr/*readim*/) assert(0);
     
-	//loop on the many images now
-	//for(int im=0; im<readim; im++){
-	//   cout<<numFrames+im<<endl;
+    
 	//Create cbf files with data
 #ifdef MYCBF
 	cbf_handle cbf;
@@ -629,18 +615,19 @@ int main(int argc, char *argv[]) {
 		      }//ichipy
 		    }//ichipx
 		  }//quad		 
-		  else{
+		  else{ 
+		    //?#pragma omp ordered
 		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
 		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
 			for(int iy=0; iy<NumChanPerChip_y;++iy){
 			  int x_t= GetX(0, ichipx, imod_h);
 			  int y_t= GetY(iy, ichipy,imod_v);
-			   int k=GetK(x_t,y_t,npix_x_g);
-			   memcpy(&map[k], 
-				  &buffer[nnr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy],
-				  NumChanPerChip_x *sizeof(int));
+			  int k=GetK(x_t,y_t,npix_x_g);
+			  memcpy(&map[k], 
+				 &buffer[nnr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy],
+				 NumChanPerChip_x *sizeof(int));
 			} //num ch chip y
-		       }//ichipy
+		      }//ichipy
 		    }//ichipx
 		  }//not quad
 		} //it ==0 		
