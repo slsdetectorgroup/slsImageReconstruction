@@ -15,14 +15,16 @@
 #include <map>
 #include <getopt.h>
 #include <cmath>
-//#include <omp.h>
 #include <cassert>	
 #include <algorithm> 
 #include <sys/time.h>
 #include <inttypes.h>
 #include <math.h>
 
+#include <omp.h>
 #include "image.h"
+
+
 
 //#define MYCBF //choose 
 //#define MSHeader
@@ -490,10 +492,7 @@ int main(int argc, char *argv[]) {
 
 #endif  //HDF5f
     
-    //now reause the same all the times
-    unsigned int* intbuffer = new unsigned int[imageSize/sizeof(int)];
-    int* bufferheader=new int[imageHeader/sizeof(int)];
- 
+   
     //int nf[Nfiles];
     //for(int ifiles=0; ifiles<Nfiles;ifiles++)
     //nf[ifiles]=Nimgsperfile*ifiles+1;
@@ -512,34 +511,62 @@ int main(int argc, char *argv[]) {
 	//    unsigned int* longbuffer =
 	//new unsigned int[readim*(imageHeader+imageSize)/sizeof(int)];
     
+      //      omp_set_dynamic(0);     // Explicitly disable dynamic teams
+      //omp_set_num_threads(nr); //set n receivers
+      
+      //comtianer for a full image
+      unsigned int* dataouttot = new unsigned int [ xpix* ypix*nr];
+      
+      omp_set_num_threads(nr);    
+  
+#pragma omp parallel for   
 	for(int inr=0; inr<nr; ++inr){
-	  unsigned int* dataout = new unsigned int [ xpix* ypix]; //will delete it in buffer
+  //now reause the same all the times
+	  unsigned int* intbuffer = new unsigned int[imageSize/sizeof(int)];
+	  int* bufferheader=new int[imageHeader/sizeof(int)];
+	
+	  //unsigned int* dataout = new unsigned int [ xpix* ypix]; //will delete it in buffer
 	  //read data
 	  if(infile[inr/*+(ifiles*nr)*/].read((char*)bufferheader,imageHeader)){
-	    fnum = (*((uint64_t*)(char*)bufferheader));
+	    //fnum = (*((uint64_t*)(char*)bufferheader));
 	  }
 	  //if(!CheckFrames(fnum,numFrames)) continue; 	 
 	  infile[inr/*+(ifiles*nr)*/].read((char*)intbuffer,imageSize);
-
-	  decodeData(intbuffer, dataout, imageSize, xpix, ypix);  
-
-	  //here layer intermedio 
-	  //for(int im=0;im<readim;++im){
-	  //read image header
-	  //unsigned int* dataout = new unsigned int [xpix* ypix]; //will delete it in buffer
-	  //overwrite every time
-	  //memcpy(&intbuffer[0], 
-	  //     (char*)longbuffer+imageHeader*(im+1)+imageSize*im, 
-	  //     xpix*ypix*sizeof(unsigned int));
-
-	  //decodeData(/*intbuffer*/ , dataout, imageSize, xpix, ypix);  			    
-	  buffer.push_back(dataout);  
+	  
+	  decodeData(intbuffer, dataouttot, imageSize, xpix, ypix,inr);  
+	  
+	//here layer intermedio 
+	//for(int im=0;im<readim;++im){
+	//read image header
+	//unsigned int* dataout = new unsigned int [xpix* ypix]; //will delete it in buffer
+	//overwrite every time
+	//memcpy(&intbuffer[0], 
+	//     (char*)longbuffer+imageHeader*(im+1)+imageSize*im, 
+	//     xpix*ypix*sizeof(unsigned int));
 	
-	  //  }//for every image
+	//decodeData(/*intbuffer*/ , dataout, imageSize, xpix, ypix);  
+	//memcpy(&dataouttot[xpix* ypix*inr], &dataout[0],  
+	//     xpix*ypix*sizeof(unsigned int));
+
+
 	}//loop on receivers
-  
-	if(buffer.size()!=nr/*readim*/) assert(0);
-    
+      
+       //      for(int inr=0; inr<nr; ++inr) {
+      //unsigned int* dataout = new unsigned int [ xpix* ypix];
+      //memcpy(&dataout[0], &dataouttot[xpix* ypix*inr],  
+      //	 xpix*ypix*sizeof(unsigned int));
+
+      //buffer.push_back((unsigned int*)dataout);  
+	    
+      //}//loop on receivers
+   
+      //here make sure threads all retuned
+      // for(int inr=0; inr<nr; ++inr)
+      //	buffer.push_back((unsigned int*)dataouttot[inr]);
+      
+      //	if(buffer.size()!=nr/*readim*/) {
+      //	  assert(0);
+      //	}
 
 	//loop on the many images now
 	//for(int im=0; im<readim; im++){
@@ -583,8 +610,11 @@ int main(int argc, char *argv[]) {
 	struct  timeval tss,tsss; //for timing
 	//   gettimeofday(&tss,NULL);
       
-	for(int imod_h=0; imod_h<n_h;++imod_h){
-	  for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
+	//here multithread??? 
+	
+#pragma omp parallel for   
+	  for(int imod_h=0; imod_h<n_h;++imod_h){
+	    for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
 	    for( int it=0;it<2;++it){	
 	      for( int ileft=0;ileft<2;++ileft){
 		
@@ -640,12 +670,20 @@ int main(int argc, char *argv[]) {
 		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
 		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
 			for(int iy=0; iy<NumChanPerChip_y;++iy){
-			  int x_t= GetX(0, ichipx, imod_h);
-			  int y_t= GetY(iy, ichipy,imod_v);
-			   int k=GetK(x_t,y_t,npix_x_g);
-			   memcpy(&map[k], 
-				  &buffer[nnr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy],
-				  NumChanPerChip_x *sizeof(int));
+			  for(int ix=0; ix<NumChanPerChip_x;++ix){
+			    int x_t= GetX(ix, ichipx, imod_h);
+			    int y_t= GetY(iy, ichipy,imod_v);
+			    int k=GetK(x_t,y_t,npix_x_g);
+			    //memcpy(&map[k], 
+			    //	   &buffer[nnr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy],
+			    //	   NumChanPerChip_x *sizeof(int));
+			    
+			    //memcpy(&dataout[0], &dataouttot[xpix* ypix*inr],  
+			    //	 xpix*ypix*sizeof(unsigned int));
+			    
+			    map[k]=dataouttot[(ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy)+(xpix* ypix)*nnr];
+			   //	  NumChanPerChip_x *sizeof(unsigned int));
+			  }//	num ch chip x	
 			} //num ch chip y
 		       }//ichipy
 		    }//ichipx
@@ -684,12 +722,17 @@ int main(int argc, char *argv[]) {
 		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
 		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
 			for(int iy=0; iy<NumChanPerChip_y;++iy){
-			  // for(int ix=0; ix<NumChanPerChip_x;++ix){
-			  int x_t=GetX(0, ichipx, imod_h);
-			  int y_t= GetY(iy,ichipy,imod_v);
-			  int k=GetK(x_t,y_t,npix_x_g);
-			  memcpy(&map[k], &buffer[nnr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)],
-				 NumChanPerChip_x *sizeof(int));
+			  for(int ix=0; ix<NumChanPerChip_x;++ix){
+			    int x_t=GetX(ix, ichipx, imod_h);
+			    int y_t= GetY(iy,ichipy,imod_v);
+			    int k=GetK(x_t,y_t,npix_x_g);
+			    // memcpy(&map[k], &buffer[nnr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)],
+			    //	 NumChanPerChip_x *sizeof(int));
+			    map[k]=dataouttot[(ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy))+(xpix* ypix)*nnr];
+
+			    //memcpy(&map[k], &dataouttot[((ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy))+(xpix* ypix)*nnr],
+			    //	 NumChanPerChip_x *sizeof(int));
+			  }
 			}
 		      }
 		    }
@@ -1346,11 +1389,16 @@ int main(int argc, char *argv[]) {
 	//	nf[ifiles]++;
     
     
-      buffer.clear();    
-      for(int inr=0; inr<nr; ++inr) 
-	delete buffer[inr]; //remove memory 
-      }//for every image
+	//      buffer.clear();    
+	//for(int inr=0; inr<nr; ++inr) 
+	//delete buffer[inr]; //remove memory 
+
+       	delete [] dataouttot;	
+    }//for every image
     
+    
+
+
     for(int inr=0; inr<nr; ++inr)
       infile[inr/*+(ifiles*nr)*/].close();
     //}loop on files
@@ -1365,9 +1413,6 @@ int main(int argc, char *argv[]) {
     H5Pclose(dxpl);
 #endif
   
-    delete[] bufferheader;
-    delete[] intbuffer;
-    
     delete[]  map;
     delete[]  mapr;
     

@@ -449,7 +449,7 @@ bool CheckFrames( int fnum, int numFrames)
   return true;
 }
 
-void decodeData(unsigned int *datain, unsigned int* dataout, const int size, const int nx, const int ny) 
+void decodeData(unsigned int *datain, unsigned int* dataout, const int size, const int nx, const int ny, int inr) 
 {
   
   int dataBytes = size;
@@ -468,7 +468,7 @@ void decodeData(unsigned int *datain, unsigned int* dataout, const int size, con
       iptr=ptr[ibyte]&0xff;				//???? a byte mask
       for (ipos=0; ipos<2; ++ipos) {		//loop over the 8bit (twice)
 	ival=(iptr>>(ipos*4))&0xf;		//pick the right 4bit
-	dataout[ichan]=ival;
+	dataout[ichan+inr*nx*ny]=ival;
 	ichan++;
       }
     }
@@ -476,7 +476,7 @@ void decodeData(unsigned int *datain, unsigned int* dataout, const int size, con
   case 8:
     for (ichan=0; ichan<dataBytes; ++ichan) {//for every pixel (1 pixel = 1 byte)
       ival=ptr[ichan]&0xff;				//????? a byte mask
-      dataout[ichan]=ival;
+      dataout[ichan+inr*nx*ny]=ival;
     }
     break;
   case 16:
@@ -486,7 +486,7 @@ void decodeData(unsigned int *datain, unsigned int* dataout, const int size, con
 	iptr=ptr[ichan*2+ibyte];
 	ival|=((iptr<<(ibyte*bytesize))&(0xff<<(ibyte*bytesize)));
       }
-      dataout[ichan]=ival;
+      dataout[ichan+inr*nx*ny]=ival;
     }
     break;
   default:
@@ -494,7 +494,7 @@ void decodeData(unsigned int *datain, unsigned int* dataout, const int size, con
     //for (ichan=0; ichan<nch; ++ichan) { 	//for every pixel
     //dataout[ichan]=datain[ichan];
     //}  
-    memcpy(&dataout[0], datain,	nch*sizeof(int));
+    memcpy(&dataout[0+inr*nx*ny], datain,	nch*sizeof(int));
   }
   
 }
