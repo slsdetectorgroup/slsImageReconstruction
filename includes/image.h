@@ -38,7 +38,7 @@ int dynamicrange;
 string outdir;
 
 //gap pixel threatement 
-enum { kZero, kDivide, kInterpolate, kMask, kInterpolate2 };
+enum { kZero, kDivide, kInterpolate, kMask, kInterpolate2, kIgnore};
 
 //class container
 //{
@@ -353,8 +353,13 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
   else
     packetsPerFrame = 4 * dynamicrange;
   if(!tg){
-    if(is!=(packetsPerFrame*1024)){
-      cout << "Error: Invalid packet size " << is << " for 1g read from file " << file << endl;
+    if((gpenabled==0) && (is!=(packetsPerFrame*1024))){
+	cout << "Error: Invalid packet size " << is << " for 1g read from file " << file <<" gappixels enabled "<<gpenabled<< endl;
+	return -1;
+    }
+    //so far nly 32 bit implemented
+    if((gpenabled==1) && (is!=(((512+2)*257*4)))){
+      cout << "Error: Invalid packet size " << is << " for 1g read from file " << file <<" gappixels enabled "<<gpenabled<<endl;
       return -1;
     }
   }
@@ -606,6 +611,7 @@ int GetX(int ix, int ichipx, int imod_h)
 {
   return ix+(NumChanPerChip_x+GapPixelsBetweenChips_x)*ichipx+(NumChanPerChip_x*NumChip_x+(NumChip_x-1)*GapPixelsBetweenChips_x+GapPixelsBetweenModules_x)*imod_h;
 }
+
 int GetY(int iy, int ichipy,int imod_v)
 {
   return iy+(NumChanPerChip_y+GapPixelsBetweenChips_y)*ichipy+(NumChanPerChip_y*NumChip_y+(NumChip_y-1)*GapPixelsBetweenChips_y+GapPixelsBetweenModules_y)*imod_v;
