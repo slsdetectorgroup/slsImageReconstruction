@@ -74,7 +74,7 @@ template <typename T>
 class vec : public std::vector<T>  {};
 
 int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
-		      string& timestamp, double& expTime,  double& subexptime, double& period, double& subperiod, int& imgs, int& imgspfile ){
+		      string& timestamp, double& expTime,  double& subexptime, double& period, double& subperiod, int& imgs, int& imgspfile, int& gpenabled, int& quad){
 
   cout << "Getting File Parameters from " << file << endl;
   string str;
@@ -84,8 +84,7 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
   string timestamp_s;
   string period_s;
   int dr;
-  int gpenabled,quad; 
-  
+    
   /*
     Version                    : 4.0
     Detector Type              : 3
@@ -202,13 +201,14 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str >> str >> str >> gpenabled;
-      if(gpenabled==1) assert(0 && "gapppixel not supported yet"); 
+      //if(gpenabled==1) assert(0 && "gapppixel not supported yet"); 
+      //i should also set the option to interpolate or not 
     }
     //Quad Enable                : 0
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str >> str >> quad;
-      if(quad==1) assert(0 && "quad not supported yet"); 
+      // if(quad==1) assert(0 && "quad not supported yet"); 
     }
     //Timestamp
     if(getline(infile,str)){

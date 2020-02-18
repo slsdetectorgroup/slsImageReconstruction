@@ -189,11 +189,11 @@ int main(int argc, char *argv[]) {
   string timestamp;
   double expTime, period,subexptime, subperiod;
   int Nimgsperfile;
-
+  int enablegpix, quad;
   sprintf(fname,"%s_master_%d.raw",file.c_str(),fileIndex);
   if(getFileParameters(fname, tenGiga, imageHeader, imageSize, xpix, 
 		       ypix, timestamp, expTime, subexptime, period,
-		       subperiod, imgs, Nimgsperfile ) != 1) return -1;
+		       subperiod, imgs, Nimgsperfile,  enablegpix, quad ) != 1) return -1;
  
   // int Nimgscashed=1;//read 10 images at the same time
  
@@ -601,7 +601,7 @@ int main(int argc, char *argv[]) {
 		  //} 
 		  
 		  if((npix_y_user==512) && (npix_x_user==512)){
-		    //quad
+		    if(quad==0){
 		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
 		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
 			for(int iy=0; iy<NumChanPerChip_y;++iy){
@@ -614,9 +614,23 @@ int main(int argc, char *argv[]) {
 			} //num ch chip y
 		      }//ichipy
 		    }//ichipx
-		  }//quad		 
+		    }//quad ==0
+		    else{
+		      for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+			for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+			  for(int iy=0; iy<NumChanPerChip_y;++iy){
+			    for(int ix=0; ix<NumChanPerChip_x;++ix){
+			      int x_t= GetX(ix, ichipx, imod_h);
+			      int y_t= GetY(iy, ichipy,imod_v);
+			      int k=GetK(x_t,y_t,npix_x_g);
+			      map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
+			    }//ix
+			  } //num ch chip y
+			}//ichipy
+		      }//ichipx	      
+		    }//quad ==1
+		  }//square geom		 
 		  else{ 
-		    //?#pragma omp ordered
 		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
 		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
 			for(int iy=0; iy<NumChanPerChip_y;++iy){
@@ -646,20 +660,35 @@ int main(int argc, char *argv[]) {
 		  }		 
 		  
 		  if((npix_y_user==512) && (npix_x_user==512)){
-		    //quad
-		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
-		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-			for(int iy=0; iy<NumChanPerChip_y;++iy){
-			  for(int ix=0; ix<NumChanPerChip_x;++ix){
-			    int x_t=GetX(ix, ichipx, imod_h);
-			    int y_t= GetY(iy,ichipy,imod_v);
-			    int k=GetK(x_t,y_t,npix_x_g);
-			    map[k]=buffer[nnr][(NumChanPerChip_x*NumChip_x_port-1)-(ix+(ichipx%2)*NumChanPerChip_x)+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
+		    if(quad==0){
+		      for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
+			for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+			  for(int iy=0; iy<NumChanPerChip_y;++iy){
+			    for(int ix=0; ix<NumChanPerChip_x;++ix){
+			      int x_t=GetX(ix, ichipx, imod_h);
+			      int y_t= GetY(iy,ichipy,imod_v);
+			      int k=GetK(x_t,y_t,npix_x_g);
+			      map[k]=buffer[nnr][(NumChanPerChip_x*NumChip_x_port-1)-(ix+(ichipx%2)*NumChanPerChip_x)+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
+			    }
 			  }
 			}
-		      }
-		    }	
-		  }//quad
+		      }	
+		    }//quad ==0
+		    else{
+		      for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
+			for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+			  for(int iy=0; iy<NumChanPerChip_y;++iy){
+			    for(int ix=0; ix<NumChanPerChip_x;++ix){
+			      int x_t=GetX(ix, ichipx, imod_h);
+			      int y_t= GetY(iy,ichipy,imod_v);
+			      int k=GetK(x_t,y_t,npix_x_g);
+			      map[k]=buffer[nnr][(ix+ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
+			    }
+			  }
+			}
+		      }	
+		    }//quad==1
+		  }//square geometry
 		  else{
 		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
 		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
