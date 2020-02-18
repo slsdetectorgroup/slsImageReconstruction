@@ -682,7 +682,7 @@ int main(int argc, char *argv[]) {
 			      int x_t=GetX(ix, ichipx, imod_h);
 			      int y_t= GetY(iy,ichipy,imod_v);
 			      int k=GetK(x_t,y_t,npix_x_g);
-			      map[k]=buffer[nnr][(ix+ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
+			      map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
 			    }
 			  }
 			}
