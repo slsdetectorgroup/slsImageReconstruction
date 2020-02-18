@@ -387,12 +387,24 @@ int main(int argc, char *argv[]) {
 		   H5Z_FLAG_MANDATORY, (size_t)1, cd_values);
     //  cout<<H5Zfilter_avail(H5Z_FILTER)<<endl;
 #endif  
+
+#ifdef BITSHUFFLE
+    unsigned filter_config;  
+    const unsigned int cd_values[2] ;
+    cd_values[0]=0; /*bitshuffle selects the size automatically*/
+    cd_values[1]=2 /* lz4 compression*/
+      
+      /* lz4 default is 3 */
+      H5Pset_filter (dataprop, H5Z_FILTER, 
+		     H5Z_FLAG_MANDATORY, (size_t)2, cd_values);
+    //  cout<<H5Zfilter_avail(H5Z_FILTER)<<endl;
+#endif  
     
     dataset = H5Dcreate2(gid,datasetname.c_str(), datatype,dataspace,
 			 H5P_DEFAULT, dataprop, H5P_DEFAULT);
-  
+    
     ////commentout attributes at the moment
-
+    
     //one for all and overwritten
     //now create attributes
     //Count_cutoff 
