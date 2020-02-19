@@ -196,7 +196,8 @@ int main(int argc, char *argv[]) {
 		       subperiod, imgs, Nimgsperfile,  enablegpix, quad ) != 1) return -1;
  
   // int Nimgscashed=1;//read 10 images at the same time
- 
+  if(enablegpix) fillgaps=kIgnore;
+
   vec<unsigned int*> buffer;
   //vector <unsigned int*> buffer;
   buffer.reserve(n_v *n_h*2*2/**Nimgscashed*/);
@@ -985,7 +986,7 @@ int main(int argc, char *argv[]) {
 	    } //notr HM
 	  }//v mods
 	} //h mods close all loops
-
+    
 	if(maskpix){
 	  //substitute with read from a file
 	  //mask a pixel

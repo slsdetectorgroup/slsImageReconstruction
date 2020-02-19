@@ -201,14 +201,12 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str >> str >> str >> gpenabled;
-      //if(gpenabled==1) assert(0 && "gapppixel not supported yet"); 
-      //i should also set the option to interpolate or not 
+    
     }
     //Quad Enable                : 0
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str >> str >> quad;
-      // if(quad==1) assert(0 && "quad not supported yet"); 
     }
     //Timestamp
     if(getline(infile,str)){
@@ -460,7 +458,7 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
 	longedge_x=0;
 	break;
       case 'g':  //[gap pix]
-	fillgaps=atoi(optarg);//0 no filling, 1 division, 2 interpolation 3 mask, interpolate alternative
+	fillgaps=atoi(optarg);//0 no filling, 1 division, 2 interpolation 3 mask, interpolate alternative, 4 ignore
 	break;
       case 'n': //[name of the dataset ]
 	datasetname=optarg;
