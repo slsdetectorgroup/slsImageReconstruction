@@ -645,7 +645,7 @@ int main(int argc, char *argv[]) {
 		    if(quad==1 && enablegpix==1){
 		      //for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
 		      //for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-		      for(int iy=256+1; iy<514;++iy){
+		       for(int iy=256+1; iy<514;++iy){
 			for(int ix=0; ix<514;++ix){
 			  //int x_t= GetX(ix, ichipx, imod_h);
 			  //int y_t= GetY(iy, ichipy,imod_v);
@@ -724,7 +724,7 @@ int main(int argc, char *argv[]) {
 			  //int x_t=GetX(ix, ichipx, imod_h);
 			  //int y_t= GetY(iy,ichipy,imod_v);
 			  //int k=GetK(x_t,y_t,npix_x_g);
-			  map[ix+514*(257-iy)]=buffer[nnr][ix+514*iy];
+			  map[ix+514*(256-iy)]=buffer[nnr][ix+514*iy];
 			}
 		      }	
 		    }//quad==1 && gp==0
