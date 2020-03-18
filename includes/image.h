@@ -37,6 +37,7 @@ int imagesize=0;
 int dynamicrange;
 string outdir;
 
+
 //gap pixel threatement 
 enum { kZero, kDivide, kInterpolate, kMask, kInterpolate2, kIgnore};
 
@@ -404,7 +405,7 @@ string GetDir(string file){
   return file;
 }
 
-int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int& longedge_x, int& fillgaps, string& datasetname, bool& maskpix){
+int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int& longedge_x, int& fillgaps, string& datasetname, bool& maskpix, int& thratecorr){
   
   int c;
   string s;
@@ -416,9 +417,10 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
   fillgaps=kInterpolate;
   datasetname="data";
   maskpix=false; 
+  thratecorr=0; 
   
   outdir="";
-  while ( (c = getopt(argc, argv, "f:d:x:y:n:vg:m")) != -1) {
+  while ( (c = getopt(argc, argv, "f:d:x:y:n:vg:mr:")) != -1) {
     switch (c) 
       {
       case 'f': //[file]
@@ -465,6 +467,9 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
 	break;
       case 'm': //[mask pix]
 	maskpix=true;
+	break;
+      case 'r':
+	thratecorr=atoi(optarg);
 	break;
 	
   }//switch
@@ -834,6 +839,158 @@ int local_exit(int status) {
   return status;    /* to avoid warning messages */
 }
 
+//32 bit
+std::vector <unsigned int> SetRateCorrectionTau(double tau, double sub_expure_time) //tau in sec
+{
+  vector <unsigned int> returnv;
+  unsigned int rate_correction_table[1024];
+  double meas[16384];
+  double ratemax=-1;
+  
+  unsigned int np = 16384; //max slope 16 * 1024 -> 14 bit
+  double b0[1024];
+  double m[1024];
+  
+  if(tau<0||sub_expure_time<0)
+    {
+      printf("Error tau %f and sub_expure_time %f must be greater than 0.\n", tau, sub_expure_time);
+      return returnv;
+    }
+  cout<<"Calculating table for tau of "<<tau*1e9<<" ns."<<endl;
+  
+  // Basic rate correction table
+  for(unsigned int i=0;i<np;i++) meas[i]=0;
+ 
+	for(unsigned int i=0;i<np;i++){
+	  meas[i]  = i*exp(-i/sub_expure_time*tau);
+	  if(meas[i]> ratemax) ratemax=meas[i];
+	}
 
+		//	cout<<i<<" meas "<<meas[i] <<endl;
+		//if(meas[i]>4095) {
+		//np=i;// limit max even before
+		  //cout<<"l"<<endl;
+		  //break;
+		  //cout<<"max limited by 12 bit counter"<<endl; 		
+		//}
+		//if(i>0 && meas[i]<meas[i-1]){
+		// np=i-1;
+		  //cout<<"ll"<<endl;
+		  //break;
+		  //cout<<"max limited by maximum counter"<<endl; 		
+		//}
+
+
+	// b  :  index/address of block ram/rate correction table
+	// b0 :  base in vhdl
+	// m  :  slope in vhdl
+	//
+	// Firmware:
+	//    data_in(11..2) -> memory address  --> memory
+	//    data_in( 1..0) -> lsb
+	//
+	//    mem_data_out(13.. 0) -> base
+	//    mem_data_out(17..14) -> slope
+	//
+	//    delta = slope*lsb
+	//    corr  = base+delta
+
+	unsigned int next_i=0;
+	double beforemax;
+	b0[0] = 0;
+	m[0]  = 1;
+
+	//initialize as max
+	//for(int i=0; i<1024; i++) 
+	//rate_correction_table[i]  =  (((int)(15+0.5)&0xf)<<14) | ((int)(max+0.5)&0x3fff); //65535;
+	
+	rate_correction_table[0]  = (((int)(m[0]+0.5)&0xf)<<14) | ((int)(b0[0]+0.5)&0x3fff);
+
+	for(int b=1;b<1024;b++)
+	{
+	  if(m[b-1]<15)
+	    {
+	      double s=0,sx=0,sy=0,sxx=0,sxy=0;
+	      for(;;next_i++)
+		{
+		  //give some space to stats
+		  if(next_i>=np)
+		    {
+		      printf("Error bin problem ???????\n");
+		      //not jump anymore but increase smootly
+
+		      for(; b<1024; b++){
+			//cout<<b<<endl;
+			//b=1024;
+			b0[b] = std::max( beforemax, ratemax);//16383;
+			m[b]  = 15; 
+			rate_correction_table[b]  = (((int)(m[b]+0.5)&0xf)<<14) | ((int)(b0[b]+0.5)&0x3fff);
+		      }
+		      b=1024;
+		      break;
+		    }
+		  
+		  double x    = meas[next_i] - b*4;
+		  double y    = next_i;
+		  //	cout<<b<<"    "<<next_i<<"   "<<meas[next_i]<<"    "<< np<<"   "<<np/16<<endl;
+		  //printf("Start Loop  x: %f,\t y: %f,\t  s: %f,\t  sx: %f,\t  sy: %f,\t  sxx: %f,\t  sxy: %f,\t  next_i: %d,\t  b: %d,\t  meas[next_i]: %f\n", x, y, s, sx, sy, sxx, sxy, next_i, b, meas[next_i]);
+		  
+		  if(x < -0.5) continue;
+		  if(x >  3.5) break;
+		  s   += 1;
+		  sx  += x;
+		  sy  += y;
+		  sxx += x*x;
+		  sxy += x*y;
+		  //printf("End   Loop  x: %f,\t y: %f,\t  s: %f,\t  sx: %f,\t  sy: %f,\t  sxx: %f,\t  sxy: %f,\t  next_i: %d,\t  b: %d,\t  meas[next_i]: %f\n", x, y, s, sx, sy, sxx, sxy, next_i, b, meas[next_i]);
+		}
+	      double delta = s*sxx - sx*sx;
+	      b0[b] = (sxx*sy - sx*sxy)/delta;
+	      m[b]  = (s*sxy  - sx*sy) /delta;
+	      beforemax= b0[b];
+ 
+	      if(m[b]<0 || m[b]>15){
+		m[b]=15;
+		b0[b]=std::max( beforemax, ratemax);//16383;
+	      }
+
+	      //	printf("After Loop  s: %f,\t  sx: %f,\t  sy: %f,\t  sxx: %f,\t  sxy: %f,\t  next_i: %d,\t  b: %d,\t  meas[next_i]: %f\n", s, sx, sy, sxx, sxy, next_i, b, meas[next_i]);
+	      //	cout<<s<<"   "<<sx<<"   "<<sy<<"   "<<sxx<<"   "<<"   "<<sxy<<"   "<<delta<<"   "<<m[b]<<"    "<<b0[b]<<endl;
+	    }else
+	    {
+	      b0[b] = std::max( beforemax,  ratemax);//(int)(max+0.5);//16383;
+	      m[b]  = 15;
+	    }
+	  rate_correction_table[b]  = (((int)(m[b]+0.5)&0xf)<<14) | ((int)(b0[b]+0.5)&0x3fff);
+	  //cout<<b<<"    "<<next_i<<"   "<<meas[next_i]<<"    "<< m[b]<<"   "<<b0[b]<<endl;
+	  returnv.push_back(rate_corr_table[b]);
+	}//b
+	delete rate_corr_table[];	
+	return returnv;
+}
+
+#if 0
+unsigned int CorrectedValue(unsigned int i)
+{
+  int delta, slope, base, lsb;
+  unsigned int corr;
+	lsb   = i&3; //here is every how many is done
+	base  = rate_correction_table[i>>2] & 0x3fff; //i>>2=i/4
+	slope = ((rate_correction_table[i>>2] & 0x3c000) >> 14);
+	
+	//original here
+	//	if(base==16383 && slope==15) return max;
+	if(slope==15) return 3*15+base;//1000/*16383*/;
+ 
+	delta = slope*lsb;
+	corr  = delta+base;
+
+	//	if(i==40 || i==80 || i==4000)
+	//printf("Readout Input: %d,\tBase:%d,\tSlope:%d,\tLSB:%d,\tDelta:%d\tResult:%d\tReal:%f\n", i, base, slope, lsb, delta, corr, meas[i]); 
+
+	//if(corr>i-4) 
+	return corr;
+}
+#endif
 
 #endif

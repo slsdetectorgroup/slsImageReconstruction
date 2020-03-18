@@ -24,6 +24,7 @@
 
 #include "image.h"
 
+
 #ifdef HDF5f
 #include "hdf5.h"
 //#include "H5Cpp.h"
@@ -98,10 +99,11 @@ int main(int argc, char *argv[]) {
   int longedge_x;
   int fillgaps;
   bool isFileFrameIndex = false;
-  bool maskpix=false;
+  bool maskpix;
+  int thratecorr;
   getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, 
 		       fileFrameIndex, npix_x_user, npix_y_user, 
-		       longedge_x,fillgaps,datasetname,maskpix);
+		       longedge_x,fillgaps,datasetname,maskpix, thratecorr);
 
   //cheat and reverse if it is in vertical orientation 
   if (!longedge_x){
@@ -483,6 +485,41 @@ int main(int argc, char *argv[]) {
 
 #endif  //HDF5f
     
+    //calculate rate corr tables only once
+
+
+	  //now implement ratecorrections if needed 
+	  if(thratecorr>0){
+	    //read taus from a file
+	    ifstream myReadFile;
+	    string line;
+	    myReadFile.open("ratecorr.txt");
+	    
+	    double tau[nr];
+	    if (myReadFile.is_open()) {
+	      while (!myReadFile.eof()) {
+	      getline(myReadFile,line);
+	      istringstream iss(line);
+	      int detid, dt;
+		if(!(line.empty())){
+		  iss >> detid >> dt;
+		  tau[detid]=dt*1e-9;//ns
+		}
+	      }
+	    }
+	    //ratecorr variables 
+	    //32 bit now
+	    std::vector <unsigned int> inoutmap;
+	    for(int inr=0; inr<nr;inr++){
+	      unsigned int rate_table[1024];    
+	      //dr 32, as many taus as needed
+	      if(dynamicrange==32) {
+		rate_table[ir]&=SetRateCorrectionTau(tau[inr], subexptime);
+	      }
+	    }//receivers
+
+	  }//rate corr on
+
     //now reause the same all the times
     unsigned int* intbuffer = new unsigned int[imageSize/sizeof(int)];
     int* bufferheader=new int[imageHeader/sizeof(int)];
@@ -508,6 +545,7 @@ int main(int argc, char *argv[]) {
       //#pragma omp parallel for ordered
 	for(int inr=0; inr<nr; ++inr){
 	  unsigned int* dataout = new unsigned int [ xpix* ypix]; //will delete it in buffer
+
 	  //read data
 	  if(infile[inr/*+(ifiles*nr)*/].read((char*)bufferheader,imageHeader)){
 	    fnum = (*((uint64_t*)(char*)bufferheader));
@@ -533,7 +571,7 @@ int main(int argc, char *argv[]) {
 	  //  }//for every image
 	}//loop on receivers
   
-	if(buffer.size()!=nr/*readim*/) assert(0);
+	if(buffer.size()!=(unsigned int)nr/*readim*/) assert(0);
     
     
 	//Create cbf files with data
@@ -760,7 +798,6 @@ int main(int argc, char *argv[]) {
 	    //fillgaps
 	    //edge
 	    int ix=NumChanPerChip_x-1;
-	    int kdebug;
 	    //start from end pixel of the chip right 
 	    for( int ichipx=0; ichipx<3; ++ichipx){
 	      for( int ichipy=0; ichipy<2; ++ichipy){
@@ -1015,6 +1052,16 @@ int main(int argc, char *argv[]) {
 	  //map[kmask]=0;
 	}//if mask pixels
 	
+
+
+	  for(int ix=0; ix<npix_x_g; ++ix){
+	    for(int iy=0; iy<npix_y_g; ++iy){
+	      int k=ix+ npix_x_g*iy;
+	      map[k]=CorrectedValue(map[k]);
+	}
+
+	    //------rate corr
+
 	//now rotate everything 
 	if(!longedge_x){
 	  //rotate on the output matrix
@@ -1025,7 +1072,18 @@ int main(int argc, char *argv[]) {
 	      mapr[knew]=map[kold];
 	    }
 	  }
-	} //short edege
+	  //make better the rotation map
+	  //now refill map with the rotated values, only map exists
+	  //for(int ix=0; ix<npix_x_g; ++ix){
+	  //for(int iy=0; iy<npix_y_g; ++iy){
+	  //  int  knew=(npix_y_g-iy)+ npix_y_g*ix;
+	  //  map[knew]=mapr[knew];
+	  // }
+	  //}
+	} //short edge
+
+
+
 
 
 #ifdef TXT
