@@ -31,7 +31,20 @@ int main(int argc, char *argv[]) {
 	else od =GetDir(argv[1]);
 	
 	string exe = string(argv[0]);
-	size_t exePos = exe.rfind("1.5M");
+
+	size_t exePos = exe.rfind("1M");
+	
+	if( exePos!= string::npos){
+	  exe.erase(exePos,2);
+	  
+	  //1M 
+	  string command = exe + " -f " + string(argv[1]) + " -d " + od +" -x 1024 -y 1024 -g 2";
+	  cout<<"command:"<<command<<endl;
+	  system(command.c_str());
+
+	}
+
+	exePos = exe.rfind("1.5M");
 	if( exePos!= string::npos){
 	  exe.erase(exePos,4);
 	  

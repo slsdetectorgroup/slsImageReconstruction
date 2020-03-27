@@ -27,6 +27,7 @@ PROGS_CBF_QUAD		  	= 	cbfMakerQuad
 PROGS_CBF_HALF			= 	cbfMakerHalf
 PROGS_CBF_1.5M        		= 	cbfMaker1.5M
 PROGS_CBF_OMNY        		= 	cbfMakerOMNY
+PROGS_CBF_1M        		= 	cbfMaker1M
 PROGS_CBF_9M	                = 	cbfMaker9M
 PROGS_HDF5		        = 	hdf5Maker
 PROGS_TIFF			= 	tiffMaker
@@ -34,6 +35,7 @@ PROGS_TIFF_QUAD			= 	tiffMakerQuad
 PROGS_TXT		        = 	txtMaker
 PROGS_TXT_QUAD			= 	txtMakerQuad
 PROGS_OMNY_HDF5			= 	hdf5MakerOMNY
+PROGS_1M_HDF5			= 	hdf5Maker1M
 PROGS_9M_HDF5			= 	hdf5Maker9M
 PROGS_1.5M_HDF5			= 	hdf5Maker1.5M
 DESTDIR				= 	./bin/
@@ -149,6 +151,18 @@ $(PROGS_OMNY_HDF5):
 	mv $(PROGS_OMNY_HDF5) $(DESTDIR) 
 	cd $(WD)
 
+$(PROGS_CBF_1M): 
+	@echo $(WD)
+	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES) $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5CBF) $(CFLAGS) $(LDLIBS) 
+	mv $(PROGS_CBF_1M) $(DESTDIR) 
+	cd $(WD)
+
+$(PROGS_1M_HDF5): 
+	@echo $(WD)
+	$(CCX)  -o $@  $(SRC_CSAXS_MULTI)  $(INCLUDES)  $(INCLUDESHDF5)  $(INCLUDELZ4) $(LIBHDF5) $(EXTPLUGINLIB) $(CFLAGS) $(LDLIBS) 
+	mv $(PROGS_1M_HDF5) $(DESTDIR) 
+	cd $(WD)
+
 $(PROGS_CBF_9M): 
 	@echo $(WD)
 	$(CCX)  -o $@  $(SRC_CSAXS_MULTI) $(INCLUDES) $(INCLUDESCBF)  $(LIBRARYCBF) $(LIBHDF5CBF)  $(CFLAGS) $(LDLIBS) 
@@ -174,7 +188,8 @@ clean:
 	rm -rf $(DESTDIR)$(PROGS_SUM)
 	rm -rf $(DESTDIR)$(PROGS_CBF)
 	rm -rf $(DESTDIR)$(PROGS_CBF_1.5M)
-	rm -rf $(DESTDIR)$(PROGS_CBF_OMNY)
+	rm -rf $(DESTDIR)$(PROGS_CBF_OMNY)	
+	rm -rf $(DESTDIR)$(PROGS_CBF_1M)	
 	rm -rf $(DESTDIR)$(PROGS_CBF_9M)	
 	rm -rf $(DESTDIR)$(PROGS_CBFSUM)
 	rm -rf $(DESTDIR)$(PROGS_CBF_QUAD)
@@ -184,7 +199,8 @@ clean:
 	rm -rf $(DESTDIR)$(PROGS_TIFF_QUAD)
 	rm -rf $(DESTDIR)$(PROGS_TXT)
 	rm -rf $(DESTDIR)$(PROGS_TXT_QUAD)	
-	rm -rf $(DESTDIR)$(PROGS_OMNY_HDF5)	
+	rm -rf $(DESTDIR)$(PROGS_OMNY_HDF5)		
+	rm -rf $(DESTDIR)$(PROGS_1M_HDF5)	
 	rm -rf $(DESTDIR)$(PROGS_HDF5)		
 	rm -rf $(DESTDIR)$(PROGS_9M_HDF5)	
 	rm -rf $(DESTDIR)$(PROGS_1.5M_HDF5)	
