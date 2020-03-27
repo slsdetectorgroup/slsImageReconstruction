@@ -163,6 +163,7 @@ int main(int argc, char *argv[]) {
 
   int fnum;
   int nr=0;
+  /*
   for(int imod_h=0; imod_h<n_h; ++imod_h){
     for(int imod_v=0; imod_v<n_v; ++imod_v){
       for(int it=0;it<2;++it){
@@ -177,6 +178,17 @@ int main(int argc, char *argv[]) {
       }
     }
   }
+  */
+  nr=n_h*n_v*2*2;
+
+  if((( longedge_x && npix_y_user==256) || 
+      (!longedge_x && npix_x_user==256) )) nr/=2;
+  if(npix_y_user==512 && npix_x_user==512) nr/=2;
+
+  cout<<"# receivers: "<<nr<<endl;
+
+  //now create omp
+  // omp_set_dynamic(0);     // Explicitly disable dynamic teams                                                                         
 
 
   //get dynamic range and configure receiverdata depending on top and bottom
@@ -218,13 +230,19 @@ int main(int argc, char *argv[]) {
   //sprintf(frames,"_f%012d",fileFrameIndex+Nimgsperfile*ifiles);
   if(isFileFrameIndex)
     sprintf(frames,"_f%012d",fileFrameIndex);
+  
+  omp_set_num_threads(nr); //set n receivers                                                                                          
+  
+#pragma omp parallel for
   for(int inr=0; inr<nr; ++inr){
-    sprintf(fname, "%s_d%d%s_%d.raw",file.c_str(),inr,frames,fileIndex);
+    char fname2[1000]; 
+    // for(int inr=0; inr<nr; ++inr){
+    sprintf(fname2, "%s_d%d%s_%d.raw",file.c_str(),inr,frames,fileIndex);
     //open file
     if(!infile[inr/*+(ifiles*nr)*/].is_open())
-      infile[inr/*+(ifiles*nr)*/].open(fname,ios::in | ios::binary);
+      infile[inr/*+(ifiles*nr)*/].open(fname2,ios::in | ios::binary);
   }//loop on receivers
-  //} //loop on how many files
+ 
   
 #ifdef MYROOT
   TFile* ofile = new TFile(TString::Format("%s/%s%s_%d.root",outdir.c_str(),
@@ -505,8 +523,7 @@ int main(int argc, char *argv[]) {
 	//    unsigned int* longbuffer =
 	//new unsigned int[readim*(imageHeader+imageSize)/sizeof(int)];
     
-      //#pragma omp parallel for ordered
-	for(int inr=0; inr<nr; ++inr){
+     	for(int inr=0; inr<nr; ++inr){
 	  unsigned int* dataout = new unsigned int [ xpix* ypix]; //will delete it in buffer
 	  //read data
 	  if(infile[inr/*+(ifiles*nr)*/].read((char*)bufferheader,imageHeader)){
@@ -527,7 +544,6 @@ int main(int argc, char *argv[]) {
 	  //     xpix*ypix*sizeof(unsigned int));
 
 	  //decodeData(/*intbuffer*/ , dataout, imageSize, xpix, ypix);  			    
-	  //#pragma omp ordered
 	  buffer.push_back(dataout);  
 	
 	  //  }//for every image
@@ -562,225 +578,239 @@ int main(int argc, char *argv[]) {
 	  for(int ik=0; ik<npix_y_g*npix_x_g;++ik) map[ik]=4095;
 	if(dynamicrange==32) 
 	  for(int ik=0; ik<npix_y_g*npix_x_g;++ik) map[ik]=4294967295;
-	int startchipx=0;
-	int startchipy=0;
-	int endchipx=4;
-	int endchipy=1;
       
 	//omp_set_dynamic(0);     // Explicitly disable dynamic teams
 	//omp_set_num_threads(nr); //set n receivers
       
 	//can be changed in a loop over receivers 
-	int nnr=0;
-	struct  timeval tss,tsss; //for timing
+       	struct  timeval tss,tsss; //for timing
 	//   gettimeofday(&tss,NULL);
-      
-	for(int imod_h=0; imod_h<n_h;++imod_h){
-	  for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
-	    for( int it=0;it<2;++it){	
-	      for( int ileft=0;ileft<2;++ileft){
-		
-		if( ((longedge_x && npix_y_user==256) 
-		   || (!longedge_x && npix_x_user==256)) 
-		  && it==1) continue; 
-		
-		if(npix_y_user==512 && npix_x_user==512 && ileft==1)
-		continue;
-		//if( npix_y_user==256 && it==1) continue; 
-
-		//getting values //top
-		if(it==0){
-		  startchipy=1;    
-		  endchipy=2;
-		  
-		  if(ileft==0){		  
-		    startchipx=0;
-		    endchipx=2;
-		  }
-		  if(ileft==1){		  
-		    startchipx=2;
-		    endchipx=4;
-		  }
-		  
-		  if((longedge_x && npix_y_user==256)
-		     || (!longedge_x && npix_x_user==256)){
-		    startchipy=0;    
-		    endchipy=1;
-		  } 
-
-		  //if(npix_y_user==256){
-		  //startchipy=0;    
-		  //endchipy=1;
-		  //} 
-		  
-		  if((npix_y_user==512) && (npix_x_user==512)){
-		    if(quad==0 && enablegpix==0){
-		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
-		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-			for(int iy=0; iy<NumChanPerChip_y;++iy){
-			  for(int ix=0; ix<NumChanPerChip_x;++ix){
-			    int x_t= GetX(ix, ichipx, imod_h);
-			    int y_t= GetY(iy, ichipy,imod_v);
-			    int k=GetK(x_t,y_t,npix_x_g);
-			    map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
-			  }//ix
-			} //num ch chip y
-		      }//ichipy
-		    }//ichipx
-		    }//quad ==0
-		    if(quad==1 && enablegpix==0){
-		      for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
-			for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-			  for(int iy=0; iy<NumChanPerChip_y;++iy){
-			    for(int ix=0; ix<NumChanPerChip_x;++ix){
-			      int x_t= GetX(ix, ichipx, imod_h);
-			      int y_t= GetY(iy, ichipy,imod_v);
-			      int k=GetK(x_t,y_t,npix_x_g);
-			      map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
-			    }//ix
-			  } //num ch chip y
-			}//ichipy
-		      }//ichipx	      
-		    }//quad ==1 && gp==0
-		    if(quad==1 && enablegpix==1){
-		      //for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
-		      //for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-		       for(int iy=256+1; iy<514;++iy){
-			for(int ix=0; ix<514;++ix){
-			  //int x_t= GetX(ix, ichipx, imod_h);
-			  //int y_t= GetY(iy, ichipy,imod_v);
-			  map[ix+ npix_x_g*iy]=buffer[nnr][ix+ npix_x_g*(iy-256-1)];
-			}//ix
-		      } //num ch chip y
-			//}//ichipy
-			//}//ichipx	      
-		    }//quad ==1 && gp==1
-		  }//square geom		 
-		  else{ 
-		    if(enablegpix==0){
-		      for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
-			for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-			  for(int iy=0; iy<NumChanPerChip_y;++iy){
-			    int x_t= GetX(0, ichipx, imod_h);
-			    int y_t= GetY(iy, ichipy,imod_v);
-			    int k=GetK(x_t,y_t,npix_x_g);
-			    memcpy(&map[k], 
-				   &buffer[nnr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy],
-				   NumChanPerChip_x *sizeof(int));
-			  } //num ch chip y
-			}//ichipy
-		      }//ichipx
-		    }//gpnot enabled
-		    else{
-		    }//gp enabled
-		    }//not quad
-		} //it ==0 		
-		
-		//getting values for bottom
-		if(it==1) {
-		  startchipy=0;    
-		  endchipy=1;
-		  if(ileft==0){
-		    startchipx=0;
-		    endchipx=2;
-		  }
-		  if(ileft==1){
-		    startchipx=2;
-		    endchipx=4;
-		  }		 
-		  
-		  if((npix_y_user==512) && (npix_x_user==512)){
-		    if(quad==0 && enablegpix==0){
-		      for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
-			for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-			  for(int iy=0; iy<NumChanPerChip_y;++iy){
-			    for(int ix=0; ix<NumChanPerChip_x;++ix){
-			      int x_t=GetX(ix, ichipx, imod_h);
-			      int y_t= GetY(iy,ichipy,imod_v);
-			      int k=GetK(x_t,y_t,npix_x_g);
-			      map[k]=buffer[nnr][(NumChanPerChip_x*NumChip_x_port-1)-(ix+(ichipx%2)*NumChanPerChip_x)+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
-			    }
-			  }
-			}
-		      }	
-		    }//quad ==0
-		    if(quad==1 && enablegpix==0){
-		      for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
-			for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-			  for(int iy=0; iy<NumChanPerChip_y;++iy){
-			    for(int ix=0; ix<NumChanPerChip_x;++ix){
-			      int x_t=GetX(ix, ichipx, imod_h);
-			      int y_t= GetY(iy,ichipy,imod_v);
-			      int k=GetK(x_t,y_t,npix_x_g);
-			      map[k]=buffer[nnr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
-			    }
-			  }
-			}
-		      }	
-		    }//quad==1 && gp==0
-		    if(quad==1 && enablegpix==1){
-		      for(int iy=0; iy<256+1;++iy){
-			for(int ix=0; ix<514;++ix){
-			  //int x_t=GetX(ix, ichipx, imod_h);
-			  //int y_t= GetY(iy,ichipy,imod_v);
-			  //int k=GetK(x_t,y_t,npix_x_g);
-			  map[ix+514*(256-iy)]=buffer[nnr][ix+514*iy];
-			}
-		      }	
-		    }//quad==1 && gp==0
-		  }//square geometry
-		  else{
-		    if(enablegpix==0){
-		      for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
-			for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-			  for(int iy=0; iy<NumChanPerChip_y;++iy){
-			    // for(int ix=0; ix<NumChanPerChip_x;++ix){
-			    int x_t=GetX(0, ichipx, imod_h);
-			    int y_t= GetY(iy,ichipy,imod_v);
-			    int k=GetK(x_t,y_t,npix_x_g);
-			    memcpy(&map[k], &buffer[nnr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)],
-				   NumChanPerChip_x *sizeof(int));
-			  }
+	
+	//	for(int imod_h=0; imod_h<n_h;++imod_h){
+	//for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
+	//  for( int it=0;it<2;++it){	
+	//    for( int ileft=0;ileft<2;++ileft){
+	
+	
+# pragma omp parallel for
+	for(int inr=0; inr<nr;++inr){
+	  //	for(int imod_h=0; imod_h<n_h;++imod_h){
+	  //for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
+	  
+	  //int imod_h=(inr/4)%n_v+inr/4*n_h;
+	  //int imod_v=(n_v-1)-(inr/4/n_h);
+	  
+	  int imod_h=0+inr/4/n_v;
+	  int imod_v=((n_v-1)-inr/4)+imod_h*n_v;
+	  
+	  
+	  //	  cout<<"rec "<<inr<<"  "<<" h"<<imod_h<< " v "<<imod_v<<endl;
+	  
+	  
+	  int startchipx=0;
+	  int startchipy=0;
+	  int endchipx=4;
+	  int endchipy=1;
+	  
+	  
+	  //		if( ((longedge_x && npix_y_user==256) 
+	  //	   || (!longedge_x && npix_x_user==256)) 
+	  //	  && it==1) continue; 
+	  
+	  //	if(npix_y_user==512 && npix_x_user==512 && ileft==1)
+	  //	continue;
+	  //if( npix_y_user==256 && it==1) continue; 
+	  
+	  if(((inr%4)==0) || ((inr%4)==1)){//every 4 top
+	      //getting values //top
+	      // if(it==0){
+	    startchipy=1;    
+	    endchipy=2;
+	    
+	    
+	    if((inr%4)==0 ){//every 2 left
+	      //if(ileft==0){		  
+	      startchipx=0;
+	      endchipx=2;
+	    }else{
+	      // if(ileft==1){		  
+	      startchipx=2;
+	      endchipx=4;
+	    }
+	    
+	    if((longedge_x && npix_y_user==256)
+	       || (!longedge_x && npix_x_user==256)){
+	      startchipy=0;    
+	      endchipy=1;
+	    } 
+	    
+	    
+	    if((npix_y_user==512) && (npix_x_user==512)){
+	      if(quad==0 && enablegpix==0){
+		for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+		  for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+		    for(int iy=0; iy<NumChanPerChip_y;++iy){
+		      for(int ix=0; ix<NumChanPerChip_x;++ix){
+			int x_t= GetX(ix, ichipx, imod_h);
+			int y_t= GetY(iy, ichipy,imod_v);
+			int k=GetK(x_t,y_t,npix_x_g);
+			map[k]=buffer[inr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
+		      }//ix
+		    } //num ch chip y
+		  }//ichipy
+		}//ichipx
+	      }//quad ==0
+	      if(quad==1 && enablegpix==0){
+		for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+		  for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+		    for(int iy=0; iy<NumChanPerChip_y;++iy){
+		      for(int ix=0; ix<NumChanPerChip_x;++ix){
+			int x_t= GetX(ix, ichipx, imod_h);
+			int y_t= GetY(iy, ichipy,imod_v);
+			int k=GetK(x_t,y_t,npix_x_g);
+			map[k]=buffer[inr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
+		      }//ix
+		    } //num ch chip y
+		  }//ichipy
+		}//ichipx	      
+	      }//quad ==1 && gp==0
+		if(quad==1 && enablegpix==1){
+		  //for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+		  //for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+		  for(int iy=256+1; iy<514;++iy){
+		    for(int ix=0; ix<514;++ix){
+		      //int x_t= GetX(ix, ichipx, imod_h);
+		      //int y_t= GetY(iy, ichipy,imod_v);
+		      map[ix+ npix_x_g*iy]=buffer[inr][ix+ npix_x_g*(iy-256-1)];
+		    }//ix
+		} //num ch chip y
+		  //}//ichipy
+		  //}//ichipx	      
+		}//quad ==1 && gp==1
+	    }//square geom		 
+	    else{ 
+	      if(enablegpix==0){
+		for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+		  for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+		    for(int iy=0; iy<NumChanPerChip_y;++iy){
+		      int x_t= GetX(0, ichipx, imod_h);
+		      int y_t= GetY(iy, ichipy,imod_v);
+		      int k=GetK(x_t,y_t,npix_x_g);
+		      memcpy(&map[k], 
+			     &buffer[inr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy],
+			     NumChanPerChip_x *sizeof(int));
+		    } //num ch chip y
+		  }//ichipy
+		}//ichipx
+	      }//gpnot enabled
+	      else{
+	      }//gp enabled
+	    }//not quad
+	  } //it ==0 		
+	  
+	    //getting values for bottom
+	  else if(((inr%4)==2)|| ((inr%4)==3) ){ //every 2 bottom
+	      //	    if(it==1) {
+	    startchipy=0;    
+	    endchipy=1;
+	      if((inr%4)==2 ){//every 2 left
+		startchipx=0;
+		endchipx=2;
+	      }else{
+		startchipx=2;
+		endchipx=4;
+	      }		 
+	      
+	      if((npix_y_user==512) && (npix_x_user==512)){
+		if(quad==0 && enablegpix==0){
+		  for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
+		    for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+		      for(int iy=0; iy<NumChanPerChip_y;++iy){
+			for(int ix=0; ix<NumChanPerChip_x;++ix){
+			  int x_t=GetX(ix, ichipx, imod_h);
+			  int y_t= GetY(iy,ichipy,imod_v);
+			  int k=GetK(x_t,y_t,npix_x_g);
+			  map[k]=buffer[inr][(NumChanPerChip_x*NumChip_x_port-1)-(ix+(ichipx%2)*NumChanPerChip_x)+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
 			}
 		      }
-		    }//ngp
-		  }//not quad
-		}//it==1
-		nnr++;
-	      }//ileft
-	    }//it
+		    }
+		}	
+		}//quad ==0
+		if(quad==1 && enablegpix==0){
+		  for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
+		  for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+		    for(int iy=0; iy<NumChanPerChip_y;++iy){
+		      for(int ix=0; ix<NumChanPerChip_x;++ix){
+			int x_t=GetX(ix, ichipx, imod_h);
+			int y_t= GetY(iy,ichipy,imod_v);
+			int k=GetK(x_t,y_t,npix_x_g);
+			map[k]=buffer[inr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
+		      }
+		    }
+		  }
+		  }	
+		}//quad==1 && gp==0
+		if(quad==1 && enablegpix==1){
+		  for(int iy=0; iy<256+1;++iy){
+		    for(int ix=0; ix<514;++ix){
+		      //int x_t=GetX(ix, ichipx, imod_h);
+		      //int y_t= GetY(iy,ichipy,imod_v);
+		      //int k=GetK(x_t,y_t,npix_x_g);
+		      map[ix+514*(256-iy)]=buffer[inr][ix+514*iy];
+		    }
+		  }	
+		}//quad==1 && gp==0
+	      }//square geometry
+	      else{
+		if(enablegpix==0){
+		  for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
+		    for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+		      for(int iy=0; iy<NumChanPerChip_y;++iy){
+			// for(int ix=0; ix<NumChanPerChip_x;++ix){
+			int x_t=GetX(0, ichipx, imod_h);
+			int y_t= GetY(iy,ichipy,imod_v);
+			int k=GetK(x_t,y_t,npix_x_g);
+			memcpy(&map[k], &buffer[inr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)],
+			       NumChanPerChip_x *sizeof(int));
+		      }
+		    }
+		  }
+		}//ngp
+	      }//not quad
+	    }//it==1
 	    
+	   
 	    //interpolation easier at the end of the module map
 	    //corner gap pixels gap pixels
 	    
 	    //gettimeofday(&tsss,NULL);
 	    //tdif+=(1e6*(tsss.tv_sec - tss.tv_sec)+(long)(tsss.tv_usec)-(long)(tss.tv_usec));
 	    //tss=tsss;
-       
+	  
 	    //fillgaps
 	    //edge
 	    int ix=NumChanPerChip_x-1;
 	    int kdebug;
-	    //start from end pixel of the chip right 
+	  //start from end pixel of the chip right 
 	    for( int ichipx=0; ichipx<3; ++ichipx){
 	      for( int ichipy=0; ichipy<2; ++ichipy){
 		for(int iy=0; iy<NumChanPerChip_y;++iy){ 
-		 
+		  
 		  if( ((longedge_x && npix_y_user==256) ||
-		       (!longedge_x && npix_x_user==256))
+		     (!longedge_x && npix_x_user==256))
 		      && ichipy==1) continue;
-
-		 if(npix_y_user==512 && npix_x_user==512 && ichipx>0)continue;
-		 //exclude border y
-		 if(ichipy==1 && iy==0) {
-		   //cout<<ichipx<<endl;
-		   //assert(0);
-
+		  
+		  if(npix_y_user==512 && npix_x_user==512 && ichipx>0)continue;
+		//exclude border y
+		  if(ichipy==1 && iy==0) {
+		    //cout<<ichipx<<endl;
+		    //assert(0);
+		    
 		    //first corner
 		    int x_t= GetX(ix, ichipx, imod_h);
 		    int y_t= GetY(iy, ichipy,imod_v);
 		    int k=GetK(x_t,y_t,npix_x_g);
-		
+		    
 		    //right
 		    int xvirtual1=x_t+1;
 		    int yvirtual1=y_t;
@@ -984,8 +1014,9 @@ int main(int argc, char *argv[]) {
 		}//xchannels
 	      } //chips	
 	    } //notr HM
-	  }//v mods
-	} //h mods close all loops
+	}//nr
+	    //}//v mods
+	//} //h mods close all loops
     
 	if(maskpix){
 	  //substitute with read from a file
@@ -1417,11 +1448,13 @@ int main(int argc, char *argv[]) {
 	//	nf[ifiles]++;
     
     
-      buffer.clear();    
+      buffer.clear();
+#pragma omp parallel for
       for(int inr=0; inr<nr; ++inr) 
 	delete buffer[inr]; //remove memory 
       }//for every image
     
+#pragma omp parallel for
     for(int inr=0; inr<nr; ++inr)
       infile[inr/*+(ifiles*nr)*/].close();
     //}loop on files

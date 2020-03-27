@@ -14,7 +14,7 @@ INCLUDESHDF5		=	-I $(HDF5DIR)/include
 INCLUDELZ4              =  -I $(LZ4DIR)/lib
 INCLUDES		= 	-I. -Iincludes  
 
-CCX			=	gcc -O3 -pthread  -fopenmp 
+CCX			=	gcc -O3  -fopenmp 
 CFLAGS		+=  -Wall 
 LDLIBS		+= 	-lm  -lstdc++ 
 
