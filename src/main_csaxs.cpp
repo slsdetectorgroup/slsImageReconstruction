@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
   
   omp_set_num_threads(nr); //set n receivers                                                                                          
   
-  #pragma omp parallel for
+  // #pragma omp parallel for
   for(int inr=0; inr<nr; ++inr){
     char fname2[1000]; 
     // for(int inr=0; inr<nr; ++inr){
@@ -570,14 +570,14 @@ int main(int argc, char *argv[]) {
 	//initialize
 	if(dynamicrange==4 ) 
 	  for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
-	    map[ik]=0;//15; //change saturation
+	    map[ik]=15; //change saturation
 	if(dynamicrange==8 ) 
 	  for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
-	    map[ik]=0;//255;
+	    map[ik]=255;
 	if(dynamicrange==16 ) 
-	  for(int ik=0; ik<npix_y_g*npix_x_g;++ik) map[ik]=0;//4095;
+	  for(int ik=0; ik<npix_y_g*npix_x_g;++ik) map[ik]=4095;
 	if(dynamicrange==32) 
-	  for(int ik=0; ik<npix_y_g*npix_x_g;++ik) map[ik]=0;//4294967295;
+	  for(int ik=0; ik<npix_y_g*npix_x_g;++ik) map[ik]=4294967295;
       
 	//omp_set_dynamic(0);     // Explicitly disable dynamic teams
 	//omp_set_num_threads(nr); //set n receivers
@@ -594,13 +594,10 @@ int main(int argc, char *argv[]) {
     
 	//# pragma omp parallel for
 	for(int inr=0; inr<nr;++inr){
-	  uint* pmap=new uint [npix_x_g*npix_y_g];//as many as receiver threads
 	  //make as large as image now
 	  //I do not know how to fill at the moment
 	   
-	 for(int ik=0; ik<npix_y_g*npix_x_g;++ik)
-	    pmap[ik]=0; //inizialization
-	   
+	  
 	    //	for(int imod_h=0; imod_h<n_h;++imod_h){
 	    //for(int imod_v=(n_v-1); imod_v>-1; imod_v--){
 	    
@@ -661,7 +658,7 @@ int main(int argc, char *argv[]) {
 			int x_t= GetX(ix, ichipx, imod_h);
 			int y_t= GetY(iy, ichipy,imod_v);
 			int k=GetK(x_t,y_t,npix_x_g);
-			pmap[k]=buffer[inr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
+			map[k]=buffer[inr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
 		      }//ix
 		    } //num ch chip y
 		  }//ichipy
@@ -675,7 +672,7 @@ int main(int argc, char *argv[]) {
 			int x_t= GetX(ix, ichipx, imod_h);
 			int y_t= GetY(iy, ichipy,imod_v);
 			int k=GetK(x_t,y_t,npix_x_g);
-			pmap[k]=buffer[inr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
+			map[k]=buffer[inr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy];
 		      }//ix
 		    } //num ch chip y
 		  }//ichipy
@@ -688,7 +685,7 @@ int main(int argc, char *argv[]) {
 		    for(int ix=0; ix<514;++ix){
 		      //int x_t= GetX(ix, ichipx, imod_h);
 		      //int y_t= GetY(iy, ichipy,imod_v);
-		      pmap[npix_x_g*iy]=buffer[inr][ix+ npix_x_g*(iy-256-1)];
+		      map[npix_x_g*iy]=buffer[inr][ix+ npix_x_g*(iy-256-1)];
 		    }//ix
 		} //num ch chip y
 		  //}//ichipy
@@ -703,7 +700,7 @@ int main(int argc, char *argv[]) {
 		      int x_t= GetX(0, ichipx, imod_h);
 		      int y_t= GetY(iy, ichipy,imod_v);
 		      int k=GetK(x_t,y_t,npix_x_g);
-		      memcpy(&pmap[k], 
+		      memcpy(&map[k], 
 			     &buffer[inr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*iy],
 			     NumChanPerChip_x *sizeof(int));
 		    } //num ch chip y
@@ -737,7 +734,7 @@ int main(int argc, char *argv[]) {
 			  int x_t=GetX(ix, ichipx, imod_h);
 			  int y_t= GetY(iy,ichipy,imod_v);
 			  int k=GetK(x_t,y_t,npix_x_g);
-			  pmap[k]=buffer[inr][(NumChanPerChip_x*NumChip_x_port-1)-(ix+(ichipx%2)*NumChanPerChip_x)+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
+			  map[k]=buffer[inr][(NumChanPerChip_x*NumChip_x_port-1)-(ix+(ichipx%2)*NumChanPerChip_x)+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
 			}
 		      }
 		    }
@@ -751,7 +748,7 @@ int main(int argc, char *argv[]) {
 			int x_t=GetX(ix, ichipx, imod_h);
 			int y_t= GetY(iy,ichipy,imod_v);
 			int k=GetK(x_t,y_t,npix_x_g);
-			pmap[k]=buffer[inr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
+			map[k]=buffer[inr][ix+(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)];
 		      }
 		    }
 		  }
@@ -763,7 +760,7 @@ int main(int argc, char *argv[]) {
 		      //int x_t=GetX(ix, ichipx, imod_h);
 		      //int y_t= GetY(iy,ichipy,imod_v);
 		      //int k=GetK(x_t,y_t,npix_x_g);
-		      pmap[ix+514*(256-iy)]=buffer[inr][ix+514*iy];
+		      map[ix+514*(256-iy)]=buffer[inr][ix+514*iy];
 		    }
 		  }	
 		}//quad==1 && gp==0
@@ -777,7 +774,7 @@ int main(int argc, char *argv[]) {
 			int x_t=GetX(0, ichipx, imod_h);
 			int y_t= GetY(iy,ichipy,imod_v);
 			int k=GetK(x_t,y_t,npix_x_g);
-			memcpy(&pmap[k], &buffer[inr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)],
+			memcpy(&map[k], &buffer[inr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)],
 			       NumChanPerChip_x *sizeof(int));
 		      }
 		    }
@@ -831,9 +828,9 @@ int main(int argc, char *argv[]) {
 		    int xvirtual3=x_t+1;
 		    int yvirtual3=y_t-1;
 		    int kvirtual3=GetK(xvirtual3,yvirtual3,npix_x_g);
-		    if(fillgaps==kZero) FillCornerGapsBetweenChipZero(pmap, k, kvirtual1,kvirtual2, kvirtual3 );
-		    if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(pmap, k, kvirtual1,kvirtual2, kvirtual3);	
-		    if(fillgaps==kMask) FillGapsBetweenChipMask(pmap, k, kvirtual1,kvirtual2, kvirtual3 );	
+		    if(fillgaps==kZero) FillCornerGapsBetweenChipZero(map, k, kvirtual1,kvirtual2, kvirtual3 );
+		    if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k, kvirtual1,kvirtual2, kvirtual3);	
+		    if(fillgaps==kMask) FillGapsBetweenChipMask(map, k, kvirtual1,kvirtual2, kvirtual3 );	
 		
 		    //second corner
 		    int x2_t= x_t+3;
@@ -851,9 +848,9 @@ int main(int argc, char *argv[]) {
 		    int x2virtual3= x2_t-1;
 		    int y2virtual3= y2_t-1;
 		    int k2virtual3=GetK(x2virtual3,y2virtual3,npix_x_g);
-		    if(fillgaps==kZero) FillCornerGapsBetweenChipZero(pmap, k2, k2virtual1,k2virtual2, k2virtual3 );	
-		    if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(pmap, k2, k2virtual1,k2virtual2, k2virtual3);	
-		    if(fillgaps==kMask) FillGapsBetweenChipMask(pmap,k2, k2virtual1,k2virtual2, k2virtual3 );	
+		    if(fillgaps==kZero) FillCornerGapsBetweenChipZero(map, k2, k2virtual1,k2virtual2, k2virtual3 );	
+		    if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k2, k2virtual1,k2virtual2, k2virtual3);	
+		    if(fillgaps==kMask) FillGapsBetweenChipMask(map,k2, k2virtual1,k2virtual2, k2virtual3 );	
 		
 		    //third corner
 		    int x3_t= x_t;
@@ -871,9 +868,9 @@ int main(int argc, char *argv[]) {
 		    int x3virtual3=x3_t+1;
 		    int y3virtual3=y3_t+1;
 		    int k3virtual3=GetK(x3virtual3,y3virtual3,npix_x_g);
-		    if(fillgaps==kZero) FillCornerGapsBetweenChipZero(pmap, k3, k3virtual1,k3virtual2, k3virtual3 );	
-		    if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(pmap, k3, k3virtual1,k3virtual2, k3virtual3);	
-		    if(fillgaps==kMask) FillGapsBetweenChipMask(pmap,k3, k3virtual1,k3virtual2, k3virtual3 );
+		    if(fillgaps==kZero) FillCornerGapsBetweenChipZero(map, k3, k3virtual1,k3virtual2, k3virtual3 );	
+		    if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k3, k3virtual1,k3virtual2, k3virtual3);	
+		    if(fillgaps==kMask) FillGapsBetweenChipMask(map,k3, k3virtual1,k3virtual2, k3virtual3 );
 
 		    //fourth
 		    int x4_t= x_t+3;
@@ -891,50 +888,50 @@ int main(int argc, char *argv[]) {
 		    int x4virtual3=x4_t-1;
 		    int y4virtual3=y4_t+1;
 		    int k4virtual3=GetK(x4virtual3,y4virtual3, npix_x_g);
-		    if(fillgaps==kZero) FillCornerGapsBetweenChipZero(pmap, k4, k4virtual1,k4virtual2, k4virtual3 );	
-		    if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(pmap, k4, k4virtual1,k4virtual2, k4virtual3);	
-		    if(fillgaps==kMask) FillGapsBetweenChipMask(pmap,k4, k4virtual1,k4virtual2, k4virtual3 );
+		    if(fillgaps==kZero) FillCornerGapsBetweenChipZero(map, k4, k4virtual1,k4virtual2, k4virtual3 );	
+		    if(fillgaps==kDivide) FillCornerGapsBetweenChipDivide(map, k4, k4virtual1,k4virtual2, k4virtual3);	
+		    if(fillgaps==kMask) FillGapsBetweenChipMask(map,k4, k4virtual1,k4virtual2, k4virtual3 );
 
 		    //here do interpolation for corners
 		    if(fillgaps==kInterpolate || fillgaps==kInterpolate2 ){
 
-		      bool saturated=Saturated(pmap[k]);
-		      bool saturated2=Saturated(pmap[k2]);
-		      bool saturated3=Saturated(pmap[k3]);
-		      bool saturated4=Saturated(pmap[k4]);
+		      bool saturated=Saturated(map[k]);
+		      bool saturated2=Saturated(map[k2]);
+		      bool saturated3=Saturated(map[k3]);
+		      bool saturated4=Saturated(map[k4]);
 
 		      if(saturated==false && saturated2==false && saturated3==false && saturated4==false){
-			unsigned int koriginal=pmap[k];
-			unsigned int k2original=pmap[k2];
-			unsigned int k3original=pmap[k3];
-			unsigned int k4original=pmap[k4];
+			unsigned int koriginal=map[k];
+			unsigned int k2original=map[k2];
+			unsigned int k3original=map[k3];
+			unsigned int k4original=map[k4];
 			//vertical left
-			pmap[k]=Divide(pmap[k],2);		    
-			pmap[k2]=Divide(pmap[k2],2);		    
-			pmap[k3]=Divide(pmap[k3],2);		    
-			pmap[k4]=Divide(pmap[k4],2);		    
-			FillGapsBetweenChipInterpolate(pmap,k,kvirtual2,k3virtual2,k3);
-			FillGapsBetweenChipInterpolate(pmap,k2,k2virtual2,k4virtual2,k4);
-			pmap[k]= Divide(koriginal,2);
-			pmap[k2]= Divide(k2original,2);
-			pmap[k3]= Divide(k3original,2);
-			pmap[k4]= Divide(k4original,2);
+			map[k]=Divide(map[k],2);		    
+			map[k2]=Divide(map[k2],2);		    
+			map[k3]=Divide(map[k3],2);		    
+			map[k4]=Divide(map[k4],2);		    
+			FillGapsBetweenChipInterpolate(map,k,kvirtual2,k3virtual2,k3);
+			FillGapsBetweenChipInterpolate(map,k2,k2virtual2,k4virtual2,k4);
+			map[k]= Divide(koriginal,2);
+			map[k2]= Divide(k2original,2);
+			map[k3]= Divide(k3original,2);
+			map[k4]= Divide(k4original,2);
 			//horizontal
-			FillGapsBetweenChipInterpolate(pmap,k,kvirtual1,k2virtual1,k2);
-			FillGapsBetweenChipInterpolate(pmap,k3,k3virtual1,k4virtual1,k4);
-			pmap[k]= Divide(koriginal,2);
-			pmap[k2]= Divide(k2original,2);
-			pmap[k3]= Divide(k3original,2);
-			pmap[k4]= Divide(k4original,2);
+			FillGapsBetweenChipInterpolate(map,k,kvirtual1,k2virtual1,k2);
+			FillGapsBetweenChipInterpolate(map,k3,k3virtual1,k4virtual1,k4);
+			map[k]= Divide(koriginal,2);
+			map[k2]= Divide(k2original,2);
+			map[k3]= Divide(k3original,2);
+			map[k4]= Divide(k4original,2);
 			//diagonal
-			FillGapsBetweenChipInterpolate(pmap,k,kvirtual3,k4virtual3,k4);
-			FillGapsBetweenChipInterpolate(pmap,k3,k3virtual3,k2virtual3,k2);
+			FillGapsBetweenChipInterpolate(map,k,kvirtual3,k4virtual3,k4);
+			FillGapsBetweenChipInterpolate(map,k3,k3virtual3,k2virtual3,k2);
 		      }//saturated
 		      else{
-			FillCornerGapsBetweenChipDivide(pmap, k, kvirtual1,kvirtual2, kvirtual3);
-			FillCornerGapsBetweenChipDivide(pmap, k2, k2virtual1,k2virtual2, k2virtual3);
-			FillCornerGapsBetweenChipDivide(pmap, k3, k3virtual1,k3virtual2, k3virtual3);
-			FillCornerGapsBetweenChipDivide(pmap, k4, k4virtual1,k4virtual2, k4virtual3 );
+			FillCornerGapsBetweenChipDivide(map, k, kvirtual1,kvirtual2, kvirtual3);
+			FillCornerGapsBetweenChipDivide(map, k2, k2virtual1,k2virtual2, k2virtual3);
+			FillCornerGapsBetweenChipDivide(map, k3, k3virtual1,k3virtual2, k3virtual3);
+			FillCornerGapsBetweenChipDivide(map, k4, k4virtual1,k4virtual2, k4virtual3 );
 		      }		  
 		      
 		    }//kinterpolate
@@ -964,11 +961,11 @@ int main(int argc, char *argv[]) {
 		      int y_t2= y_t;
 		      int k2=GetK(x_t2,y_t2,npix_x_g);
 		    
-		      if(fillgaps==kZero) FillGapsBetweenChipZero(pmap,k,kvirtual,kvirtual2,k2);
-		      if(fillgaps==kDivide) FillGapsBetweenChipDivide(pmap,k,kvirtual,kvirtual2,k2);			    
-		      if(fillgaps==kInterpolate) FillGapsBetweenChipInterpolate(pmap,k,kvirtual,kvirtual2,k2);	
-		      if(fillgaps==kMask) FillGapsBetweenChipMask(pmap,k,kvirtual,kvirtual2,k2);	
-		      if(fillgaps==kInterpolate2) FillGapsBetweenChipInterpolate2(pmap,GetK(x_t-1,y_t, npix_x_g),k,kvirtual,
+		      if(fillgaps==kZero) FillGapsBetweenChipZero(map,k,kvirtual,kvirtual2,k2);
+		      if(fillgaps==kDivide) FillGapsBetweenChipDivide(map,k,kvirtual,kvirtual2,k2);			    
+		      if(fillgaps==kInterpolate) FillGapsBetweenChipInterpolate(map,k,kvirtual,kvirtual2,k2);	
+		      if(fillgaps==kMask) FillGapsBetweenChipMask(map,k,kvirtual,kvirtual2,k2);	
+		      if(fillgaps==kInterpolate2) FillGapsBetweenChipInterpolate2(map,GetK(x_t-1,y_t, npix_x_g),k,kvirtual,
 										  kvirtual2,k2,GetK(x_t2+1,y_t2,npix_x_g));	
 		    }//edge
 		  }//other corner
@@ -1012,23 +1009,17 @@ int main(int argc, char *argv[]) {
 		  int y_t2= y_t+3;
 		  int k2=GetK(x_t2,y_t2,npix_x_g);
 		  
-		  if(fillgaps==kZero) FillGapsBetweenChipZero(pmap,k,kvirtual,kvirtual2,k2);
-		  if(fillgaps==kDivide) FillGapsBetweenChipDivide(pmap,k,kvirtual,kvirtual2,k2);			    
-		  if(fillgaps==kInterpolate) FillGapsBetweenChipInterpolate(pmap,k,kvirtual,kvirtual2,k2);	
-		  if(fillgaps==kMask) FillGapsBetweenChipMask(pmap,k,kvirtual,kvirtual2,k2);	
-		  if(fillgaps==kInterpolate2) FillGapsBetweenChipInterpolate2(pmap,GetK(x_t,y_t-1,npix_x_g),k,kvirtual,
+		  if(fillgaps==kZero) FillGapsBetweenChipZero(map,k,kvirtual,kvirtual2,k2);
+		  if(fillgaps==kDivide) FillGapsBetweenChipDivide(map,k,kvirtual,kvirtual2,k2);			    
+		  if(fillgaps==kInterpolate) FillGapsBetweenChipInterpolate(map,k,kvirtual,kvirtual2,k2);	
+		  if(fillgaps==kMask) FillGapsBetweenChipMask(map,k,kvirtual,kvirtual2,k2);	
+		  if(fillgaps==kInterpolate2) FillGapsBetweenChipInterpolate2(map,GetK(x_t,y_t-1,npix_x_g),k,kvirtual,
 									      kvirtual2,k2,GetK(x_t2,y_t2+1,npix_x_g));	
 		  
 		}//xchannels
 	      } //chips	
 	    } //notr HM
      
-
-	    //#pragma omp critical
-	    for (int ik=0; ik<npix_x_g*npix_y_g; ++ik)	 
-	      map[ik] += pmap[ik];
-	    
-	    delete [] pmap;
 	}//nr
 	// }//omp parallel
 	
@@ -1463,12 +1454,12 @@ int main(int argc, char *argv[]) {
     
     
       buffer.clear();
-#pragma omp parallel for
+      //#pragma omp parallel for
       for(int inr=0; inr<nr; ++inr) 
 	delete buffer[inr]; //remove memory 
       }//for every image
     
-    #pragma omp parallel for
+    // #pragma omp parallel for
     for(int inr=0; inr<nr; ++inr)
       infile[inr/*+(ifiles*nr)*/].close();
     //}loop on files
