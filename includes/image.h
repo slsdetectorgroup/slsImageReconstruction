@@ -228,9 +228,9 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       Bunch ID                        : 8 bytes
       Timestamp                       : 8 bytes
       Module Id                       : 2 bytes
-      X Coordinate                    : 2 bytes
-      Y Coordinate                    : 2 bytes
-      Z Coordinate                    : 2 bytes
+      Row                             : 2 bytes
+      Column                          : 2 bytes
+      Reserved                        : 2 bytes
       Debug                           : 4 bytes
       Round Robin Number              : 2 bytes
       Detector Type                   : 1 byte
@@ -278,22 +278,22 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       sstr >> str >>str >> str >> dummyint;
       frameheadersize+=dummyint;
     }	
-    //X Coordinate
+    //Row
     if(getline(infile,str)){
       istringstream sstr(str);
-      sstr >> str >>str >> str >> dummyint;
+      sstr  >>str >> str >> dummyint;
       frameheadersize+=dummyint;
     }	
-    //Y Coordinate 
+    //Column 
     if(getline(infile,str)){
       istringstream sstr(str);
-      sstr >> str >>str >> str >> dummyint;
+      sstr >>str >> str >> dummyint;
       frameheadersize+=dummyint;
     }	
-    //Z Coordinate
+    //Reserved
     if(getline(infile,str)){
       istringstream sstr(str);
-      sstr >> str >>str >> str >> dummyint;
+      sstr >>str >> str >> dummyint;
       frameheadersize+=dummyint;
     }	
     //Debug
