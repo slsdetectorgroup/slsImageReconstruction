@@ -992,7 +992,18 @@ int main(int argc, char *argv[]) {
 	  //mask a pixel
 	  ifstream myReadFile;
 	  string line;
-	  myReadFile.open("maskpix.txt");
+	  string baseexedir=argv[0];
+	  std::size_t found = baseexedir.find("cbfMaker");
+	  if (found!=std::string::npos)
+	    baseexedir.erase(baseexedir.end()-8,baseexedir.end());
+	  else {
+	    found = baseexedir.find("hdf5Maker");
+	    if (found!=std::string::npos)
+	      baseexedir.erase(baseexedir.end()-9,baseexedir.end());
+	  }
+	  baseexedir+="maskpix.txt";
+	  
+	  myReadFile.open( baseexedir.c_str());
 
 	  if (myReadFile.is_open()) {
 	    while (!myReadFile.eof()) {
@@ -1247,7 +1258,7 @@ int main(int argc, char *argv[]) {
 						      1,									//int binary_id
 						      ( longedge_x ? &(map[0]) : &(mapr[0])), 						//void *array
 						      sizeof (int),						 //size_t elsize
-						      0,									//int elsigned
+						      (dynamicrange==32 || dynamicrange ==16 )? 1 : 0,  /*was 0*/									//int elsigned
 						      longedge_x ?  npix_y_g * npix_x_g: npix_x_g * npix_y_g,	    //size_t elements
 						      "little_endian",					 // const char *byteorder
 						      longedge_x? npix_x_g : npix_y_g,		       		 //size_t dimfast

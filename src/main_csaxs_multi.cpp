@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
 	  exe.erase(exePos,2);
 	  
 	  //1M 
-	  string command = exe + " -f " + string(argv[1]) + " -d " + od +" -x 1024 -y 1024 -g 2";
+	  string command = exe + " -f " + string(argv[1]) + " -d " + od +" -x 1024 -y 1024 -g 2 -m";
 	  cout<<"command:"<<command<<endl;
 	  system(command.c_str());
 
