@@ -87,6 +87,9 @@ void FillROOT(TH2F* hmap,  int longedge_x, int x_t, int y_t,
 
 int main(int argc, char *argv[]) {
 
+
+
+
   //double tdif=0;
   //user set geometry
   int npix_x_user= npix_x_sm;
@@ -482,7 +485,44 @@ int main(int argc, char *argv[]) {
     //Trim_file
 
 #endif  //HDF5f
-    
+ 
+    vector <int> maskedpix;
+
+    if(maskpix){
+      //read only first time
+      //substitute with read from a file
+      //mask a pixel
+      ifstream myReadFile;
+      string line;
+      string baseexedir=argv[0];
+      std::size_t found = baseexedir.find("cbfMaker");
+      if (found!=std::string::npos)
+	baseexedir.erase(baseexedir.end()-8,baseexedir.end());
+      else {
+	found = baseexedir.find("hdf5Maker");
+	if (found!=std::string::npos)
+	  baseexedir.erase(baseexedir.end()-9,baseexedir.end());
+      }
+      baseexedir+="maskpix.txt";
+      
+      myReadFile.open( baseexedir.c_str());
+      
+      if (myReadFile.is_open()) {
+	while (!myReadFile.eof()) {
+	  getline(myReadFile,line);
+	  istringstream iss(line);
+	  int a , b;
+	  if(!(line.empty())){
+	    iss >> a >> b;
+	    //cout<<line<<endl;
+	    int kmask=GetK(a,b,npix_x_g);
+	    maskedpix.push_back(kmask);
+	  }
+	}
+      }
+    }
+
+   
     //now reause the same all the times
     unsigned int* intbuffer = new unsigned int[imageSize/sizeof(int)];
     int* bufferheader=new int[imageHeader/sizeof(int)];
@@ -987,43 +1027,9 @@ int main(int argc, char *argv[]) {
 	  }//v mods
 	} //h mods close all loops
     
-	if(maskpix){
-	  //substitute with read from a file
-	  //mask a pixel
-	  ifstream myReadFile;
-	  string line;
-	  string baseexedir=argv[0];
-	  std::size_t found = baseexedir.find("cbfMaker");
-	  if (found!=std::string::npos)
-	    baseexedir.erase(baseexedir.end()-8,baseexedir.end());
-	  else {
-	    found = baseexedir.find("hdf5Maker");
-	    if (found!=std::string::npos)
-	      baseexedir.erase(baseexedir.end()-9,baseexedir.end());
-	  }
-	  baseexedir+="maskpix.txt";
-	  
-	  myReadFile.open( baseexedir.c_str());
-
-	  if (myReadFile.is_open()) {
-	    while (!myReadFile.eof()) {
-	      getline(myReadFile,line);
-	      istringstream iss(line);
-	      int a , b;
-	      if(!(line.empty())){
-	      iss >> a >> b;
-	      cout<<line<<endl;
-	      // cout<<a<<"  "<<b<<endl;
-	      int kmask=GetK(a,b,npix_x_g);
-	      map[kmask]=0;
-	      }//not empty
-	    }
-	  }//if open 
-	  else {cout<<"I cannot read the file"<<endl; assert(0);}
-	  //int kmask=GetK(702,338,npix_x_g);
-	  //map[kmask]=0;
-	  //kmask=GetK(792,250,npix_x_g);
-	  //map[kmask]=0;
+    	if(maskpix){
+	  for (int ik=0; ik< maskedpix.size(); ++ik)  
+	    map[maskedpix[ik]]=0;
 	}//if mask pixels
 	
 	//now rotate everything 
@@ -1436,7 +1442,7 @@ int main(int argc, char *argv[]) {
     for(int inr=0; inr<nr; ++inr)
       infile[inr/*+(ifiles*nr)*/].close();
     //}loop on files
-  
+    
 #ifdef HDF5f
     /*
      * close the file 
@@ -1446,17 +1452,19 @@ int main(int argc, char *argv[]) {
     H5Fclose(fid);
     H5Pclose(dxpl);
 #endif
-  
+    
     delete[] bufferheader;
     delete[] intbuffer;
     
     delete[]  map;
     delete[]  mapr;
     
+    
 #ifdef HDF5f
     //now create master virtual dataset
     //createonly for the first datafile (note not created for single images)
-#ifdef MASTERVIRTUAL || MASTERLINK
+
+#if defined(MASTERVIRTUAL) || defined(MASTERLINK)
     if( fileFrameIndex==0){
       char fnamemaster[1000]; 
       fapl = H5Pcreate(H5P_FILE_ACCESS);
@@ -1554,15 +1562,15 @@ int main(int argc, char *argv[]) {
 #ifdef MASTERLINK	
 	//questo e' per farlo in un altro modo con tanti dataset linkati (ALBULA LO LEGGE)
 	H5Lcreate_external(fname,filedatasetname.c_str(), fvid, filedatasetnamereal.c_str(), H5P_DEFAULT, H5P_DEFAULT);
-   #endif
-   }//for each file
-
+#endif
+      }//for each file
+   
 
 #ifdef MASTERVIRTUAL      
    /* Create a virtual dataset. */
       dataset = H5Dcreate2(fvid , filedatasetname.c_str(), datatype, vdataspace,
-      		   H5P_DEFAULT, dataprop, H5P_DEFAULT);
-
+			   H5P_DEFAULT, dataprop, H5P_DEFAULT);
+      
       int vnr=imgs;
       atts = H5Screate(H5S_SCALAR);
       attid = H5Acreate2(dataset,"image_nr_high", H5T_STD_I32LE,atts,
@@ -1637,7 +1645,7 @@ int main(int argc, char *argv[]) {
     } //fileframeindex0    
 #endif
 #endif 
-
+    
 #ifdef TXT
     fclose (out);
 #endif   
