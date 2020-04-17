@@ -394,9 +394,9 @@ int main(int argc, char *argv[]) {
 
 #ifdef BITSHUFFLE
     unsigned filter_config;  
-    const unsigned int cd_values[2] ;
-    cd_values[0]=0; /*bitshuffle selects the size automatically*/
-    cd_values[1]=2 /* lz4 compression*/
+    const unsigned int cd_values[2] ={0,2};
+    //  cd_values[0]=0; /*bitshuffle selects the size automatically*/
+    // cd_values[1]=2 /* lz4 compression*/
       
       /* lz4 default is 3 */
       H5Pset_filter (dataprop, H5Z_FILTER, 
