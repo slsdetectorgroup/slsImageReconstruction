@@ -100,9 +100,8 @@ int main(int argc, char *argv[]) {
   int fileIndex, fileFrameIndex=0;
   int longedge_x;
   int fillgaps;
-  bool isFileFrameIndex = false;
   bool maskpix=false;
-  getCommandParameters(argc, argv, file, fileIndex, isFileFrameIndex, 
+  getCommandParameters(argc, argv, file, fileIndex, 
 		       fileFrameIndex, npix_x_user, npix_y_user, 
 		       longedge_x,fillgaps,datasetname,maskpix);
 
@@ -185,22 +184,20 @@ int main(int argc, char *argv[]) {
   //get dynamic range and configure receiverdata depending on top and bottom
   char fname[1000]; 
   char frames[20]="";
-  if(isFileFrameIndex)
-    sprintf(frames,"_f%012d",fileFrameIndex);//"f000000000000";
+  sprintf(frames,"_f%d",fileFrameIndex);//"f000000000000";
     //put master on top always
   int  tenGiga, xpix, ypix, imageHeader, imageSize,imgs;
   string timestamp;
   double expTime, period,subexptime, subperiod;
   int Nimgsperfile;
-  int enablegpix, quad;
+  int quad;
   sprintf(fname,"%s_master_%d.raw",file.c_str(),fileIndex);
   if(getFileParameters(fname, tenGiga, imageHeader, imageSize, xpix, 
 		       ypix, timestamp, expTime, subexptime, period,
-		       subperiod, imgs, Nimgsperfile,  enablegpix, quad ) != 1) return -1;
+		       subperiod, imgs, Nimgsperfile, quad ) != 1) return -1;
  
   // int Nimgscashed=1;//read 10 images at the same time
-  if(enablegpix) fillgaps=kIgnore;
-
+  
   vec<unsigned int*> buffer;
   //vector <unsigned int*> buffer;
   buffer.reserve(n_v *n_h*2*2/**Nimgscashed*/);
@@ -219,8 +216,7 @@ int main(int argc, char *argv[]) {
   //loop on each receiver to get frame buffer
   //  for(int ifiles=0; ifiles<Nfiles; ifiles++){
   //sprintf(frames,"_f%012d",fileFrameIndex+Nimgsperfile*ifiles);
-  if(isFileFrameIndex)
-    sprintf(frames,"_f%012d",fileFrameIndex);
+  sprintf(frames,"_f%d",fileFrameIndex);
   for(int inr=0; inr<nr; ++inr){
     sprintf(fname, "%s_d%d%s_%d.raw",file.c_str(),inr,frames,fileIndex);
     //open file
@@ -654,7 +650,7 @@ int main(int argc, char *argv[]) {
 		  //} 
 		  
 		  if((npix_y_user==512) && (npix_x_user==512)){
-		    if(quad==0 && enablegpix==0){
+		    if(quad==0 ){
 		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
 		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
 			for(int iy=0; iy<NumChanPerChip_y;++iy){
@@ -668,7 +664,7 @@ int main(int argc, char *argv[]) {
 		      }//ichipy
 		    }//ichipx
 		    }//quad ==0
-		    if(quad==1 && enablegpix==0){
+		    if(quad==1 ){
 		      for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
 			for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
 			  for(int iy=0; iy<NumChanPerChip_y;++iy){
@@ -682,23 +678,9 @@ int main(int argc, char *argv[]) {
 			}//ichipy
 		      }//ichipx	      
 		    }//quad ==1 && gp==0
-		    if(quad==1 && enablegpix==1){
-		      //for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
-		      //for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-		       for(int iy=256+1; iy<514;++iy){
-			for(int ix=0; ix<514;++ix){
-			  //int x_t= GetX(ix, ichipx, imod_h);
-			  //int y_t= GetY(iy, ichipy,imod_v);
-			  map[ix+ npix_x_g*iy]=buffer[nnr][ix+ npix_x_g*(iy-256-1)];
-			}//ix
-		      } //num ch chip y
-			//}//ichipy
-			//}//ichipx	      
-		    }//quad ==1 && gp==1
 		  }//square geom		 
 		  else{ 
-		    if(enablegpix==0){
-		      for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
+		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){
 			for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
 			  for(int iy=0; iy<NumChanPerChip_y;++iy){
 			    int x_t= GetX(0, ichipx, imod_h);
@@ -710,10 +692,7 @@ int main(int argc, char *argv[]) {
 			  } //num ch chip y
 			}//ichipy
 		      }//ichipx
-		    }//gpnot enabled
-		    else{
-		    }//gp enabled
-		    }//not quad
+		  }//not quad
 		} //it ==0 		
 		
 		//getting values for bottom
@@ -730,7 +709,7 @@ int main(int argc, char *argv[]) {
 		  }		 
 		  
 		  if((npix_y_user==512) && (npix_x_user==512)){
-		    if(quad==0 && enablegpix==0){
+		    if(quad==0){
 		      for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
 			for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
 			  for(int iy=0; iy<NumChanPerChip_y;++iy){
@@ -744,7 +723,7 @@ int main(int argc, char *argv[]) {
 			}
 		      }	
 		    }//quad ==0
-		    if(quad==1 && enablegpix==0){
+		    if(quad==1 ){
 		      for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
 			for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
 			  for(int iy=0; iy<NumChanPerChip_y;++iy){
@@ -758,32 +737,20 @@ int main(int argc, char *argv[]) {
 			}
 		      }	
 		    }//quad==1 && gp==0
-		    if(quad==1 && enablegpix==1){
-		      for(int iy=0; iy<256+1;++iy){
-			for(int ix=0; ix<514;++ix){
-			  //int x_t=GetX(ix, ichipx, imod_h);
-			  //int y_t= GetY(iy,ichipy,imod_v);
-			  //int k=GetK(x_t,y_t,npix_x_g);
-			  map[ix+514*(256-iy)]=buffer[nnr][ix+514*iy];
-			}
-		      }	
-		    }//quad==1 && gp==0
 		  }//square geometry
 		  else{
-		    if(enablegpix==0){
-		      for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
-			for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
-			  for(int iy=0; iy<NumChanPerChip_y;++iy){
-			    // for(int ix=0; ix<NumChanPerChip_x;++ix){
-			    int x_t=GetX(0, ichipx, imod_h);
-			    int y_t= GetY(iy,ichipy,imod_v);
-			    int k=GetK(x_t,y_t,npix_x_g);
-			    memcpy(&map[k], &buffer[nnr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)],
-				   NumChanPerChip_x *sizeof(int));
-			  }
+		    for(int ichipx=startchipx; ichipx<endchipx;++ichipx){	    
+		      for(int ichipy=startchipy; ichipy<endchipy;++ichipy){
+			for(int iy=0; iy<NumChanPerChip_y;++iy){
+			  // for(int ix=0; ix<NumChanPerChip_x;++ix){
+			  int x_t=GetX(0, ichipx, imod_h);
+			  int y_t= GetY(iy,ichipy,imod_v);
+			  int k=GetK(x_t,y_t,npix_x_g);
+			  memcpy(&map[k], &buffer[nnr/**readim+im*/][(ichipx%2)*NumChanPerChip_x+ NumChanPerChip_x*NumChip_x_port*(NumChanPerChip_y-1-iy)],
+				 NumChanPerChip_x *sizeof(int));
 			}
 		      }
-		    }//ngp
+		    }
 		  }//not quad
 		}//it==1
 		nnr++;

@@ -74,7 +74,7 @@ template <typename T>
 class vec : public std::vector<T>  {};
 
 int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
-		      string& timestamp, double& expTime,  double& subexptime, double& period, double& subperiod, int& imgs, int& imgspfile, int& gpenabled, int& quad){
+		      string& timestamp, double& expTime,  double& subexptime, double& period, double& subperiod, int& imgs, int& imgspfile, int& quad){
 
   cout << "Getting File Parameters from " << file << endl;
   string str;
@@ -86,23 +86,35 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
   int dr;
     
   /*
-    Version                    : 4.0
-    Detector Type              : 3
+    Version                    : 6.0
+    Detector Type              : 1
     Dynamic Range              : 32
-    Ten Giga                   : 1
+    Ten Giga                   : 0
     Image Size                 : 524288 bytes
     nPixelsX                   : 512 pixels
     nPixelsY                   : 256 pixels
     Max Frames Per File        : 10000
-    Total Frames               : 3
-    Exptime (ns)               : 10000000
+    Total Frames               : 1
+    Exptime (ns)               : 1000000000
     SubExptime (ns)            : 2621440
     SubPeriod(ns)              : 2621440
-    Period (ns)                : 0
-    Gap Pixels Enable          : 0
+    Period (ns)                : 1000000000
     Quad Enable                : 0
-    Timestamp                  : Wed Aug 21 16:30:20 2019
-   */
+    Analog Flag                : 1
+    Digital Flag               : 0
+    ADC Mask                   : -1
+    Dbit Offset                : 0
+    Dbit Bitset                : 0
+    Roi (xmin, xmax)           : -1 -1
+    Exptime1 (ns)              : 0
+    Exptime2 (ns)              : 0
+    Exptime3 (ns)              : 0
+    GateDelay1 (ns)            : 0
+    GateDelay2 (ns)            : 0
+    GateDelay3 (ns)            : 0
+    Gates                      : 0
+    Timestamp                  : Mon Jul 27 14:14:33 2020
+  */
 
   infile.open(file.c_str(),ios::in | ios::binary);
   if (infile.is_open()) {
@@ -113,13 +125,13 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
     //version
     if(getline(infile,str)){
       istringstream sstr(str);
-      sstr >> str >> str >> str >> str;
+      sstr >> str >> str >> str;
       cout<<"Version:"<<str<<endl;  
     }
     //detector type
     if(getline(infile,str)){
       istringstream sstr(str);
-      sstr >> str >> str >> str;
+      sstr >> str >> str >> str >> str;
     }
     
     //dynamic range
@@ -145,19 +157,19 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       imagesize=is;
     }
     
-    //x
+    //nPixelsX                   : 256 
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str >> x;
     }
 
-    //y
+    //PixelsY                   : 512 
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str >> y;
     }
     
-    // Max. Frames Per File       : 10000
+    // Max Frames Per File        : 10000
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str >> str >> str >> str >>  imgspfile;
@@ -197,17 +209,38 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
     subexptime*=1e-9;
     subperiod*= 1e-9;
    
-    //Gap Pixels Enable          : 0
-    if(getline(infile,str)){
-      istringstream sstr(str);
-      sstr >> str >> str >> str >> str >> gpenabled;
-    
-    }
     //Quad Enable                : 0
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str >> str >> quad;
     }
+
+    //Analog Flag                : 1
+    getline(infile,str);
+    //Digital Flag               : 0
+    getline(infile,str);
+    //ADC Mask                   : -1
+    getline(infile,str);
+    //Dbit Offset                : 0
+    getline(infile,str);
+    //Dbit Bitset                : 0
+    getline(infile,str);
+    //Roi (xmin, xmax)           : -1 -1
+    getline(infile,str);
+    //Exptime1 (ns)              : 0
+    getline(infile,str);
+    //Exptime2 (ns)              : 0
+    getline(infile,str);
+    //Exptime3 (ns)              : 0
+    getline(infile,str);
+    //GateDelay1 (ns)            : 0
+    getline(infile,str);
+    //GateDelay2 (ns)            : 0
+    getline(infile,str);
+    //GateDelay3 (ns)            : 0
+    getline(infile,str);
+    //Gates                      : 0
+    getline(infile,str);
     //Timestamp
     if(getline(infile,str)){
       istringstream sstr(str);
@@ -351,14 +384,9 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
   else
     packetsPerFrame = 4 * dynamicrange;
   if(!tg){
-    if((gpenabled==0) && (is!=(packetsPerFrame*1024))){
-	cout << "Error: Invalid packet size " << is << " for 1g read from file " << file <<" gappixels enabled "<<gpenabled<< endl;
-	return -1;
-    }
-    //so far nly 32 bit implemented
-    if((gpenabled==1) && (is!=(((512+2)*257*4)))){
-      cout << "Error: Invalid packet size " << is << " for 1g read from file " << file <<" gappixels enabled "<<gpenabled<<endl;
-      return -1;
+    if(is!=(packetsPerFrame*1024)){
+  	cout << "Error: Invalid packet size " << is << " for 1g read from file " << file <<endl;
+  	return -1;
     }
   }
   else{
@@ -404,7 +432,7 @@ string GetDir(string file){
   return file;
 }
 
-int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, bool &isFileFrameIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int& longedge_x, int& fillgaps, string& datasetname, bool& maskpix){
+int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, int &fileFrameIndex, int &npix_x_user, int &npix_y_user, int& longedge_x, int& fillgaps, string& datasetname, bool& maskpix){
   
   int c;
   string s;
@@ -432,7 +460,6 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
 	}
 	uscore=s.rfind("_");
 	if (sscanf( s.substr(uscore+1,s.size()-uscore-1).c_str(),"f%d",&i)) {
-	  isFileFrameIndex = true;
 	  fileFrameIndex = i;
 	  s=file.substr(0,uscore);
 	}
@@ -475,11 +502,10 @@ int  getCommandParameters(int argc, char *argv[], string &file, int &fileIndex, 
 	  "\n"
 	  "File Name                 : %s\n"
 	  "File Index                : %d\n"
-	  "Frame Index Enable        : %d\n"
 	  "Frame Index               : %d\n"
 	  "Number of pixels in x dir : %d\n"
 	  "Number of pixels in y dir : %d\n",
-	  file.c_str(),fileIndex,isFileFrameIndex,fileFrameIndex, npix_x_user,npix_y_user);
+	  file.c_str(),fileIndex,fileFrameIndex, npix_x_user,npix_y_user);
   
   return 1;  
 }
