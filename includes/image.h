@@ -7,6 +7,7 @@
 #include <typeinfo>
 #include <vector>
 #include <unistd.h>
+//#include <chrono>
 
 using namespace std;
 
@@ -73,6 +74,35 @@ enum { kZero, kDivide, kInterpolate, kMask, kInterpolate2, kIgnore};
 template <typename T>
 class vec : public std::vector<T>  {};
 
+std::string FindUnit(std::string &str) {
+  std::string::iterator it = str.begin();
+  while (it != str.end()) {
+    if (std::isalpha(*it))
+      break;
+    ++it;
+  }
+  string::size_type  pos = it - str.begin();
+  string unit = str.substr(pos);
+  str.erase(it, str.end()); 
+
+  return unit;
+}
+
+ void  CorrectUnit(double& expTime, string unit)
+ {
+   if(unit.compare("ns") == 0) expTime*=1;
+   else   {
+     if (unit.compare("us") ==0)   expTime*=1e3;
+     else {
+       if (unit.compare("ms") ==0) expTime*=1e6;
+       else {
+	 if (unit.compare("s")==0)  expTime*=1e9;
+	 else assert ("error in conversion");
+       }
+     }
+   }
+ }
+
 int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
 		      string& timestamp, double& expTime,  double& subexptime, double& period, double& subperiod, int& imgs, int& imgspfile, int& quad){
 
@@ -84,43 +114,30 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
   string timestamp_s;
   string period_s;
   int dr;
+  string ratecorrstring;
     
   /*
-    Version                    : 6.0
-    Detector Type              : 1
-    Dynamic Range              : 32
-    Ten Giga                   : 0
-    Image Size                 : 524288 bytes
-    nPixelsX                   : 512 pixels
-    nPixelsY                   : 256 pixels
+    Version                    : 6.1
+    TimeStamp                  : Mon Aug 10 15:26:10 2020
+    
+    Detector Type              : Eiger
+    Timing Mode                : auto
+    Image Size                 : 65536 bytes
+    Pixels                     : [512, 256]
     Max Frames Per File        : 10000
-    Total Frames               : 1
-    Exptime (ns)               : 1000000000
-    SubExptime (ns)            : 2621440
-    SubPeriod(ns)              : 2621440
-    Period (ns)                : 1000000000
-    Quad Enable                : 0
-    Analog Flag                : 1
-    Digital Flag               : 0
-    ADC Mask                   : -1
-    Dbit Offset                : 0
-    Dbit Bitset                : 0
-    Roi (xmin, xmax)           : -1 -1
-    Exptime1 (ns)              : 0
-    Exptime2 (ns)              : 0
-    Exptime3 (ns)              : 0
-    GateDelay1 (ns)            : 0
-    GateDelay2 (ns)            : 0
-    GateDelay3 (ns)            : 0
-    Gates                      : 0
-    Timestamp                  : Mon Jul 27 14:14:33 2020
+    Total Frames               : 20000
+    Dynamic Range              : 4
+    Ten Giga                   : 1
+    Exptime                    : 45us
+    Period                     : 50us
+    SubExptime                 : 2.62144ms
+    SubPeriod                  : 2.62144ms
+    Quad                       : 0
+    Rate Corrections           : [0, 0]
   */
 
   infile.open(file.c_str(),ios::in | ios::binary);
   if (infile.is_open()) {
-
-    //empty line
-    // getline(infile,str);
 
     //version
     if(getline(infile,str)){
@@ -128,12 +145,69 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       sstr >> str >> str >> str;
       cout<<"Version:"<<str<<endl;  
     }
+    //Timestamp
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      //cout<<"Str:"<<str<<endl;
+      sstr >> str >> str>> strdayw >> strmonth >> strday>> strtime >> stryear;
+      timestamp = stryear+"/"+strmonth+"/"+strday+" "+strtime+".000 CEST";
+    }
+    
+    //empty line
+    getline(infile,str);
+    
     //detector type
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str >> str >> str;
     }
     
+    //Timing Mode 
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str >> str;
+    }
+    
+    //image size
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str >> is;
+      imagesize=is;
+    }
+
+    //pixels
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str;
+      string::size_type position=0;
+      string::size_type last_position=0;
+      //first argument
+      position = str.find ('[');
+      last_position = str.find (',');
+      str=str.substr(position+1,last_position-1);
+      x=atoi(str.c_str());
+
+      sstr >> str ;
+      //second argument
+      position = str.find (']');
+      str=str.substr(0,position);
+      y=atoi(str.c_str());
+      cout<<"x "<<x<<"  y "<<y<<endl;
+    }
+
+    // Max Frames Per File        : 10000
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str >> str >> str >>  imgspfile;
+    }
+
+    //Total Frames 
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str >> imgs;
+      cout<<"total frames:"<<imgs<<endl;
+    }
+
     //dynamic range
     if(getline(infile,str)){
       istringstream sstr(str);
@@ -150,107 +224,55 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       cout<<"ten giga :"<<tg<<endl; 
     }
     
-    //image size
+    //  Exptime                    : 45us
     if(getline(infile,str)){
       istringstream sstr(str);
-      sstr >> str >> str >> str >> is;
-      imagesize=is;
+      sstr >> str >> str >> str ;
+      string unit= FindUnit(str);
+      
+      expTime=atof(str.c_str());
+      CorrectUnit(expTime, unit); //set expTime in ns
+    }
+    //Period                     : 50us
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str;
+      string unit= FindUnit(str);
+      period=atof(str.c_str());
+      CorrectUnit(period, unit); //set period in ns
+    }  
+    // SubExptime                 : 2.62144ms
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str;
+      string unit= FindUnit(str);
+      subexptime=atof(str.c_str());
+      CorrectUnit(subexptime, unit); //set subexptime in ns
+    }
+
+    //SubPeriod                  : 2.62144ms
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str;
+      string unit= FindUnit(str);
+      subperiod=atof(str.c_str());
+      CorrectUnit(subperiod, unit); //set subperiod in ns
     }
     
-    //nPixelsX                   : 256 
+    //Quad                 : 0
     if(getline(infile,str)){
       istringstream sstr(str);
-      sstr >> str >> str >> x;
+      sstr >> str >> str  >> quad;
     }
 
-    //PixelsY                   : 512 
+    //Rate Corrections       : string
+    //here need to pass a vector.. still to do
     if(getline(infile,str)){
       istringstream sstr(str);
-      sstr >> str >> str >> y;
+      sstr >> str >> str  >>str >> ratecorrstring;
     }
     
-    // Max Frames Per File        : 10000
-    if(getline(infile,str)){
-      istringstream sstr(str);
-      sstr >> str >> str >> str >> str >> str >>  imgspfile;
-    }
-
-    //Total Frames 
-    if(getline(infile,str)){
-      istringstream sstr(str);
-      sstr >> str >> str >> str >> imgs;
-      cout<<"total frames:"<<imgs<<endl;
-    }
-
-    // Exptime (ns)	: 1000000000
-    if(getline(infile,str)){
-      istringstream sstr(str);
-      sstr >> str >> str >> str >> expTime;
-    }
-    //  SubExptime (ns)    		: 2621440
-    if(getline(infile,str)){
-      istringstream sstr(str);
-      sstr >> str >> str >> str >> subexptime;
-    }
-
-    //SubPeriod(ns)              : 2661440
-    if(getline(infile,str)){
-      istringstream sstr(str);
-      sstr >> str >> str >>  subperiod;
-    }
-    
-    //Period (ns)	: 1000000000
-    if(getline(infile,str)){
-      istringstream sstr(str);
-      sstr >> str >> str >> str >> period;
-    }
-    expTime*=1e-9;
-    period*= 1e-9;
-    subexptime*=1e-9;
-    subperiod*= 1e-9;
-   
-    //Quad Enable                : 0
-    if(getline(infile,str)){
-      istringstream sstr(str);
-      sstr >> str >> str >> str >> quad;
-    }
-
-    //Analog Flag                : 1
-    getline(infile,str);
-    //Digital Flag               : 0
-    getline(infile,str);
-    //ADC Mask                   : -1
-    getline(infile,str);
-    //Dbit Offset                : 0
-    getline(infile,str);
-    //Dbit Bitset                : 0
-    getline(infile,str);
-    //Roi (xmin, xmax)           : -1 -1
-    getline(infile,str);
-    //Exptime1 (ns)              : 0
-    getline(infile,str);
-    //Exptime2 (ns)              : 0
-    getline(infile,str);
-    //Exptime3 (ns)              : 0
-    getline(infile,str);
-    //GateDelay1 (ns)            : 0
-    getline(infile,str);
-    //GateDelay2 (ns)            : 0
-    getline(infile,str);
-    //GateDelay3 (ns)            : 0
-    getline(infile,str);
-    //Gates                      : 0
-    getline(infile,str);
-    //Timestamp
-    if(getline(infile,str)){
-      istringstream sstr(str);
-      //cout<<"Str:"<<str<<endl;
-      sstr >> str >> str>> strdayw >> strmonth >> strday>> strtime >> stryear;
-      timestamp = stryear+"/"+strmonth+"/"+strday+" "+strtime+".000 CEST";
-    }
-    
-    //two empty lines
-    getline(infile,str);
+    //empty line
     getline(infile,str);
     
     /*
@@ -271,7 +293,9 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       Packets Caught Mask             : 64 bytes
     */
 
+    // #Frame Header
     getline(infile,str);
+
     //Frame Number
     if(getline(infile,str)){
       istringstream sstr(str);

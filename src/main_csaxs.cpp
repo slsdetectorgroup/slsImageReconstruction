@@ -185,6 +185,7 @@ int main(int argc, char *argv[]) {
   char fname[1000]; 
   char frames[20]="";
   sprintf(frames,"_f%d",fileFrameIndex);//"f000000000000";
+ 
     //put master on top always
   int  tenGiga, xpix, ypix, imageHeader, imageSize,imgs;
   string timestamp;
@@ -203,7 +204,7 @@ int main(int argc, char *argv[]) {
   buffer.reserve(n_v *n_h*2*2/**Nimgscashed*/);
   //FILE *out;
   //nr high again
-  int numFrames = fileFrameIndex+1 ;
+  int numFrames = fileFrameIndex*Nimgsperfile+1 ;
   
   //now loop over all frames
   //for each frame
@@ -264,7 +265,7 @@ int main(int argc, char *argv[]) {
     /* HDF-5 handles */
     hid_t fid, fvid,fapl, gid, atts, atttype, attid;
     hid_t datatype, dataspace, dataspaceimg, vspace,dataprop, dataset;
-    hsize_t dim[3]={Nimagesexpected-1-fileFrameIndex,
+    hsize_t dim[3]={Nimagesexpected-1-fileFrameIndex*Nimgsperfile,
 		    ((longedge_x==1) ? npix_y_g : npix_x_g) ,
 		    ((longedge_x==1) ? npix_x_g : npix_y_g)};
     hsize_t dim2[2]={dim[1],dim[2]};
@@ -424,7 +425,7 @@ int main(int argc, char *argv[]) {
     H5Sclose(atts);
     H5Aclose(attid);
 
-    vnr= fileFrameIndex+1;
+    vnr= fileFrameIndex*Nimgsperfile+1;
     atts = H5Screate(H5S_SCALAR);
     attid = H5Acreate2(dataset,"image_nr_low", H5T_STD_I32LE,atts,
 		       H5P_DEFAULT,H5P_DEFAULT);
@@ -1276,7 +1277,7 @@ int main(int argc, char *argv[]) {
 	 */
 
 	//      start[0] = numFrames+im-1;
-	start[0] = /*nf[ifiles]*/numFrames-1-fileFrameIndex;
+	start[0] = /*nf[ifiles]*/numFrames-1-fileFrameIndex*Nimgsperfile;
 	dataspaceimg = H5Screate_simple(2, dim2, NULL);
 	//  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, start, stride, count, count);
 	//original
