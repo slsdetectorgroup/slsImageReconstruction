@@ -117,22 +117,26 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
   string ratecorrstring;
     
   /*
-    Version                    : 6.1
-    TimeStamp                  : Mon Aug 10 15:26:10 2020
+    Version                    : 6.2
+    TimeStamp                  : Wed Oct  7 16:02:31 2020
     
     Detector Type              : Eiger
     Timing Mode                : auto
     Image Size                 : 65536 bytes
     Pixels                     : [512, 256]
     Max Frames Per File        : 10000
+    Frame Discard Policy       : nodiscard
+    Frame Padding              : 1
+    Scan Parameters            : [disabled]
     Total Frames               : 20000
     Dynamic Range              : 4
     Ten Giga                   : 1
-    Exptime                    : 45us
-    Period                     : 50us
+    Exptime                    : 10us
+    Period                     : 14.2us
     SubExptime                 : 2.62144ms
     SubPeriod                  : 2.62144ms
     Quad                       : 0
+    Number of Lines read out   : 64
     Rate Corrections           : [0, 0]
   */
 
@@ -201,6 +205,25 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
       sstr >> str >> str >> str >> str >> str >>  imgspfile;
     }
 
+    //    Frame Discard Policy       : nodiscard(never tested with discard)
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str >> str >> str;
+      //here I should check that it is no discard
+    }
+
+    //  Frame Padding              : 1
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str >> str;
+    }
+
+    //  Scan Parameters            : [disabled]
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str >> str >> str;
+    }
+    
     //Total Frames 
     if(getline(infile,str)){
       istringstream sstr(str);
@@ -263,6 +286,13 @@ int getFileParameters(string file, int &tg,  int &ih, int &is, int &x, int &y,
     if(getline(infile,str)){
       istringstream sstr(str);
       sstr >> str >> str  >> quad;
+    }
+
+    //Number of Lines read out   : 64
+    if(getline(infile,str)){
+      istringstream sstr(str);
+      sstr >> str >> str  >> str >> str >> str >> str>> str;
+      //here do nothing with this info.. in the future do something
     }
 
     //Rate Corrections       : string
