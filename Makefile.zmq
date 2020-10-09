@@ -1,9 +1,15 @@
-CCX			=	g++
+CCX			=	g++ -std=c++11
 CFLAGS		=  -Wall -g
-BASERX_INCLUDE		=	../slsDetectorPackageNew/slsReceiverSoftware/include
-INCLUDES	= 	-I. -I$(BASERX_INCLUDE) -I$(BASERX_INCLUDE)/rapidjson/ -I$(BASERX_INCLUDE)/rapidjson/error  
+BASERX_INCLUDE		=	../slsDetectorPackage/slsReceiverSoftware/src
+BASERX_INCLUDE2		=	../slsDetectorPackage/slsReceiverSoftware/include
+BASESUPPORT_INCLUDE	=	../slsDetectorPackage/slsSupportLib/include
+INCLUDES	= 	-I. -I$(BASERX_INCLUDE) -I$(BASERX_INCLUDE)/rapidjson/ -I$(BASERX_INCLUDE)/rapidjson/error  -I$(BASERX_INCLUDE2) -I$(BASESUPPORT_INCLUDE) 
 LDLIBS		= 	-lm  -lstdc++ -L$(BASERX_INCLUDE) -L$(BASERX_INCLUDE) -lzmq -pthread -lrt  
-SLSRECEIVERLIB	=	../slsDetectorPackageNew/build/bin/libSlsReceiver.so
+#SLSRECEIVERLIB	=	/home/l_msdetect/miniconda3/envs/developer/lib/libSlsReceiver.so
+#SLSSUPPORTLIB	=	/home/l_msdetect/miniconda3/envs/developer/lib/libSlsSupport.so
+SLSRECEIVERLIB	=	../slsDetectorPackage/build/bin/libSlsReceiver.so
+SLSSUPPORTLIB	=	../slsDetectorPackage/build/bin/libSlsSupport.so
+
 PROGS		= 	zmqModule
 PROGSRECSUM		= 	receiverSum
 PROGSSUM		= 	zmqModuleSum
@@ -27,7 +33,7 @@ $(PROGS):
 
 $(PROGSRECSUM): 
 	mkdir -p $(DESTDIR) 
-	$(CCX)  -o $@   $(SRCRECSUM) $(INCLUDES) $(SLSRECEIVERLIB)  $(CFLAGS) $(LDLIBS) 
+	$(CCX)  -o $@   $(SRCRECSUM) $(INCLUDES) $(SLSRECEIVERLIB) $(SLSSUPPORTLIB) $(CFLAGS) $(LDLIBS) 
 	mv $(PROGSRECSUM) $(DESTDIR)
 
 $(PROGSSUM): 

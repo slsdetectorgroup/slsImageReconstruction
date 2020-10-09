@@ -1,30 +1,42 @@
 /* A simple server in the internet domain using TCP
    The port number is passed as an argument */
 
-#include "sls_receiver_defs.h"
-#include "slsReceiverUsers.h"
-#include "slsReceiver.h"
 
-#include <iostream>
-#include <string.h>
-#include <signal.h>	//SIGINT
-#include <cstdlib>		//system
-#include <cassert>
+//#include "Implementation.h"
+//#include "ServerSocket.h"
+//#include "receiver_defs.h"
+//#include "sls_detector_defs.h"
+//#include "sls_detector_funcs.h"
 
-#include "utilities.h"
+#include "Receiver.h"
+#include "container_utils.h"
 #include "logger.h"
+#include "sls_detector_defs.h"
+
+#include <csignal> //SIGINT
+#include <cstring>
+#include <iostream>
+#include <semaphore.h>
+#include <sys/syscall.h>
+#include <sys/wait.h> //wait
+#include <unistd.h>
+
+//#include <iostream>
+#include <string.h>
+//#include <signal.h>	//SIGINT
+//#include <cstdlib>		//system
+//#include <cassert>
+
+
 
 #include <sys/types.h>	//wait
 #include <sys/wait.h>	//wait
 #include <unistd.h> 	//usleep
 #include <syscall.h>
 
+sem_t semaphore;
 
-bool keeprunning;
-
-void sigInterruptHandler(int p){
-	keeprunning = false;
-}
+void sigInterruptHandler(int p) { sem_post(&semaphore); }
 
 FILE *fptr[2];//2 as left and right
 int portn;
@@ -39,13 +51,13 @@ int ichanmin=(256*4);
 int ichanmax=(256)*256*2;
 
 
-int startAcquisitionCallBack(char* filepath, char* filename, uint64_t fileindex, uint32_t datasize, void*p){
-  cprintf(BLUE,"#### StartAcq:  filepath:%s  filename:%s fileindex:%lld  datasize:%u ####\n",
-	 filepath, filename, fileindex, datasize);
+int startAcquisitionCallBack(std::string filepath, std::string filename, uint64_t fileindex, uint32_t datasize, void*p){
+  cprintf(BLUE,"#### StartAcq:  filepath:%s  filename:%s fileindex:%lu  datasize:%u ####\n",
+	  filepath.c_str(), filename.c_str(), fileindex, datasize);
  
   char str[300];
   for(int iport =0; iport<2; ++iport){
-    sprintf(str,"%s/%sd%d_%lld.txt",filepath, filename, 
+    sprintf(str,"%s/%sd%d_%lu.txt",filepath.c_str(), filename.c_str(), 
 	    (portn==1954 ? 0+iport : 2+iport),
 	    fileindex);
     
@@ -57,13 +69,13 @@ int startAcquisitionCallBack(char* filepath, char* filename, uint64_t fileindex,
 
 
 void acquisitionFinishedCallBack(uint64_t frames, void*p){
-  cprintf(BLUE, "#### AcquisitionFinished: frames:%llu ####\n",frames);
+  cprintf(BLUE, "#### AcquisitionFinished: frames:%lu ####\n",frames);
   for(int iport =0; iport<2; ++iport) fclose(fptr[iport]);
 }
 
 void rawDataReadyCallBack(char* metadata, char* datapointer, uint32_t datasize, void* p){
-  slsReceiverDefs::sls_receiver_header* header = (slsReceiverDefs::sls_receiver_header*)metadata;
-  slsReceiverDefs::sls_detector_header detectorHeader = header->detHeader;
+  slsDetectorDefs::sls_receiver_header* header = (slsDetectorDefs::sls_receiver_header*)metadata;
+  slsDetectorDefs::sls_detector_header detectorHeader = header->detHeader;
   
   uint64_t sum= 0;
   /*	
@@ -131,14 +143,13 @@ void rawDataReadyCallBack(char* metadata, char* datapointer, uint32_t datasize, 
   }
   
   //column here tells me if left or right
-  fprintf(fptr[ detectorHeader.column],"%d %lld \n",
+  fprintf(fptr[ detectorHeader.column],"%lu %lu \n",
 	  detectorHeader.frameNumber, sum);
 }
 
 
 int main(int argc, char *argv[]) {
 
-	keeprunning = true;
 	portn=1954;
 	if(argc>2) {
 	  //std::cout<< argv[2]<<std::endl;
@@ -162,26 +173,44 @@ int main(int argc, char *argv[]) {
 	// subsequent read/write to socket gives error - must handle locally
 	struct sigaction asa;
 	asa.sa_flags=0;							// no flags
-	asa.sa_handler=SIG_IGN;					// handler function
+	asa.sa_handler = SIG_IGN;  // handler function
 	sigemptyset(&asa.sa_mask);				// dont block additional signals during invocation of handler
-	if (sigaction(SIGPIPE, &asa, NULL) == -1) {
-		cprintf(RED, "Could not set handler function for SIGPIPE\n");
+	
+	// invocation of handler
+	if (sigaction(SIGPIPE, &asa, nullptr) == -1) {
+	  cprintf(RED, "Could not set handler function for SIGPIPE\n");
 	}
 
+	//	int numReceivers = 1;
 
-	int ret = slsReceiverDefs::OK;
-	slsReceiverUsers *receiver = new slsReceiverUsers(argc, argv, ret);
-	if(ret==slsReceiverDefs::FAIL){
-		delete receiver;
-		cprintf(BLUE,"Exiting [ Tid: %ld ]\n", (long)syscall(SYS_gettid));
-		exit(EXIT_FAILURE);
-	}
-
-	//register callbacks
-
-	/**
-	   callback arguments are
-	   filepath
+	/** - loop over number of receivers */
+	//	for (int i = 0; i < numReceivers; ++i) {
+	  
+	/**	- fork process to create child process */
+	// pid_t pid = fork();
+	
+        /**	- if fork failed, raise SIGINT and properly destroy all child
+         * processes */
+        //if (pid < 0) {
+	//cprintf(RED, "fork() failed. Killing all the receiver objects\n");
+	//  raise(SIGINT);
+        //}
+	
+        /**	- if child process */
+	Receiver *receiver = new Receiver(portn);
+	    // } catch (...) {
+	    //LOG(logINFOBLUE)
+	    //    << "Exiting Child Process [ Tid: " << syscall(SYS_gettid)
+	    //<< " ]";
+	    //throw;
+	    //}
+	  
+	
+	  //register callbacks
+	  
+	  /**
+	     callback arguments are
+	     filepath
 	   filename
 	   fileindex
 	   datasize
@@ -193,7 +222,7 @@ int main(int argc, char *argv[]) {
 
 	   registerCallBackStartAcquisition(int (*func)(char*, char*,int, int, void*),void *arg);
 	 */
-	receiver->registerCallBackStartAcquisition(startAcquisitionCallBack,NULL);
+	  receiver->registerCallBackStartAcquisition(startAcquisitionCallBack,nullptr);
 
 
 	/**
@@ -201,7 +230,7 @@ int main(int argc, char *argv[]) {
 	  total farmes caught
 	  registerCallBackAcquisitionFinished(void (*func)(int, void*),void *arg);
 	 */
-	receiver->registerCallBackAcquisitionFinished(acquisitionFinishedCallBack,NULL);
+	  receiver->registerCallBackAcquisitionFinished(acquisitionFinishedCallBack,nullptr);
 
 
 	/**
@@ -214,25 +243,52 @@ int main(int argc, char *argv[]) {
 	  REMEMBER THAT THE CALLBACK IS BLOCKING
 	  registerCallBackRawDataReady(void (*func)(char*, char*, uint32_t, void*),void *arg);
 	 */
-	receiver->registerCallBackRawDataReady(rawDataReadyCallBack,NULL);
+	  receiver->registerCallBackRawDataReady(rawDataReadyCallBack,nullptr);
 
-
-
-	//start tcp server thread
-	if (receiver->start() == slsReceiverDefs::FAIL){
-		delete receiver;
-		cprintf(BLUE,"Exiting [ Tid: %ld ]\n", (long)syscall(SYS_gettid));
-		exit(EXIT_FAILURE);
+     /**	- as long as no Ctrl+C */
+	  sem_wait(&semaphore);
+	  sem_destroy(&semaphore);
+	  cprintf(BLUE, "Exiting Child Process [ Tid: %ld ]\n",
+		  (long)syscall(SYS_gettid));
+	  exit(EXIT_SUCCESS);
+	  //	  break;
+	  //}
+	/** - Parent process ignores SIGINT (exits only when all child process
+	 * exits) */
+	sa.sa_flags = 0;          // no flags
+	sa.sa_handler = SIG_IGN;  // handler function
+	sigemptyset(&sa.sa_mask); // dont block additional signals during invocation
+                              // of handler
+	if (sigaction(SIGINT, &sa, nullptr) == -1) {
+	  cprintf(RED, "Could not set handler function for SIGINT\n");
 	}
 
-	FILE_LOG(logINFO) << "Ready ... ";
-	cprintf(RESET, "\n[ Press \'Ctrl+c\' to exit ]\n");
-	while(keeprunning)
-		pause();
+/** - Print Ready and Instructions how to exit */
+    std::cout << "Ready ... \n";
+    cprintf(RESET, "\n[ Press \'Ctrl+c\' to exit ]\n");
 
-	delete receiver;
-	cprintf(BLUE,"Exiting [ Tid: %ld ]\n", (long)syscall(SYS_gettid));
-	FILE_LOG(logINFO) << "Goodbye!";
-	return 0;
+    /** - Parent process waits for all child processes to exit */
+    for (;;) {
+        pid_t childPid = waitpid(-1, nullptr, 0);
+
+        // no child closed
+        if (childPid == -1) {
+            if (errno == ECHILD) {
+                cprintf(GREEN, "All Child Processes have been closed\n");
+                break;
+            } else {
+                cprintf(RED, "Unexpected error from waitpid(): (%s)\n",
+                        strerror(errno));
+                break;
+            }
+        }
+
+        // child closed
+        cprintf(BLUE, "Exiting Child Process [ Tid: %ld ]\n",
+                (long int)childPid);
+    }
+    delete receiver;
+    std::cout << "Goodbye!\n";
+    return 0;
 }
 
