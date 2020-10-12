@@ -1,4 +1,4 @@
-CCX			=	g++ -std=c++11
+CCX			=	g++ #-std=c++11
 CFLAGS		=  -Wall -g
 BASERX_INCLUDE		=	../slsDetectorPackage/slsReceiverSoftware/src
 BASERX_INCLUDE2		=	../slsDetectorPackage/slsReceiverSoftware/include
@@ -33,7 +33,7 @@ $(PROGS):
 
 $(PROGSRECSUM): 
 	mkdir -p $(DESTDIR) 
-	$(CCX)  -o $@   $(SRCRECSUM) $(INCLUDES) $(SLSRECEIVERLIB) $(SLSSUPPORTLIB) $(CFLAGS) $(LDLIBS) 
+	$(CCX) -std=c++11 -o $@   $(SRCRECSUM) $(INCLUDES) $(SLSRECEIVERLIB) $(SLSSUPPORTLIB) $(CFLAGS) $(LDLIBS) 
 	mv $(PROGSRECSUM) $(DESTDIR)
 
 $(PROGSSUM): 
