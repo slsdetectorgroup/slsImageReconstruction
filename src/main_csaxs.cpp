@@ -1517,7 +1517,7 @@ int main(int argc, char *argv[]) {
 
  	H5Sselect_hyperslab(vdataspace, H5S_SELECT_SET, start, NULL, count,NULL);
 	//relative path here 
-       	sprintf(fname, "%s_%05d_%012d.h5",GetFileNoDir(file).c_str(),fileIndex,Nimgsperfile*ifile);
+       	sprintf(fname, "%s_%05d_%012d.h5",GetFileNoDir(file).c_str(),fileIndex,/*Nimgsperfile**/ifile);
 	
 	hid_t src_space = H5Screate_simple(rank,dim, maxdim); //here
       
