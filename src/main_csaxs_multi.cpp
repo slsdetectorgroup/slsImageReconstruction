@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
 	  exe.erase(exePos,4);
 	  
 	  //1.5M OMNY 
-	  string command = exe + " -f " + string(argv[1]) + " -d " + od +" -x 1536 -y 1024 -v -g 2 eiger_4";
+	  string command = exe + " -f " + string(argv[1]) + " -d " + od +" -x 1536 -y 1024 -v -g 2 -n eiger_4";
 	  cout<<"command:"<<command<<endl;
 	  system(command.c_str());
 
